@@ -1,7 +1,8 @@
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, FSInputFile
 from aiogram.fsm.context import FSMContext
-from keyboards.client import get_cabinet_keyboard, get_history_keyboard, get_back_to_cabinet_keyboard
+from callbacks.menu import MenuCallback
+from keyboards.client import get_cabinet_keyboard, get_history_keyboard, get_back_to_cabinet_keyboard, get_main_menu_keyboard
 from database.crud import get_user, get_user_videos_history, get_video_by_id, get_ai_response_by_video
 from services.pdf_generator import generate_pdf
 from utils.helpers import safe_edit_text
@@ -102,6 +103,12 @@ async def show_history_page(query: CallbackQuery, page: int = 1):
         reply_markup=get_history_keyboard(page, total_pages, videos),
         parse_mode="HTML"
     )
+
+
+@router.callback_query(MenuCallback.filter(F.action == "main_menu"))
+async def back_from_analysis_type(query: CallbackQuery, state: FSMContext):
+    await query.message.edit_text("Главное меню", reply_markup=get_main_menu_keyboard())
+    await state.clear()
 
 
 @router.callback_query(F.data.startswith("download:"))

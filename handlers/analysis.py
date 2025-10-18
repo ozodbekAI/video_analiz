@@ -22,33 +22,25 @@ user_analysis_locks = {}
 
 @router.callback_query(MenuCallback.filter(F.action == "analysis_my_video"))
 async def analysis_my_video_handler(query: CallbackQuery, state: FSMContext):
+    await state.set_state(AnalysisFSM.choose_type)
     await state.update_data(analysis_category="my")
     await query.message.edit_text("Выберите тип анализа:", reply_markup=get_analysis_type_keyboard("my"))
-    await state.set_state(AnalysisFSM.choose_type)
 
 @router.callback_query(MenuCallback.filter(F.action == "analysis_competitor"))
 async def analysis_competitor_handler(query: CallbackQuery, state: FSMContext):
+    await state.set_state(AnalysisFSM.choose_type)
     await state.update_data(analysis_category="competitor")
     await query.message.edit_text("Выберите тип анализа:", reply_markup=get_analysis_type_keyboard("competitor"))
-    await state.set_state(AnalysisFSM.choose_type)
 
 @router.callback_query(AnalysisFSM.choose_type, AnalysisCallback.filter(F.type == "simple"))
 async def choose_simple_analysis(query: CallbackQuery, callback_data: AnalysisCallback, state: FSMContext):
-    data = await state.get_data()
-    await state.update_data(
-        analysis_category=data.get('analysis_category'),
-        analysis_type="simple"
-    )
+    await state.update_data(analysis_type="simple")
     await query.message.edit_text(ENTER_VIDEO_URL, reply_markup=get_back_to_menu_keyboard())
     await state.set_state(AnalysisFSM.waiting_for_url)
 
 @router.callback_query(AnalysisFSM.choose_type, AnalysisCallback.filter(F.type == "advanced"))
 async def choose_advanced_analysis(query: CallbackQuery, callback_data: AnalysisCallback, state: FSMContext):
-    data = await state.get_data()
-    await state.update_data(
-        analysis_category=data.get('analysis_category'),
-        analysis_type="advanced"
-    )
+    await state.update_data(analysis_type="advanced")
     await query.message.edit_text(ENTER_VIDEO_URL, reply_markup=get_back_to_menu_keyboard())
     await state.set_state(AnalysisFSM.waiting_for_url)
 
@@ -59,17 +51,14 @@ async def back_from_analysis_type(query: CallbackQuery, state: FSMContext):
 
 
 async def update_progress_message(message: Message, text: str, emoji: str = "⏳"):
-    
     try:
         progress_bar = f"{emoji} {text}"
         await message.edit_text(progress_bar)
     except Exception:
-        
         await message.answer(f"{emoji} {text}")
 
 
 async def run_analysis_task(user_id: int, message: Message, url: str, category: str, analysis_type: str):
-    
     comments_file = None
     pdf_file = None
     progress_msg = None
@@ -80,7 +69,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         if user.analyses_used >= user.analyses_limit:
             await message.answer(LIMIT_EXCEEDED, reply_markup=get_back_to_menu_keyboard())
             return
-        
         
         progress_msg = await message.answer("⏳ Загрузка комментариев с YouTube...")
         
@@ -94,7 +82,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             f"✅ Загружено {len(comments_data)} комментариев\n🔄 Сохранение в базу данных..."
         )
         
-        
         db_video_id = await create_video(
             user.id, 
             url, 
@@ -103,7 +90,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         
         with open(comments_file, "r", encoding="utf-8") as f:
             comments_text = f.read()
-        
         
         if analysis_type == "simple":
             await update_progress_message(
@@ -133,7 +119,7 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             if not advanced_prompts:
                 raise ValueError("Нет advanced промптов в базе")
             
-            total_steps = len(advanced_prompts) + 1  # +1 для synthesis
+            total_steps = len(advanced_prompts) + 1
             
             await update_progress_message(
                 progress_msg,
@@ -141,7 +127,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             )
             
             partial_responses = []
-            
             
             tasks = []
             for idx, prompt in enumerate(advanced_prompts):
@@ -160,7 +145,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
                     partial_response
                 )
                 
-                
                 completed = idx + 1
                 percentage = int((completed / total_steps) * 100)
                 progress_bar = "▓" * (percentage // 10) + "░" * (10 - percentage // 10)
@@ -170,14 +154,12 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
                     f"🔍 Этап {completed}/{total_steps}\n{progress_bar} {percentage}%"
                 )
             
-            
             await update_progress_message(
                 progress_msg,
                 f"🔄 Финальный синтез...\n{progress_bar} 90%"
             )
             
             synthesis_prompts = await get_prompts(category=category, analysis_type="synthesis")
-            print(len(synthesis_prompts))
             if not synthesis_prompts:
                 raise ValueError("Должен быть ровно один synthesis промпт")
             
@@ -202,7 +184,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         else:
             raise ValueError("Неизвестный тип анализа")
         
- 
         await update_progress_message(
             progress_msg,
             "📄 Генерация PDF отчета..."
@@ -210,7 +191,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         
         pdf_file = generate_pdf(final_ai_response, url, video_id)
         
-      
         reports_dir = Path(f"reports/{user.user_id}")
         reports_dir.mkdir(parents=True, exist_ok=True)
         saved_pdf_path = reports_dir / f"{video_id}_{analysis_type}.pdf"
@@ -236,6 +216,7 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             reply_markup=get_main_menu_keyboard()
         )
         
+        # await update_user_analyses(user.id, user.analyses_used + 1)
         
     except ValueError as e:
         if progress_msg:
@@ -273,7 +254,7 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
 async def process_video_url(message: Message, state: FSMContext):
     url = message.text.strip()
     user_id = message.from_user.id
-    
+
     if user_id in user_analysis_locks and not user_analysis_locks[user_id].done():
         await message.answer(
             "⏳ У вас уже идет анализ. Дождитесь завершения текущего.\n\n"
@@ -282,20 +263,23 @@ async def process_video_url(message: Message, state: FSMContext):
         )
         return
     
+
     data = await state.get_data()
-    category = data.get('analysis_category', 'my')
-    analysis_type = data.get('analysis_type', 'simple')
+    category = data.get('analysis_category')
+    analysis_type = data.get('analysis_type')
+    
+    if not category or not analysis_type:
+        await message.answer(
+            "❌ Ошибка: не выбран тип анализа.\n\n"
+            "Пожалуйста, начните заново:",
+            reply_markup=get_main_menu_keyboard()
+        )
+        await state.clear()
+        return
     
     await state.clear()
     
-    # await message.answer(
-    #     "🚀 <b>Анализ запущен!</b>\n\n"
-    #     "Вы получите уведомления о прогрессе.\n"
-    #     "Тем временем можете продолжить работу с ботом 👇",
-    #     parse_mode="HTML",
-    #     reply_markup=get_main_menu_keyboard()
-    # )
-    
+    # Asinxron task yaratish
     task = asyncio.create_task(
         run_analysis_task(user_id, message, url, category, analysis_type)
     )
