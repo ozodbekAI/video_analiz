@@ -238,5 +238,4 @@ def generate_pdf(content: str, video_url: str, video_id: str) -> str:
         stylesheets=[CSS(string=css_style)]
     )
     
-    print(f"✅ PDF сгенерирован: {temp_path}")
     return temp_path

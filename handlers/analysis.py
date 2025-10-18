@@ -22,27 +22,51 @@ user_analysis_locks = {}
 
 @router.callback_query(MenuCallback.filter(F.action == "analysis_my_video"))
 async def analysis_my_video_handler(query: CallbackQuery, state: FSMContext):
+    await state.clear() 
     await state.set_state(AnalysisFSM.choose_type)
     await state.update_data(analysis_category="my")
+    
+
+    
     await query.message.edit_text("Выберите тип анализа:", reply_markup=get_analysis_type_keyboard("my"))
 
 @router.callback_query(MenuCallback.filter(F.action == "analysis_competitor"))
 async def analysis_competitor_handler(query: CallbackQuery, state: FSMContext):
+    await state.clear()  
     await state.set_state(AnalysisFSM.choose_type)
     await state.update_data(analysis_category="competitor")
+    
+    
     await query.message.edit_text("Выберите тип анализа:", reply_markup=get_analysis_type_keyboard("competitor"))
 
 @router.callback_query(AnalysisFSM.choose_type, AnalysisCallback.filter(F.type == "simple"))
 async def choose_simple_analysis(query: CallbackQuery, callback_data: AnalysisCallback, state: FSMContext):
-    await state.update_data(analysis_type="simple")
-    await query.message.edit_text(ENTER_VIDEO_URL, reply_markup=get_back_to_menu_keyboard())
+    data = await state.get_data()
+    category = data.get('analysis_category')
+    
+
     await state.set_state(AnalysisFSM.waiting_for_url)
+    await state.update_data(
+        analysis_category=category,
+        analysis_type="simple"
+    )
+    
+    await query.message.edit_text(ENTER_VIDEO_URL, reply_markup=get_back_to_menu_keyboard())
 
 @router.callback_query(AnalysisFSM.choose_type, AnalysisCallback.filter(F.type == "advanced"))
 async def choose_advanced_analysis(query: CallbackQuery, callback_data: AnalysisCallback, state: FSMContext):
-    await state.update_data(analysis_type="advanced")
-    await query.message.edit_text(ENTER_VIDEO_URL, reply_markup=get_back_to_menu_keyboard())
+    data = await state.get_data()
+    category = data.get('analysis_category')
+    
+
     await state.set_state(AnalysisFSM.waiting_for_url)
+    await state.update_data(
+        analysis_category=category,
+        analysis_type="advanced"
+    )
+    
+    
+    await query.message.edit_text(ENTER_VIDEO_URL, reply_markup=get_back_to_menu_keyboard())
 
 @router.callback_query(AnalysisFSM.choose_type, MenuCallback.filter(F.action == "main_menu"))
 async def back_from_analysis_type(query: CallbackQuery, state: FSMContext):
@@ -216,7 +240,7 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             reply_markup=get_main_menu_keyboard()
         )
         
-        # await update_user_analyses(user.id, user.analyses_used + 1)
+        await update_user_analyses(user.id, user.analyses_used + 1)
         
     except ValueError as e:
         if progress_msg:
@@ -246,15 +270,13 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             f"Ошибка: {str(e)}\n\nВернуться в меню:",
             reply_markup=get_main_menu_keyboard()
         )
-        import traceback
-        print(traceback.format_exc())
 
 
 @router.message(AnalysisFSM.waiting_for_url)
 async def process_video_url(message: Message, state: FSMContext):
     url = message.text.strip()
     user_id = message.from_user.id
-
+    
     if user_id in user_analysis_locks and not user_analysis_locks[user_id].done():
         await message.answer(
             "⏳ У вас уже идет анализ. Дождитесь завершения текущего.\n\n"
@@ -263,23 +285,17 @@ async def process_video_url(message: Message, state: FSMContext):
         )
         return
     
-
+    current_state = await state.get_state()
     data = await state.get_data()
+    
+
     category = data.get('analysis_category')
     analysis_type = data.get('analysis_type')
     
-    if not category or not analysis_type:
-        await message.answer(
-            "❌ Ошибка: не выбран тип анализа.\n\n"
-            "Пожалуйста, начните заново:",
-            reply_markup=get_main_menu_keyboard()
-        )
-        await state.clear()
-        return
+
     
     await state.clear()
     
-    # Asinxron task yaratish
     task = asyncio.create_task(
         run_analysis_task(user_id, message, url, category, analysis_type)
     )

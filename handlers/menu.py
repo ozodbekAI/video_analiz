@@ -13,14 +13,39 @@ router = Router()
 async def in_development_handler(query: CallbackQuery):
     await query.answer(FEATURE_IN_DEVELOPMENT, show_alert=True)
 
+# ❌ BU HANDLER'LARNI O'CHIRING! Ular analysis_handler.py da bor!
+# @router.callback_query(MenuCallback.filter(F.action == "analysis_my_video"))
+# async def analysis_my_video_handler(query: CallbackQuery, state: FSMContext):
+#     await safe_edit_text(query, ANALYSIS_MY_VIDEO, reply_markup=get_analysis_type_keyboard("my"))
+#     await state.set_state(AnalysisFSM.choose_type)
+
+# @router.callback_query(MenuCallback.filter(F.action == "analysis_competitor"))
+# async def analysis_competitor_handler(query: CallbackQuery, state: FSMContext):
+#     await safe_edit_text(query, ANALYSIS_COMPETITOR, reply_markup=get_analysis_type_keyboard("competitor"))
+#     await state.set_state(AnalysisFSM.choose_type)
+
+# Yoki agar bu handler'lar kerak bo'lsa, to'g'rilang:
+
 @router.callback_query(MenuCallback.filter(F.action == "analysis_my_video"))
 async def analysis_my_video_handler(query: CallbackQuery, state: FSMContext):
-    # Use safe_edit_text instead of direct edit_text
-    await safe_edit_text(query, ANALYSIS_MY_VIDEO, reply_markup=get_analysis_type_keyboard("my"))
+    await state.clear()  
     await state.set_state(AnalysisFSM.choose_type)
+    await state.update_data(analysis_category="my")  
+    
+    # DEBUG
+    data = await state.get_data()
+    print(f"DEBUG menu_handler.analysis_my_video: data = {data}")
+    
+    await safe_edit_text(query, ANALYSIS_MY_VIDEO, reply_markup=get_analysis_type_keyboard("my"))
 
 @router.callback_query(MenuCallback.filter(F.action == "analysis_competitor"))
 async def analysis_competitor_handler(query: CallbackQuery, state: FSMContext):
-    # Use safe_edit_text instead of direct edit_text
-    await safe_edit_text(query, ANALYSIS_COMPETITOR, reply_markup=get_analysis_type_keyboard("competitor"))
+    await state.clear()
     await state.set_state(AnalysisFSM.choose_type)
+    await state.update_data(analysis_category="competitor") 
+    
+    # DEBUG
+    data = await state.get_data()
+    print(f"DEBUG menu_handler.analysis_competitor: data = {data}")
+    
+    await safe_edit_text(query, ANALYSIS_COMPETITOR, reply_markup=get_analysis_type_keyboard("competitor"))

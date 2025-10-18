@@ -18,8 +18,8 @@ async def main():
     
     dp.include_routers(
         start_router,
-        menu_router,
         analysis_router,
+        menu_router,
         cabinet_router,
         admin_router
     )
