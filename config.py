@@ -15,8 +15,8 @@ class Config(BaseSettings):
     AI_TUNEL_API_KEY: str  
     API_KEY: str  
 
-    DEFAULT_ANALYSES_LIMIT = 5  
-    MONTHLY_RESET_DAYS = 30
+    DEFAULT_ANALYSES_LIMIT: int = 5  
+    MONTHLY_RESET_DAYS: int = 30
 
     class Config:
         env_file = ".env"  

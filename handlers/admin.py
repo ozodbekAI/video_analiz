@@ -5,7 +5,8 @@ from aiogram.fsm.context import FSMContext
 from callbacks.admin import AdminCallback
 from states.admin import AdminFSM
 from keyboards.admin import (
-    get_admin_menu_keyboard, 
+    get_admin_menu_keyboard,
+    get_back_keyboard, 
     get_prompt_category_keyboard, 
     get_prompt_type_keyboard, 
     get_advanced_subtype_keyboard, 
@@ -46,7 +47,7 @@ async def manage_users_handler(query: CallbackQuery, state: FSMContext):
         "Отправьте User ID для управления его лимитами.\n"
         "Пример: <code>123456789</code>",
         parse_mode="HTML",
-        reply_markup=get_user_management_keyboard()
+        reply_markup=get_back_keyboard()
     )
     await state.set_state(AdminFSM.waiting_for_user_id)
 
@@ -130,7 +131,6 @@ async def process_new_limit(message: Message, state: FSMContext):
 
 @router.callback_query(AdminFSM.managing_user, AdminCallback.filter(F.action == "reset_usage"))
 async def reset_usage_handler(query: CallbackQuery, state: FSMContext):
-    """Foydalanishni reset qilish"""
     data = await state.get_data()
     target_user_id = data.get('target_user_id')
     
@@ -145,7 +145,6 @@ async def reset_usage_handler(query: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-# ============ STATISTIKA ============
 
 @router.callback_query(AdminCallback.filter(F.action == "view_stats"))
 async def view_stats_handler(query: CallbackQuery):
@@ -280,7 +279,6 @@ async def recent_videos_handler(query: CallbackQuery):
         )
 
 
-# ============ PROMPT BOSHQARUV ============
 
 @router.callback_query(AdminCallback.filter(F.action == "view_prompts"))
 async def view_prompts_handler(query: CallbackQuery):

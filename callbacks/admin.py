@@ -6,4 +6,4 @@ class AdminCallback(CallbackData, prefix="admin"):
     category: Optional[str] = None  
     analysis_type: Optional[str] = None  
     subtype: Optional[str] = None 
-    prompt_id: Optional[int] = None  
+    prompt_id: Optional[int] = None

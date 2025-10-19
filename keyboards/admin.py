@@ -4,7 +4,6 @@ from callbacks.admin import AdminCallback
 
 
 def get_admin_menu_keyboard():
-    """Admin asosiy menyu"""
     builder = InlineKeyboardBuilder()
     builder.button(text="📊 Статистика", callback_data=AdminCallback(action="view_stats"))
     builder.button(text="📋 Промпты", callback_data=AdminCallback(action="view_prompts"))
@@ -15,7 +14,6 @@ def get_admin_menu_keyboard():
 
 
 def get_user_management_keyboard():
-    """User boshqaruv klaviaturasi"""
     builder = InlineKeyboardBuilder()
     builder.button(text="📊 Установить лимит", callback_data=AdminCallback(action="set_limit"))
     builder.button(text="🔄 Сбросить использование", callback_data=AdminCallback(action="reset_usage"))
@@ -23,9 +21,13 @@ def get_user_management_keyboard():
     builder.adjust(2, 1)
     return builder.as_markup()
 
+def get_back_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.button(text="↩️ Назад", callback_data=AdminCallback(action="back"))
+    return builder.as_markup()
+
 
 def get_stats_keyboard():
-    """Statistika klaviaturasi"""
     builder = InlineKeyboardBuilder()
     builder.button(text="🔄 Обновить", callback_data=AdminCallback(action="view_stats"))
     builder.button(text="🏆 Топ пользователей", callback_data=AdminCallback(action="top_users"))
@@ -36,7 +38,6 @@ def get_stats_keyboard():
 
 
 def get_prompt_category_keyboard(add_mode: bool = False):
-    """Prompt kategoriyasi klaviaturasi"""
     builder = InlineKeyboardBuilder()
     action_prefix = "add_select_category" if add_mode else "select_category"
     builder.button(text="Моё видео", callback_data=AdminCallback(action=action_prefix, category="my"))
@@ -47,7 +48,6 @@ def get_prompt_category_keyboard(add_mode: bool = False):
 
 
 def get_prompt_type_keyboard(add_mode: bool = False):
-    """Prompt turi klaviaturasi"""
     builder = InlineKeyboardBuilder()
     action_prefix = "add_select_type" if add_mode else "select_type"
     builder.button(text="⛏️ Простой", callback_data=AdminCallback(action=action_prefix, analysis_type="simple"))
@@ -58,7 +58,6 @@ def get_prompt_type_keyboard(add_mode: bool = False):
 
 
 def get_advanced_subtype_keyboard(category: str = "my", add_mode: bool = False):
-    """Advanced subtype klaviaturasi"""
     builder = InlineKeyboardBuilder()
     action_prefix = "add_select_subtype" if add_mode else "select_subtype"
     builder.button(text="📝 Предыдущие промпты", callback_data=AdminCallback(action=action_prefix, subtype="advanced", category=category))
@@ -69,7 +68,6 @@ def get_advanced_subtype_keyboard(category: str = "my", add_mode: bool = False):
 
 
 def get_prompts_keyboard(prompts, analysis_type: str, category: str):
-    """Promptlar ro'yxati klaviaturasi"""
     builder = InlineKeyboardBuilder()
     
     for prompt in prompts:

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
+from sqlalchemy import BigInteger, Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from .engine import Base
 from datetime import datetime, timezone
@@ -7,12 +7,12 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, unique=True, nullable=False)
+    user_id = Column(BigInteger, unique=True, nullable=False)
     username = Column(String(255), nullable=True)
-    language = Column(String(10), default="ru")  # YANGI: til
-    tariff_plan = Column(Boolean, default=False)
-    analyses_limit = Column(Integer, default=5)  # Oylik limit
-    analyses_used = Column(Integer, default=0)  # Ishlatilgan so'rovlar
+    language = Column(String(10), default="ru")
+    tariff_plan = Column(String, default='basic')
+    analyses_limit = Column(Integer, default=5) 
+    analyses_used = Column(Integer, default=0)  
     last_reset_date = Column(DateTime(timezone=True), default=lambda: datetime.now(tz=timezone.utc))  # YANGI
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz=timezone.utc))
     

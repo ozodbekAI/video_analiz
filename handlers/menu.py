@@ -12,7 +12,6 @@ router = Router()
 
 @router.callback_query(MenuCallback.filter(F.action == "strategic_hub"))
 async def strategic_hub_handler(query: CallbackQuery):
-    """Strategik hub"""
     await safe_edit_text(
         query, 
         STRATEGIC_HUB_TEXT, 
@@ -31,13 +30,11 @@ async def strategic_hub_handler(query: CallbackQuery):
     "motivation"
 })))
 async def in_development_handler(query: CallbackQuery):
-    """Ishlab chiqilayotgan funksiyalar"""
     await query.answer(FEATURE_IN_DEVELOPMENT, show_alert=True)
 
 
 @router.callback_query(MenuCallback.filter(F.action == "main_menu"))
 async def main_menu_handler(query: CallbackQuery, state: FSMContext):
-    """Asosiy menyuga qaytish"""
     await state.clear()
     await safe_edit_text(
         query,

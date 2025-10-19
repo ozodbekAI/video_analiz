@@ -5,7 +5,6 @@ from callbacks.analysis import AnalysisCallback
 
 
 def get_language_keyboard():
-    """Til tanlash klaviaturasi"""
     builder = InlineKeyboardBuilder()
     builder.button(text="🇷🇺 Русский", callback_data=MenuCallback(action="select_language", category="ru"))
     builder.button(text="🇺🇸 English", callback_data=MenuCallback(action="select_language", category="en"))
@@ -16,7 +15,6 @@ def get_language_keyboard():
 
 
 def get_main_menu_keyboard():
-    """Asosiy menyu - 5 ta tugma (2x3 grid)"""
     builder = InlineKeyboardBuilder()
     builder.button(text="📈 Анализ моего видео", callback_data=MenuCallback(action="analysis_my_video"))
     builder.button(text="🥊 Анализ конкурента", callback_data=MenuCallback(action="analysis_competitor"))
@@ -28,7 +26,6 @@ def get_main_menu_keyboard():
 
 
 def get_strategic_hub_keyboard():
-    """Strategik hub klaviaturasi"""
     builder = InlineKeyboardBuilder()
     builder.button(text="📈 Эволюция контента", callback_data=MenuCallback(action="content_evolution"))
     builder.button(text="👥 Карта аудитории", callback_data=MenuCallback(action="audience_map"))
@@ -43,7 +40,6 @@ def get_strategic_hub_keyboard():
 
 
 def get_analysis_type_keyboard(category: str):
-    """Analiz turi tanlash klaviaturasi"""
     builder = InlineKeyboardBuilder()
     builder.button(
         text="⛏️ Простой анализ", 
@@ -59,7 +55,6 @@ def get_analysis_type_keyboard(category: str):
 
 
 def get_after_analysis_keyboard():
-    """Analiz tugagandan keyin - faqat 2 ta tugma"""
     builder = InlineKeyboardBuilder()
     builder.button(text="🏠 Главное меню", callback_data=MenuCallback(action="main_menu"))
     builder.button(text="⚙️ Личный кабинет", callback_data="personal_cabinet")
@@ -68,14 +63,12 @@ def get_after_analysis_keyboard():
 
 
 def get_back_to_menu_keyboard():
-    """Menyuga qaytish tugmasi"""
     builder = InlineKeyboardBuilder()
     builder.button(text="🏠 Главное меню", callback_data=MenuCallback(action="main_menu"))
     return builder.as_markup()
 
 
 def get_cabinet_keyboard():
-    """Shaxsiy kabinet klaviaturasi"""
     builder = InlineKeyboardBuilder()
     builder.button(text="📋 История отчетов", callback_data="cabinet:history")
     builder.button(text="💳 Улучшить тариф", callback_data="cabinet:upgrade_tariff")
@@ -88,7 +81,6 @@ def get_cabinet_keyboard():
 
 
 def get_history_keyboard(current_page: int, total_pages: int, videos: list):
-    """Tarix klaviaturasi paginatsiya bilan"""
     builder = InlineKeyboardBuilder()
     
     for video, ai_response in videos:
@@ -125,7 +117,6 @@ def get_history_keyboard(current_page: int, total_pages: int, videos: list):
 
 
 def get_back_to_cabinet_keyboard():
-    """Kabinetga qaytish"""
     builder = InlineKeyboardBuilder()
     builder.button(text="↩️ Назад в кабинет", callback_data="personal_cabinet")
     return builder.as_markup()

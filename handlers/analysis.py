@@ -97,7 +97,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
     try:
         user = await get_user(user_id)
         
-        # LIMIT TEKSHIRISH - admin emas bo'lsa
         if user_id not in ADMIN_IDS:
             if user.analyses_used >= user.analyses_limit:
                 await message.answer(
@@ -249,7 +248,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             parse_mode="HTML",
         )
 
-        # YANGI: Faqat 2 ta tugma
         if user_id not in ADMIN_IDS:
             remaining = user.analyses_limit - (user.analyses_used + 1)
             await message.answer(
@@ -266,7 +264,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
                 reply_markup=get_after_analysis_keyboard()
             )
         
-        # SO'ROVNI HISOBLASH - admin emas bo'lsa
         if user_id not in ADMIN_IDS:
             await update_user_analyses(user.id, user.analyses_used + 1)
         

@@ -8,7 +8,6 @@ class AdminFSM(StatesGroup):
     waiting_for_prompt_text = State()
     waiting_for_update_text = State()
     
-    # User boshqaruv uchun
     waiting_for_user_id = State()
     managing_user = State()
     waiting_for_limit = State()

@@ -3,4 +3,4 @@ from typing import Optional
 
 class MenuCallback(CallbackData, prefix="menu"):
     action: str
-    category: Optional[str] = None  # til uchun
+    category: Optional[str] = None
