@@ -70,13 +70,17 @@ async def process_user_id(message: Message, state: FSMContext):
         
         await state.update_data(target_user_id=user_id)
         
+    
+        registration_date = user.created_at.strftime('%d.%m.%Y') if user.created_at else 'Неизвестно'
+        last_reset = user.last_reset_date.strftime('%d.%m.%Y') if user.last_reset_date else 'Никогда'
+        
         await message.answer(
             f"👤 <b>Пользователь найден</b>\n\n"
             f"🆔 ID: <code>{user.user_id}</code>\n"
             f"👤 Username: {user.username or 'Не указан'}\n"
             f"📊 Использовано: {user.analyses_used}/{user.analyses_limit}\n"
-            f"📅 Регистрация: {user.created_at.strftime('%d.%m.%Y')}\n"
-            f"🔄 Последний сброс: {user.last_reset_date.strftime('%d.%m.%Y')}\n\n"
+            f"📅 Регистрация: {registration_date}\n"
+            f"🔄 Последний сброс: {last_reset}\n\n"
             f"Выберите действие:",
             parse_mode="HTML",
             reply_markup=get_user_management_keyboard()
