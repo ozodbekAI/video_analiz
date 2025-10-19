@@ -1,58 +1,88 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from callbacks.admin import AdminCallback
-from typing import List, Optional
-from database.models import Prompt
 
-def get_admin_menu_keyboard() -> InlineKeyboardMarkup:
+
+def get_admin_menu_keyboard():
+    """Admin asosiy menyu"""
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="📊 Статистика", callback_data=AdminCallback(action="view_stats").pack()))
-    builder.row(InlineKeyboardButton(text="👁 Просмотреть промпты", callback_data=AdminCallback(action="view_prompts").pack()))
-    builder.row(InlineKeyboardButton(text="➕ Добавить промпт", callback_data=AdminCallback(action="add_prompt").pack()))
-    builder.row(InlineKeyboardButton(text="👥 Топ пользователей", callback_data=AdminCallback(action="top_users").pack()))
-    builder.row(InlineKeyboardButton(text="📹 Последние видео", callback_data=AdminCallback(action="recent_videos").pack()))
+    builder.button(text="📊 Статистика", callback_data=AdminCallback(action="view_stats"))
+    builder.button(text="📋 Промпты", callback_data=AdminCallback(action="view_prompts"))
+    builder.button(text="➕ Добавить промпт", callback_data=AdminCallback(action="add_prompt"))
+    builder.button(text="👥 Управление пользователями", callback_data=AdminCallback(action="manage_users"))  # YANGI
+    builder.adjust(2, 2)
     return builder.as_markup()
 
-def get_prompt_category_keyboard(add_mode: bool = False) -> InlineKeyboardMarkup:
+
+def get_user_management_keyboard():
+    """User boshqaruv klaviaturasi"""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="📊 Установить лимит", callback_data=AdminCallback(action="set_limit"))
+    builder.button(text="🔄 Сбросить использование", callback_data=AdminCallback(action="reset_usage"))
+    builder.button(text="↩️ Назад", callback_data=AdminCallback(action="back"))
+    builder.adjust(2, 1)
+    return builder.as_markup()
+
+
+def get_stats_keyboard():
+    """Statistika klaviaturasi"""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🔄 Обновить", callback_data=AdminCallback(action="view_stats"))
+    builder.button(text="🏆 Топ пользователей", callback_data=AdminCallback(action="top_users"))
+    builder.button(text="📹 Последние анализы", callback_data=AdminCallback(action="recent_videos"))
+    builder.button(text="↩️ Назад", callback_data=AdminCallback(action="back"))
+    builder.adjust(2, 2)
+    return builder.as_markup()
+
+
+def get_prompt_category_keyboard(add_mode: bool = False):
+    """Prompt kategoriyasi klaviaturasi"""
+    builder = InlineKeyboardBuilder()
     action_prefix = "add_select_category" if add_mode else "select_category"
-    builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="📈 Анализ моего видео", callback_data=AdminCallback(action=action_prefix, category="my").pack()))
-    builder.row(InlineKeyboardButton(text="🥊 Анализ конкурента", callback_data=AdminCallback(action=action_prefix, category="competitor").pack()))
-    builder.row(InlineKeyboardButton(text="🔙 Назад", callback_data=AdminCallback(action="back").pack()))
+    builder.button(text="Моё видео", callback_data=AdminCallback(action=action_prefix, category="my"))
+    builder.button(text="Конкурент", callback_data=AdminCallback(action=action_prefix, category="competitor"))
+    builder.button(text="↩️ Назад", callback_data=AdminCallback(action="back"))
+    builder.adjust(2, 1)
     return builder.as_markup()
 
-def get_prompt_type_keyboard(add_mode: bool = False) -> InlineKeyboardMarkup:
-    action_prefix_type = "add_select_type" if add_mode else "select_type"
+
+def get_prompt_type_keyboard(add_mode: bool = False):
+    """Prompt turi klaviaturasi"""
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="⛏️ Простой анализ (simple)", callback_data=AdminCallback(action=action_prefix_type, analysis_type="simple").pack()))
-    builder.row(InlineKeyboardButton(text="⚙️ Расширенный анализ (advanced)", callback_data=AdminCallback(action=action_prefix_type, analysis_type="advanced").pack()))
-    builder.row(InlineKeyboardButton(text="🔙 Назад", callback_data=AdminCallback(action="back").pack()))
+    action_prefix = "add_select_type" if add_mode else "select_type"
+    builder.button(text="⛏️ Простой", callback_data=AdminCallback(action=action_prefix, analysis_type="simple"))
+    builder.button(text="⚙️ Углубленный", callback_data=AdminCallback(action=action_prefix, analysis_type="advanced"))
+    builder.button(text="↩️ Назад", callback_data=AdminCallback(action="back"))
+    builder.adjust(2, 1)
     return builder.as_markup()
 
-def get_advanced_subtype_keyboard(category: str = None, add_mode: bool = False) -> InlineKeyboardMarkup:
-    action_prefix_subtype = "add_select_subtype" if add_mode else "select_subtype"
+
+def get_advanced_subtype_keyboard(category: str = "my", add_mode: bool = False):
+    """Advanced subtype klaviaturasi"""
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="🔝 Предыдущие промпты (advanced)", callback_data=AdminCallback(action=action_prefix_subtype, subtype="advanced").pack()))
-    builder.row(InlineKeyboardButton(text="🔚 Финальный промпт (synthesis)", callback_data=AdminCallback(action=action_prefix_subtype, subtype="synthesis").pack()))
-    builder.row(InlineKeyboardButton(text="🔙 Назад", callback_data=AdminCallback(action="back").pack()))
+    action_prefix = "add_select_subtype" if add_mode else "select_subtype"
+    builder.button(text="📝 Предыдущие промпты", callback_data=AdminCallback(action=action_prefix, subtype="advanced", category=category))
+    builder.button(text="🔄 Финальный синтез", callback_data=AdminCallback(action=action_prefix, subtype="synthesis", category=category))
+    builder.button(text="↩️ Назад", callback_data=AdminCallback(action="back"))
+    builder.adjust(2, 1)
     return builder.as_markup()
 
-def get_prompts_keyboard(prompts: Optional[List[Prompt]] = None, analysis_type: str = None, category: str = None) -> InlineKeyboardMarkup:
-    builder = InlineKeyboardBuilder()
-    if prompts:
-        for prompt in prompts:
-            builder.row(
-                InlineKeyboardButton(text=f"🖊 Изменить {prompt.name}", callback_data=AdminCallback(action="update_prompt", prompt_id=prompt.id).pack()),
-                InlineKeyboardButton(text=f"➖ Удалить {prompt.name}", callback_data=AdminCallback(action="delete_prompt", prompt_id=prompt.id).pack())
-            )
-    if analysis_type in ["advanced", "simple"]:
-        builder.row(InlineKeyboardButton(text="➕ Добавить новый", callback_data=AdminCallback(action="add_prompt").pack()))
-    builder.row(InlineKeyboardButton(text="🔙 Назад", callback_data=AdminCallback(action="back").pack()))
-    return builder.as_markup()
 
-def get_stats_keyboard() -> InlineKeyboardMarkup:
+def get_prompts_keyboard(prompts, analysis_type: str, category: str):
+    """Promptlar ro'yxati klaviaturasi"""
+    builder = InlineKeyboardBuilder()
     
-    builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="🔄 Обновить", callback_data=AdminCallback(action="view_stats").pack()))
-    builder.row(InlineKeyboardButton(text="🔙 Назад", callback_data=AdminCallback(action="back").pack()))
+    for prompt in prompts:
+        builder.button(
+            text=f"✏️ {prompt.name[:30]}", 
+            callback_data=AdminCallback(action="update_prompt", prompt_id=prompt.id)
+        )
+        builder.button(
+            text="❌", 
+            callback_data=AdminCallback(action="delete_prompt", prompt_id=prompt.id)
+        )
+    
+    builder.adjust(2)
+    builder.row(InlineKeyboardButton(text="↩️ Назад", callback_data=AdminCallback(action="back").pack()))
+    
     return builder.as_markup()

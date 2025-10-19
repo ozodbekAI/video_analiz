@@ -4,7 +4,12 @@ from aiogram.fsm.context import FSMContext
 from callbacks.menu import MenuCallback
 from callbacks.analysis import AnalysisCallback
 from states.analysis import AnalysisFSM
-from keyboards.client import get_analysis_type_keyboard, get_back_to_menu_keyboard, get_main_menu_keyboard
+from keyboards.client import (
+    get_analysis_type_keyboard, 
+    get_back_to_menu_keyboard, 
+    get_main_menu_keyboard,
+    get_after_analysis_keyboard
+)
 from services.youtube_service import extract_video_id, get_video_comments, save_comments_to_file, get_comments_file_path
 from services.ai_service import analyze_comments_with_prompt
 from services.pdf_generator import generate_pdf
@@ -15,10 +20,14 @@ import os
 import asyncio
 from datetime import datetime
 from pathlib import Path
+from config import config
 
 router = Router()
 
 user_analysis_locks = {}
+
+ADMIN_IDS = config.ADMIN_IDS  
+
 
 @router.callback_query(MenuCallback.filter(F.action == "analysis_my_video"))
 async def analysis_my_video_handler(query: CallbackQuery, state: FSMContext):
@@ -26,9 +35,8 @@ async def analysis_my_video_handler(query: CallbackQuery, state: FSMContext):
     await state.set_state(AnalysisFSM.choose_type)
     await state.update_data(analysis_category="my")
     
-
-    
     await query.message.edit_text("Выберите тип анализа:", reply_markup=get_analysis_type_keyboard("my"))
+
 
 @router.callback_query(MenuCallback.filter(F.action == "analysis_competitor"))
 async def analysis_competitor_handler(query: CallbackQuery, state: FSMContext):
@@ -36,15 +44,14 @@ async def analysis_competitor_handler(query: CallbackQuery, state: FSMContext):
     await state.set_state(AnalysisFSM.choose_type)
     await state.update_data(analysis_category="competitor")
     
-    
     await query.message.edit_text("Выберите тип анализа:", reply_markup=get_analysis_type_keyboard("competitor"))
+
 
 @router.callback_query(AnalysisFSM.choose_type, AnalysisCallback.filter(F.type == "simple"))
 async def choose_simple_analysis(query: CallbackQuery, callback_data: AnalysisCallback, state: FSMContext):
     data = await state.get_data()
     category = data.get('analysis_category')
     
-
     await state.set_state(AnalysisFSM.waiting_for_url)
     await state.update_data(
         analysis_category=category,
@@ -53,20 +60,20 @@ async def choose_simple_analysis(query: CallbackQuery, callback_data: AnalysisCa
     
     await query.message.edit_text(ENTER_VIDEO_URL, reply_markup=get_back_to_menu_keyboard())
 
+
 @router.callback_query(AnalysisFSM.choose_type, AnalysisCallback.filter(F.type == "advanced"))
 async def choose_advanced_analysis(query: CallbackQuery, callback_data: AnalysisCallback, state: FSMContext):
     data = await state.get_data()
     category = data.get('analysis_category')
     
-
     await state.set_state(AnalysisFSM.waiting_for_url)
     await state.update_data(
         analysis_category=category,
         analysis_type="advanced"
     )
     
-    
     await query.message.edit_text(ENTER_VIDEO_URL, reply_markup=get_back_to_menu_keyboard())
+
 
 @router.callback_query(AnalysisFSM.choose_type, MenuCallback.filter(F.action == "main_menu"))
 async def back_from_analysis_type(query: CallbackQuery, state: FSMContext):
@@ -90,9 +97,16 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
     try:
         user = await get_user(user_id)
         
-        if user.analyses_used >= user.analyses_limit:
-            await message.answer(LIMIT_EXCEEDED, reply_markup=get_back_to_menu_keyboard())
-            return
+        # LIMIT TEKSHIRISH - admin emas bo'lsa
+        if user_id not in ADMIN_IDS:
+            if user.analyses_used >= user.analyses_limit:
+                await message.answer(
+                    f"❌ {LIMIT_EXCEEDED}\n\n"
+                    f"📊 Использовано: {user.analyses_used}/{user.analyses_limit}\n"
+                    f"🔄 Лимит обновится через {30 - (datetime.now() - user.last_reset_date).days} дней",
+                    reply_markup=get_back_to_menu_keyboard()
+                )
+                return
         
         progress_msg = await message.answer("⏳ Загрузка комментариев с YouTube...")
         
@@ -235,12 +249,26 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             parse_mode="HTML",
         )
 
-        await message.answer(
-            "Вы можете продолжить использовать бот:",
-            reply_markup=get_main_menu_keyboard()
-        )
+        # YANGI: Faqat 2 ta tugma
+        if user_id not in ADMIN_IDS:
+            remaining = user.analyses_limit - (user.analyses_used + 1)
+            await message.answer(
+                f"✅ Анализ завершен!\n\n"
+                f"📊 Осталось анализов: {remaining}/{user.analyses_limit}\n\n"
+                f"Выберите действие:",
+                reply_markup=get_after_analysis_keyboard()
+            )
+        else:
+            await message.answer(
+                f"✅ Анализ завершен!\n\n"
+                f"👑 Вы администратор - безлимитный доступ\n\n"
+                f"Выберите действие:",
+                reply_markup=get_after_analysis_keyboard()
+            )
         
-        await update_user_analyses(user.id, user.analyses_used + 1)
+        # SO'ROVNI HISOBLASH - admin emas bo'lsa
+        if user_id not in ADMIN_IDS:
+            await update_user_analyses(user.id, user.analyses_used + 1)
         
     except ValueError as e:
         if progress_msg:
@@ -285,14 +313,9 @@ async def process_video_url(message: Message, state: FSMContext):
         )
         return
     
-    current_state = await state.get_state()
     data = await state.get_data()
-    
-
     category = data.get('analysis_category')
     analysis_type = data.get('analysis_type')
-    
-
     
     await state.clear()
     

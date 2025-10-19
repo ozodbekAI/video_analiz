@@ -8,23 +8,82 @@ from datetime import datetime, timezone, timedelta
 async def get_user(user_id: int):
     async with async_session() as session:
         result = await session.execute(select(User).where(User.user_id == user_id))
-        return result.scalar_one_or_none()
+        user = result.scalar_one_or_none()
+        
+        # Oylik reset tekshirish
+        if user:
+            await check_and_reset_monthly_limit(user, session)
+        
+        return user
+
+
+async def check_and_reset_monthly_limit(user: User, session: AsyncSession):
+    """Har oyda limitni reset qilish"""
+    now = datetime.now(tz=timezone.utc)
+    
+    if user.last_reset_date:
+        days_passed = (now - user.last_reset_date).days
+        
+        if days_passed >= 30:
+            stmt = update(User).where(User.id == user.id).values(
+                analyses_used=0,
+                last_reset_date=now
+            )
+            await session.execute(stmt)
+            await session.commit()
+            user.analyses_used = 0
+            user.last_reset_date = now
+
 
 async def create_user(user_id: int, username: str):
     async with async_session() as session:
         stmt = insert(User).values(
             user_id=user_id,
             username=username,
+            language="ru",
+            analyses_limit=5,
+            analyses_used=0,
+            last_reset_date=datetime.now(tz=timezone.utc),
             created_at=datetime.now(tz=timezone.utc)
         )
         await session.execute(stmt)
         await session.commit()
 
+
+async def update_user_language(user_id: int, language: str):
+    """Foydalanuvchi tilini yangilash"""
+    async with async_session() as session:
+        stmt = update(User).where(User.user_id == user_id).values(language=language)
+        await session.execute(stmt)
+        await session.commit()
+
+
 async def update_user_analyses(user_id: int, used: int):
+    """So'rovlar sonini yangilash"""
     async with async_session() as session:
         stmt = update(User).where(User.user_id == user_id).values(analyses_used=used)
         await session.execute(stmt)
         await session.commit()
+
+
+async def set_user_limit(user_id: int, new_limit: int):
+    """ADMIN: Foydalanuvchi limitini o'zgartirish"""
+    async with async_session() as session:
+        stmt = update(User).where(User.user_id == user_id).values(analyses_limit=new_limit)
+        await session.execute(stmt)
+        await session.commit()
+
+
+async def reset_user_analyses(user_id: int):
+    """ADMIN: Foydalanuvchi so'rovlarini 0 ga qaytarish"""
+    async with async_session() as session:
+        stmt = update(User).where(User.user_id == user_id).values(
+            analyses_used=0,
+            last_reset_date=datetime.now(tz=timezone.utc)
+        )
+        await session.execute(stmt)
+        await session.commit()
+
 
 async def get_prompts(category: str = None, analysis_type: str = None):
     async with async_session() as session:
@@ -36,11 +95,13 @@ async def get_prompts(category: str = None, analysis_type: str = None):
         result = await session.execute(query)
         return result.scalars().all()
 
+
 async def create_prompt(name: str, prompt_text: str, analysis_type: str = None, category: str = None):
     async with async_session() as session:
         stmt = insert(Prompt).values(name=name, prompt_text=prompt_text, analysis_type=analysis_type, category=category)
         await session.execute(stmt)
         await session.commit()
+
 
 async def update_prompt(prompt_id: int, prompt_text: str):
     async with async_session() as session:
@@ -48,11 +109,13 @@ async def update_prompt(prompt_id: int, prompt_text: str):
         await session.execute(stmt)
         await session.commit()
 
+
 async def delete_prompt(prompt_id: int):
     async with async_session() as session:
         stmt = delete(Prompt).where(Prompt.id == prompt_id)
         await session.execute(stmt)
         await session.commit()
+
 
 async def create_video(user_id: int, video_url: str, video_title: str):
     async with async_session() as session:
@@ -65,6 +128,7 @@ async def create_video(user_id: int, video_url: str, video_title: str):
         result = await session.execute(stmt)
         await session.commit()
         return result.inserted_primary_key[0]
+
 
 async def create_comments(video_id: int, comments: list):
     async with async_session() as session:
@@ -82,10 +146,12 @@ async def create_comments(video_id: int, comments: list):
             await session.execute(stmt)
         await session.commit()
 
+
 async def get_comments(video_id: int):
     async with async_session() as session:
         result = await session.execute(select(Comment).where(Comment.video_id == video_id))
         return result.scalars().all()
+
 
 async def create_ai_response(user_id: int, video_id: int, chunk_id: int, analysis_type: str, response_text: str):
     async with async_session() as session:
@@ -101,30 +167,27 @@ async def create_ai_response(user_id: int, video_id: int, chunk_id: int, analysi
         await session.commit()
 
 
+# STATISTIKA FUNKSIYALARI
 
 async def get_total_users():
-    """Jami foydalanuvchilar soni"""
     async with async_session() as session:
         result = await session.execute(select(func.count(User.id)))
         return result.scalar() or 0
 
 
 async def get_total_videos():
-    """Jami tahlil qilingan videolar soni"""
     async with async_session() as session:
         result = await session.execute(select(func.count(Video.id)))
         return result.scalar() or 0
 
 
 async def get_total_ai_requests():
-    """Jami AI so'rovlar soni"""
     async with async_session() as session:
         result = await session.execute(select(func.count(AIResponse.id)))
         return result.scalar() or 0
 
 
 async def get_users_today():
-    """Bugun ro'yxatdan o'tgan foydalanuvchilar"""
     async with async_session() as session:
         today_start = datetime.now(tz=timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         result = await session.execute(
@@ -134,7 +197,6 @@ async def get_users_today():
 
 
 async def get_videos_today():
-    """Bugun tahlil qilingan videolar"""
     async with async_session() as session:
         today_start = datetime.now(tz=timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         result = await session.execute(
@@ -144,7 +206,6 @@ async def get_videos_today():
 
 
 async def get_ai_requests_today():
-    """Bugun yuborilgan AI so'rovlar"""
     async with async_session() as session:
         today_start = datetime.now(tz=timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         result = await session.execute(
@@ -154,7 +215,6 @@ async def get_ai_requests_today():
 
 
 async def get_analysis_type_stats():
-    """Tahlil turlari bo'yicha statistika"""
     async with async_session() as session:
         result = await session.execute(
             select(
@@ -166,7 +226,6 @@ async def get_analysis_type_stats():
 
 
 async def get_top_active_users(limit: int = 5):
-    """Eng faol foydalanuvchilar (ko'p tahlil qilganlar)"""
     async with async_session() as session:
         result = await session.execute(
             select(
@@ -183,7 +242,6 @@ async def get_top_active_users(limit: int = 5):
 
 
 async def get_recent_videos(limit: int = 5):
-    """Oxirgi tahlil qilingan videolar"""
     async with async_session() as session:
         result = await session.execute(
             select(Video, User.username)
@@ -195,9 +253,7 @@ async def get_recent_videos(limit: int = 5):
 
 
 async def get_average_comments_per_video():
-    """Har bir video uchun o'rtacha kommentariyalar soni"""
     async with async_session() as session:
-        # Step 1: Har bir video uchun comment count
         subquery = (
             select(
                 Comment.video_id,
@@ -207,7 +263,6 @@ async def get_average_comments_per_video():
             .subquery()
         )
         
-        # Step 2: O'rtachani hisoblash
         result = await session.execute(
             select(func.avg(subquery.c.comment_count))
         )
@@ -216,14 +271,12 @@ async def get_average_comments_per_video():
 
 
 async def get_prompts_count():
-    """Jami promptlar soni"""
     async with async_session() as session:
         result = await session.execute(select(func.count(Prompt.id)))
         return result.scalar() or 0
-    
+
 
 async def get_user_videos_history(user_id: int, limit: int = 10, offset: int = 0):
-    """Получить историю видео пользователя с пагинацией"""
     async with async_session() as session:
         user_result = await session.execute(
             select(User.id).where(User.user_id == user_id)
@@ -238,7 +291,6 @@ async def get_user_videos_history(user_id: int, limit: int = 10, offset: int = 0
         )
         total_count = count_result.scalar() or 0
         
-
         result = await session.execute(
             select(Video, AIResponse)
             .outerjoin(AIResponse, AIResponse.video_id == Video.id)
@@ -254,7 +306,6 @@ async def get_user_videos_history(user_id: int, limit: int = 10, offset: int = 0
 
 
 async def get_video_by_id(video_id: int):
-    """Получить видео по ID"""
     async with async_session() as session:
         result = await session.execute(
             select(Video).where(Video.id == video_id)
@@ -263,14 +314,22 @@ async def get_video_by_id(video_id: int):
 
 
 async def get_ai_response_by_video(video_id: int, analysis_type: str = None):
-    """Получить AI ответ для видео"""
     async with async_session() as session:
         query = select(AIResponse).where(
             AIResponse.video_id == video_id,
-            AIResponse.chunk_id == 0  
+            AIResponse.chunk_id == 0
         )
         if analysis_type:
             query = query.where(AIResponse.analysis_type == analysis_type)
         
         result = await session.execute(query.order_by(desc(AIResponse.created_at)))
+        return result.scalar_one_or_none()
+
+
+async def get_user_by_id(user_id: int):
+    """User ID orqali foydalanuvchi ma'lumotlarini olish"""
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
         return result.scalar_one_or_none()

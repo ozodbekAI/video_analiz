@@ -3,105 +3,129 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from callbacks.menu import MenuCallback
 from callbacks.analysis import AnalysisCallback
 
-def get_main_menu_keyboard() -> InlineKeyboardMarkup:
+
+def get_language_keyboard():
+    """Til tanlash klaviaturasi"""
     builder = InlineKeyboardBuilder()
-    builder.row(
-        InlineKeyboardButton(text="📈 Анализ моего видео", callback_data=MenuCallback(action="analysis_my_video").pack()),
-        InlineKeyboardButton(text="🥊 Анализ конкурента", callback_data=MenuCallback(action="analysis_competitor").pack())
-    )
-    builder.row(
-        InlineKeyboardButton(text="❤️ Индекс здоровья", callback_data=MenuCallback(action="health_index").pack()),
-        InlineKeyboardButton(text="📊 Динамика канала", callback_data=MenuCallback(action="channel_dynamics").pack())
-    )
-    builder.row(
-        InlineKeyboardButton(text="🎬 Генератор контента", callback_data=MenuCallback(action="content_generator").pack()),
-        InlineKeyboardButton(text="🚨 Кризис-менеджер (Премиум)", callback_data=MenuCallback(action="crisis_manager").pack())
-    )
-    builder.row(
-        InlineKeyboardButton(text="👤 Карта личности (Премиум)", callback_data=MenuCallback(action="personality_map").pack()),
-        InlineKeyboardButton(text="🔍 Детектор трендов (Премиум)", callback_data=MenuCallback(action="trend_detector").pack())
-    )
-    builder.row(
-        InlineKeyboardButton(text="📝 Генератор заголовков (Премиум)", callback_data=MenuCallback(action="title_generator").pack()),
-        InlineKeyboardButton(text="🖼️ Генератор обложек (Премиум)", callback_data=MenuCallback(action="cover_generator").pack())
-    )
-    builder.row(
-        InlineKeyboardButton(text="📅 Планировщик стратегии (Премиум)", callback_data=MenuCallback(action="strategy_planner").pack()),
-        InlineKeyboardButton(text="💰 Мониторинг монетизации (Премиум)", callback_data=MenuCallback(action="monetization_monitor").pack())
-    )
-    builder.row(
-        InlineKeyboardButton(text="💪 Мотивация", callback_data=MenuCallback(action="motivation").pack()),
-        InlineKeyboardButton(text="⚙️ Личный кабинет", callback_data="personal_cabinet")
-    )
+    builder.button(text="🇷🇺 Русский", callback_data=MenuCallback(action="select_language", category="ru"))
+    builder.button(text="🇺🇸 English", callback_data=MenuCallback(action="select_language", category="en"))
+    builder.button(text="🇧🇷 Português", callback_data=MenuCallback(action="select_language", category="pt"))
+    builder.button(text="🇫🇷 Français", callback_data=MenuCallback(action="select_language", category="fr"))
+    builder.adjust(2, 2)
     return builder.as_markup()
 
-def get_analysis_type_keyboard(category: str) -> InlineKeyboardMarkup:
+
+def get_main_menu_keyboard():
+    """Asosiy menyu - 5 ta tugma (2x3 grid)"""
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="⛏️Простой анализ", callback_data=AnalysisCallback(type="simple", category=category).pack()))
-    builder.row(InlineKeyboardButton(text="⚙️Расширенный анализ", callback_data=AnalysisCallback(type="advanced", category=category).pack()))
-    builder.row(InlineKeyboardButton(text="↩️ Назад", callback_data=MenuCallback(action="main_menu").pack()))
+    builder.button(text="📈 Анализ моего видео", callback_data=MenuCallback(action="analysis_my_video"))
+    builder.button(text="🥊 Анализ конкурента", callback_data=MenuCallback(action="analysis_competitor"))
+    builder.button(text="📊 Стратегический хаб", callback_data=MenuCallback(action="strategic_hub"))
+    builder.button(text="💪 Мотивация", callback_data=MenuCallback(action="motivation"))
+    builder.button(text="⚙️ Личный кабинет", callback_data="personal_cabinet")
+    builder.adjust(2, 2, 1)
     return builder.as_markup()
 
-def get_back_to_menu_keyboard() -> InlineKeyboardMarkup:
+
+def get_strategic_hub_keyboard():
+    """Strategik hub klaviaturasi"""
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="🏠 Главное меню", callback_data=MenuCallback(action="main_menu").pack()))
+    builder.button(text="📈 Эволюция контента", callback_data=MenuCallback(action="content_evolution"))
+    builder.button(text="👥 Карта аудитории", callback_data=MenuCallback(action="audience_map"))
+    builder.button(text="🚨 Мониторинг рисков", callback_data=MenuCallback(action="risk_monitoring"))
+    builder.button(text="💪 Сильные стороны", callback_data=MenuCallback(action="strengths"))
+    builder.button(text="🎯 План роста", callback_data=MenuCallback(action="growth_plan"))
+    builder.button(text="📉 Детектор аномалий", callback_data=MenuCallback(action="anomaly_detector"))
+    builder.button(text="↩️ Назад", callback_data=MenuCallback(action="main_menu"))
+    builder.button(text="🏠 Главное меню", callback_data=MenuCallback(action="main_menu"))
+    builder.adjust(2, 2, 2, 2)
     return builder.as_markup()
 
-def get_cabinet_keyboard() -> InlineKeyboardMarkup:
+
+def get_analysis_type_keyboard(category: str):
+    """Analiz turi tanlash klaviaturasi"""
     builder = InlineKeyboardBuilder()
-    builder.row(
-        InlineKeyboardButton(text="💳 Улучшить тариф", callback_data="cabinet:upgrade_tariff"),
-        InlineKeyboardButton(text="🔔 Настроить уведомления", callback_data="cabinet:notifications")
+    builder.button(
+        text="⛏️ Простой анализ", 
+        callback_data=AnalysisCallback(type="simple", category=category)
     )
-    builder.row(
-        InlineKeyboardButton(text="🤖 Настроить интеграции", callback_data="cabinet:integrations"),
-        InlineKeyboardButton(text="👥 Управление конкурентами", callback_data="cabinet:competitors")
+    builder.button(
+        text="⚙️ Углубленный анализ", 
+        callback_data=AnalysisCallback(type="advanced", category=category)
     )
-    builder.row(
-        InlineKeyboardButton(text="📋 История отчетов", callback_data="cabinet:history"),
-        InlineKeyboardButton(text="🏠 Главное меню", callback_data=MenuCallback(action="main_menu").pack())
-    )
+    builder.button(text="↩️ Назад", callback_data=MenuCallback(action="main_menu"))
+    builder.adjust(2, 1)
     return builder.as_markup()
 
-def get_history_keyboard(current_page: int, total_pages: int, videos: list) -> InlineKeyboardMarkup:
-    
+
+def get_after_analysis_keyboard():
+    """Analiz tugagandan keyin - faqat 2 ta tugma"""
     builder = InlineKeyboardBuilder()
-    
+    builder.button(text="🏠 Главное меню", callback_data=MenuCallback(action="main_menu"))
+    builder.button(text="⚙️ Личный кабинет", callback_data="personal_cabinet")
+    builder.adjust(2)
+    return builder.as_markup()
+
+
+def get_back_to_menu_keyboard():
+    """Menyuga qaytish tugmasi"""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🏠 Главное меню", callback_data=MenuCallback(action="main_menu"))
+    return builder.as_markup()
+
+
+def get_cabinet_keyboard():
+    """Shaxsiy kabinet klaviaturasi"""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="📋 История отчетов", callback_data="cabinet:history")
+    builder.button(text="💳 Улучшить тариф", callback_data="cabinet:upgrade_tariff")
+    builder.button(text="🔔 Уведомления", callback_data="cabinet:notifications")
+    builder.button(text="🤖 Интеграции", callback_data="cabinet:integrations")
+    builder.button(text="👥 Конкуренты", callback_data="cabinet:competitors")
+    builder.button(text="🏠 Главное меню", callback_data=MenuCallback(action="main_menu"))
+    builder.adjust(2, 2, 2)
+    return builder.as_markup()
+
+
+def get_history_keyboard(current_page: int, total_pages: int, videos: list):
+    """Tarix klaviaturasi paginatsiya bilan"""
+    builder = InlineKeyboardBuilder()
     
     for video, ai_response in videos:
         video_id = video.video_url.split('v=')[-1] if 'v=' in video.video_url else video.video_url.split('/')[-1]
-        builder.row(
-            InlineKeyboardButton(
-                text=f"📥 Скачать {video_id[:11]}",
-                callback_data=f"download:{video.id}"
-            )
+        builder.button(
+            text=f"📄 {video_id[:11]}", 
+            callback_data=f"download:{video.id}"
         )
     
-    pagination_buttons = []
+    builder.adjust(2)
+    
+    nav_buttons = []
     if current_page > 1:
-        pagination_buttons.append(
-            InlineKeyboardButton(text="⬅️ Назад", callback_data=f"history:page:{current_page - 1}")
-        )
+        nav_buttons.append(InlineKeyboardButton(
+            text="◀️ Назад", 
+            callback_data=f"history:page:{current_page-1}"
+        ))
+    
     if current_page < total_pages:
-        pagination_buttons.append(
-            InlineKeyboardButton(text="➡️ Вперед", callback_data=f"history:page:{current_page + 1}")
-        )
+        nav_buttons.append(InlineKeyboardButton(
+            text="Вперед ▶️", 
+            callback_data=f"history:page:{current_page+1}"
+        ))
     
-    if pagination_buttons:
-        builder.row(*pagination_buttons)
+    if nav_buttons:
+        builder.row(*nav_buttons)
     
-    
-    builder.row(
-        InlineKeyboardButton(text="↩️ Назад в кабинет", callback_data="personal_cabinet")
-    )
+    builder.row(InlineKeyboardButton(
+        text="↩️ Назад в кабинет", 
+        callback_data="personal_cabinet"
+    ))
     
     return builder.as_markup()
 
 
-def get_back_to_cabinet_keyboard() -> InlineKeyboardMarkup:
-   
+def get_back_to_cabinet_keyboard():
+    """Kabinetga qaytish"""
     builder = InlineKeyboardBuilder()
-    builder.row(
-        InlineKeyboardButton(text="↩️ Назад в кабинет", callback_data="personal_cabinet")
-    )
+    builder.button(text="↩️ Назад в кабинет", callback_data="personal_cabinet")
     return builder.as_markup()
