@@ -21,7 +21,7 @@ def get_main_menu_keyboard():
     builder.button(text="📊 Стратегический хаб", callback_data=MenuCallback(action="strategic_hub"))
     builder.button(text="💪 Мотивация", callback_data=MenuCallback(action="motivation"))
     builder.button(text="⚙️ Личный кабинет", callback_data="personal_cabinet")
-    builder.adjust(2, 2, 1)
+    # builder.adjust()
     return builder.as_markup()
 
 
@@ -35,7 +35,7 @@ def get_strategic_hub_keyboard():
     builder.button(text="📉 Детектор аномалий", callback_data=MenuCallback(action="anomaly_detector"))
     builder.button(text="↩️ Назад", callback_data=MenuCallback(action="main_menu"))
     builder.button(text="🏠 Главное меню", callback_data=MenuCallback(action="main_menu"))
-    builder.adjust(2, 2, 2, 2)
+    # builder.adjust(2, 2, 2, 2)
     return builder.as_markup()
 
 

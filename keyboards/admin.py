@@ -9,7 +9,7 @@ def get_admin_menu_keyboard():
     builder.button(text="📋 Промпты", callback_data=AdminCallback(action="view_prompts"))
     builder.button(text="➕ Добавить промпт", callback_data=AdminCallback(action="add_prompt"))
     builder.button(text="👥 Управление пользователями", callback_data=AdminCallback(action="manage_users"))  # YANGI
-    builder.adjust(2, 2)
+    builder.adjust(2, 1, 1)
     return builder.as_markup()
 
 
