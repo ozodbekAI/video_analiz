@@ -27,10 +27,12 @@ from datetime import datetime
 router = Router()
 
 @router.message(F.text == "/admin")
-async def admin_menu_handler(message: Message):
+async def admin_menu_handler(message: Message, is_admin: bool = False):
+    if not is_admin:
+        await message.answer("❌ У вас нет прав для использования этой команды!")
+        return
+    
     await message.answer(ADMIN_MENU, reply_markup=get_admin_menu_keyboard())
-
-
 
 @router.callback_query(AdminCallback.filter(F.action == "view_stats"))
 async def view_stats_handler(query: CallbackQuery):
