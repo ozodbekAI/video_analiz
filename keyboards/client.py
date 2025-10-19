@@ -50,7 +50,7 @@ def get_analysis_type_keyboard(category: str):
         callback_data=AnalysisCallback(type="advanced", category=category)
     )
     builder.button(text="↩️ Назад", callback_data=MenuCallback(action="main_menu"))
-    builder.adjust(2, 1)
+    builder.adjust(1)
     return builder.as_markup()
 
 
@@ -58,7 +58,7 @@ def get_after_analysis_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(text="🏠 Главное меню", callback_data=MenuCallback(action="main_menu"))
     builder.button(text="⚙️ Личный кабинет", callback_data="personal_cabinet")
-    builder.adjust(2)
+    builder.adjust(1)
     return builder.as_markup()
 
 
