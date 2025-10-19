@@ -18,7 +18,7 @@ def get_user_management_keyboard():
     builder.button(text="📊 Установить лимит", callback_data=AdminCallback(action="set_limit"))
     builder.button(text="🔄 Сбросить использование", callback_data=AdminCallback(action="reset_usage"))
     builder.button(text="↩️ Назад", callback_data=AdminCallback(action="back"))
-    builder.adjust(2, 1)
+    builder.adjust(1)
     return builder.as_markup()
 
 def get_back_keyboard():
@@ -33,7 +33,7 @@ def get_stats_keyboard():
     builder.button(text="🏆 Топ пользователей", callback_data=AdminCallback(action="top_users"))
     builder.button(text="📹 Последние анализы", callback_data=AdminCallback(action="recent_videos"))
     builder.button(text="↩️ Назад", callback_data=AdminCallback(action="back"))
-    builder.adjust(2, 2)
+    builder.adjust(1)
     return builder.as_markup()
 
 
@@ -63,7 +63,7 @@ def get_advanced_subtype_keyboard(category: str = "my", add_mode: bool = False):
     builder.button(text="📝 Предыдущие промпты", callback_data=AdminCallback(action=action_prefix, subtype="advanced", category=category))
     builder.button(text="🔄 Финальный синтез", callback_data=AdminCallback(action=action_prefix, subtype="synthesis", category=category))
     builder.button(text="↩️ Назад", callback_data=AdminCallback(action="back"))
-    builder.adjust(2, 1)
+    builder.adjust(1)
     return builder.as_markup()
 
 
