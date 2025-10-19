@@ -9,7 +9,7 @@ def get_admin_menu_keyboard():
     builder.button(text="📋 Промпты", callback_data=AdminCallback(action="view_prompts"))
     builder.button(text="➕ Добавить промпт", callback_data=AdminCallback(action="add_prompt"))
     builder.button(text="👥 Управление пользователями", callback_data=AdminCallback(action="manage_users"))  # YANGI
-    builder.adjust(2, 1, 1)
+    builder.adjust(1)
     return builder.as_markup()
 
 
@@ -43,7 +43,7 @@ def get_prompt_category_keyboard(add_mode: bool = False):
     builder.button(text="Моё видео", callback_data=AdminCallback(action=action_prefix, category="my"))
     builder.button(text="Конкурент", callback_data=AdminCallback(action=action_prefix, category="competitor"))
     builder.button(text="↩️ Назад", callback_data=AdminCallback(action="back"))
-    builder.adjust(2, 1)
+    builder.adjust(1)
     return builder.as_markup()
 
 
@@ -53,7 +53,7 @@ def get_prompt_type_keyboard(add_mode: bool = False):
     builder.button(text="⛏️ Простой", callback_data=AdminCallback(action=action_prefix, analysis_type="simple"))
     builder.button(text="⚙️ Углубленный", callback_data=AdminCallback(action=action_prefix, analysis_type="advanced"))
     builder.button(text="↩️ Назад", callback_data=AdminCallback(action="back"))
-    builder.adjust(2, 1)
+    builder.adjust(1)
     return builder.as_markup()
 
 

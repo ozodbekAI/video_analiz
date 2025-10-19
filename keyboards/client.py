@@ -75,8 +75,9 @@ def get_cabinet_keyboard():
     builder.button(text="🔔 Уведомления", callback_data="cabinet:notifications")
     builder.button(text="🤖 Интеграции", callback_data="cabinet:integrations")
     builder.button(text="👥 Конкуренты", callback_data="cabinet:competitors")
+    builder.button(text="🌐 Изменить язык", callback_data="cabinet:change_language")  # Yangi tugma
     builder.button(text="🏠 Главное меню", callback_data=MenuCallback(action="main_menu"))
-    builder.adjust(2, 2, 2)
+    builder.adjust(1)
     return builder.as_markup()
 
 

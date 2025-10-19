@@ -1,9 +1,10 @@
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, FSInputFile
 from aiogram.fsm.context import FSMContext
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from callbacks.menu import MenuCallback
 from keyboards.client import get_cabinet_keyboard, get_history_keyboard, get_back_to_cabinet_keyboard, get_main_menu_keyboard
-from database.crud import get_user, get_user_videos_history, get_video_by_id, get_ai_response_by_video
+from database.crud import get_user, get_user_videos_history, get_video_by_id, get_ai_response_by_video, update_user_language
 from services.pdf_generator import generate_pdf
 from utils.helpers import safe_edit_text
 from pathlib import Path
@@ -168,3 +169,32 @@ async def integrations_handler(query: CallbackQuery):
 @router.callback_query(F.data == "cabinet:competitors")
 async def competitors_handler(query: CallbackQuery):
     await query.answer("👥 Функция управления конкурентами в разработке", show_alert=True)
+
+
+
+@router.callback_query(F.data == "cabinet:change_language")
+async def change_language_handler(query: CallbackQuery):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🇷🇺 Русский", callback_data="change_lang:ru")
+    builder.button(text="🇺🇸 English", callback_data="change_lang:en")
+    builder.button(text="🇧🇷 Português", callback_data="change_lang:pt")
+    builder.button(text="🇫🇷 Français", callback_data="change_lang:fr")
+    builder.button(text="↩️ Назад в кабинет", callback_data="personal_cabinet")
+    builder.adjust(1)
+    
+    await safe_edit_text(
+        query,
+        "🌐 <b>Выберите язык / Choose language</b>",
+        reply_markup=builder.as_markup(),
+        parse_mode="HTML"
+    )
+
+
+@router.callback_query(F.data.startswith("change_lang:"))
+async def apply_language_change(query: CallbackQuery):
+    language = query.data.split(":")[-1]
+    await update_user_language(query.from_user.id, language)
+    
+    await query.answer("✅ Язык изменен!", show_alert=True)
+    
+    await personal_cabinet_handler(query)

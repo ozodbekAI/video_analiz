@@ -24,17 +24,20 @@ async def start_handler(message: Message, state: FSMContext):
 
 @router.callback_query(MenuCallback.filter(F.action == "select_language"))
 async def select_language_handler(query: CallbackQuery, callback_data: MenuCallback, state: FSMContext):
-    language = callback_data.category  
+    language = callback_data.category
     
     await update_user_language(query.from_user.id, language)
-    await state.clear()
     
-    if language != "ru":
-        await query.message.edit_text(
-            "🚧 This language is under development. Switching to Russian.\n\n"
-            "🚧 Este idioma está em desenvolvimento. Mudando para russo.\n\n"
-            "🚧 Cette langue est en développement. Passage au russe."
-        )
-        await query.message.answer(START_MESSAGE, reply_markup=get_main_menu_keyboard())
-    else:
-        await query.message.edit_text(START_MESSAGE, reply_markup=get_main_menu_keyboard())
+    current_state = await state.get_state()
+    if current_state == CommonFSM.choosing_language:
+        await state.clear()
+        
+        if language != "ru":
+            await query.message.edit_text(
+                "🚧 This language is under development. Switching to Russian.\n\n"
+                "🚧 Este idioma está em desenvolvimento. Mudando para russo.\n\n"
+                "🚧 Cette langue est en développement. Passage au russe."
+            )
+            await query.message.answer(START_MESSAGE, reply_markup=get_main_menu_keyboard())
+        else:
+            await query.message.edit_text(START_MESSAGE, reply_markup=get_main_menu_keyboard())
