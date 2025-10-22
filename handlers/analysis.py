@@ -10,7 +10,7 @@ from keyboards.client import (
     get_main_menu_keyboard,
     get_after_analysis_keyboard
 )
-from services.youtube_service import extract_video_id, get_video_comments, get_video_comments_len, save_comments_to_file, get_comments_file_path
+from services.youtube_service import extract_video_id, get_video_comments, get_video_comments_count, save_comments_to_file, get_comments_file_path
 from services.ai_service import analyze_comments_with_prompt
 from services.pdf_generator import generate_pdf
 from database.crud import get_user, update_user_analyses, create_video, get_prompts, create_ai_response
@@ -129,9 +129,9 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         video_id = extract_video_id(url)
         comments_data = get_video_comments(video_id)
         comments_file = get_comments_file_path(video_id)
-        comments_len = get_video_comments_len(video_id)
+        comments_len = get_video_comments_count(url)
 
-        if comments_len >= 2000:
+        if comments_len >= 2000 and analysis_type == "advanced" and user.tariff_plan != 'premium':
             raise ValueError("❌ Превышен лимит в 2000 комментариев для анализа.")
 
         save_comments_to_file(comments_data, comments_file)

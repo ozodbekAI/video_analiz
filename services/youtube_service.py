@@ -94,9 +94,26 @@ def get_comments_file_path(video_id):
     file_path = results_dir / f"{video_id}_{timestamp}.txt"
     return str(file_path)
 
-def get_video_comments_len(video_id):
-    comments_file = get_comments_file_path(video_id)
-    if not Path(comments_file).exists():
-        return 0
-    with open(comments_file, "r", encoding="utf-8") as f:
-        return sum(1 for line in f if line.startswith("["))
+def get_video_comments_count(video_url: str) -> int:
+    """
+    YouTube video URL dan commentlar sonini qaytaradi.
+    """
+    # Video ID ni URL dan ajratib olish
+    video_id_match = re.search(r"(?:v=|youtu\.be/)([a-zA-Z0-9_-]{11})", video_url)
+    if not video_id_match:
+        raise ValueError("❌ ")
+    video_id = video_id_match.group(1)
+
+    # YouTube API orqali video statistik ma’lumotlarini olish
+    response = youtube.videos().list(
+        part="statistics",
+        id=video_id
+    ).execute()
+
+    if not response["items"]:
+        raise ValueError("❌ ")
+
+    stats = response["items"][0]["statistics"]
+    comment_count = int(stats.get("commentCount", 0))
+
+    return comment_count

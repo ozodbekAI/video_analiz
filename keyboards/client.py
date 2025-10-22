@@ -58,7 +58,7 @@ def get_after_analysis_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(text="🏠 Главное меню", callback_data=MenuCallback(action="main_menu"))
     builder.button(text="⚙️ Личный кабинет", callback_data="personal_cabinet")
-    builder.button(text="🧑🏼‍💻 Техподдержка", callback_data="support", url="@sp_alexey")
+    builder.button(text="🧑🏼‍💻 Техподдержка", callback_data="support", url="https://t.me/sp_alexey")
     builder.adjust(1)
     return builder.as_markup()
 
