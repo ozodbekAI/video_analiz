@@ -10,7 +10,7 @@ from keyboards.client import (
     get_main_menu_keyboard,
     get_after_analysis_keyboard
 )
-from services.youtube_service import extract_video_id, get_video_comments, save_comments_to_file, get_comments_file_path
+from services.youtube_service import extract_video_id, get_video_comments, get_video_comments_len, save_comments_to_file, get_comments_file_path
 from services.ai_service import analyze_comments_with_prompt
 from services.pdf_generator import generate_pdf
 from database.crud import get_user, update_user_analyses, create_video, get_prompts, create_ai_response
@@ -40,6 +40,12 @@ async def analysis_my_video_handler(query: CallbackQuery, state: FSMContext):
 
 @router.callback_query(MenuCallback.filter(F.action == "analysis_competitor"))
 async def analysis_competitor_handler(query: CallbackQuery, state: FSMContext):
+    user = get_user(query.from_user.id)
+    if user.tariff_plan != 'premium':
+        await query.answer("❌ Эта функция доступна только для пользователей Premium тарифа.", show_alert=True)
+        return
+            
+
     await state.clear()  
     await state.set_state(AnalysisFSM.choose_type)
     await state.update_data(analysis_category="competitor")
@@ -49,6 +55,12 @@ async def analysis_competitor_handler(query: CallbackQuery, state: FSMContext):
 
 @router.callback_query(AnalysisFSM.choose_type, AnalysisCallback.filter(F.type == "simple"))
 async def choose_simple_analysis(query: CallbackQuery, callback_data: AnalysisCallback, state: FSMContext):
+
+    user = await get_user(query.from_user.id)
+    if user.analyses_used >= user.analyses_limit:
+        await query.answer("❌ Достигнут лимит анализов.", show_alert=True)
+        return
+
     data = await state.get_data()
     category = data.get('analysis_category')
     
@@ -63,6 +75,11 @@ async def choose_simple_analysis(query: CallbackQuery, callback_data: AnalysisCa
 
 @router.callback_query(AnalysisFSM.choose_type, AnalysisCallback.filter(F.type == "advanced"))
 async def choose_advanced_analysis(query: CallbackQuery, callback_data: AnalysisCallback, state: FSMContext):
+    user = get_user(query.from_user.id)
+    if user.tariff_plan != 'premium':
+        await query.answer("❌ Эта функция доступна только для пользователей Premium тарифа.", show_alert=True)
+        return
+        
     data = await state.get_data()
     category = data.get('analysis_category')
     
@@ -112,11 +129,16 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         video_id = extract_video_id(url)
         comments_data = get_video_comments(video_id)
         comments_file = get_comments_file_path(video_id)
+        comments_len = get_video_comments_len(video_id)
+
+        if comments_len >= 2000:
+            raise ValueError("❌ Превышен лимит в 2000 комментариев для анализа.")
+
         save_comments_to_file(comments_data, comments_file)
         
         await update_progress_message(
             progress_msg, 
-            f"✅ Загружено {len(comments_data)} комментариев\n🔄 Сохранение в базу данных..."
+            f"✅ Загружено {comments_len} комментариев\n🔄 Сохранение в базу данных..."
         )
         
         db_video_id = await create_video(
@@ -234,16 +256,14 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         os.rename(pdf_file, str(saved_pdf_path))
         pdf_file = str(saved_pdf_path)
         
-        await update_progress_message(
-            progress_msg,
-            "✅ Анализ завершен!"
-        )
+        await progress_msg.delete()
+        progress_msg = None
         
         await message.answer_document(
             FSInputFile(pdf_file),
             caption=f"📊 <b>Анализ готов!</b>\n\n"
                     f"📹 Видео: <code>{video_id}</code>\n"
-                    f"📝 Комментариев: {len(comments_data)}\n"
+                    f"📝 Комментариев: {comments_len}\n"
                     f"🎯 Тип: {'Простой' if analysis_type == 'simple' else 'Углубленный'}\n\n",
             parse_mode="HTML",
         )

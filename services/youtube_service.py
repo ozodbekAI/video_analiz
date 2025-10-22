@@ -93,3 +93,10 @@ def get_comments_file_path(video_id):
     timestamp = datetime.now().strftime('%d.%m.%Y-%H.%M.%S')
     file_path = results_dir / f"{video_id}_{timestamp}.txt"
     return str(file_path)
+
+def get_video_comments_len(video_id):
+    comments_file = get_comments_file_path(video_id)
+    if not Path(comments_file).exists():
+        return 0
+    with open(comments_file, "r", encoding="utf-8") as f:
+        return sum(1 for line in f if line.startswith("["))

@@ -11,7 +11,7 @@ class User(Base):
     username = Column(String(255), nullable=True)
     language = Column(String(10), default="ru")
     tariff_plan = Column(String, default='basic')
-    analyses_limit = Column(Integer, default=5) 
+    analyses_limit = Column(Integer, default=1) 
     analyses_used = Column(Integer, default=0)  
     last_reset_date = Column(DateTime(timezone=True), default=lambda: datetime.now(tz=timezone.utc))  # YANGI
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz=timezone.utc))
