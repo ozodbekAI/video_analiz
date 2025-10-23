@@ -41,7 +41,7 @@ async def analysis_my_video_handler(query: CallbackQuery, state: FSMContext):
 @router.callback_query(MenuCallback.filter(F.action == "analysis_competitor"))
 async def analysis_competitor_handler(query: CallbackQuery, state: FSMContext):
     user = get_user(query.from_user.id)
-    if user.tariff_plan != 'premium':
+    if user.tariff_plan != 'premium' and query.from_user.id not in ADMIN_IDS:
         await query.answer("❌ Эта функция доступна только для пользователей Premium тарифа.", show_alert=True)
         return
             
@@ -57,7 +57,7 @@ async def analysis_competitor_handler(query: CallbackQuery, state: FSMContext):
 async def choose_simple_analysis(query: CallbackQuery, callback_data: AnalysisCallback, state: FSMContext):
 
     user = await get_user(query.from_user.id)
-    if user.analyses_used >= user.analyses_limit:
+    if user.analyses_used >= user.analyses_limit and query.from_user.id not in ADMIN_IDS:
         await query.answer("❌ Достигнут лимит анализов.", show_alert=True)
         return
 
@@ -76,7 +76,7 @@ async def choose_simple_analysis(query: CallbackQuery, callback_data: AnalysisCa
 @router.callback_query(AnalysisFSM.choose_type, AnalysisCallback.filter(F.type == "advanced"))
 async def choose_advanced_analysis(query: CallbackQuery, callback_data: AnalysisCallback, state: FSMContext):
     user = get_user(query.from_user.id)
-    if user.tariff_plan != 'premium':
+    if user.tariff_plan != 'premium' and query.from_user.id not in ADMIN_IDS:
         await query.answer("❌ Эта функция доступна только для пользователей Premium тарифа.", show_alert=True)
         return
         
@@ -131,7 +131,7 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         comments_file = get_comments_file_path(video_id)
         comments_len = get_video_comments_count(url)
 
-        if comments_len >= 2000 and analysis_type == "advanced" and user.tariff_plan != 'premium':
+        if comments_len >= 2000 and analysis_type == "advanced" and user.tariff_plan != 'premium' and user_id not in ADMIN_IDS:
             raise ValueError("❌ Превышен лимит в 2000 комментариев для анализа.")
 
         save_comments_to_file(comments_data, comments_file)
