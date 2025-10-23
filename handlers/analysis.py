@@ -40,7 +40,7 @@ async def analysis_my_video_handler(query: CallbackQuery, state: FSMContext):
 
 @router.callback_query(MenuCallback.filter(F.action == "analysis_competitor"))
 async def analysis_competitor_handler(query: CallbackQuery, state: FSMContext):
-    user = get_user(query.from_user.id)
+    user = await get_user(query.from_user.id)
     if user.tariff_plan != 'premium' and query.from_user.id not in ADMIN_IDS:
         await query.answer("❌ Эта функция доступна только для пользователей Premium тарифа.", show_alert=True)
         return
@@ -75,7 +75,7 @@ async def choose_simple_analysis(query: CallbackQuery, callback_data: AnalysisCa
 
 @router.callback_query(AnalysisFSM.choose_type, AnalysisCallback.filter(F.type == "advanced"))
 async def choose_advanced_analysis(query: CallbackQuery, callback_data: AnalysisCallback, state: FSMContext):
-    user = get_user(query.from_user.id)
+    user = await get_user(query.from_user.id)
     if user.tariff_plan != 'premium' and query.from_user.id not in ADMIN_IDS:
         await query.answer("❌ Эта функция доступна только для пользователей Premium тарифа.", show_alert=True)
         return
