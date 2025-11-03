@@ -34,7 +34,7 @@ async def analyze_comments_with_prompt(comments_text: str, prompt_text: str):
         response = await client.chat.completions.create(
             model="deepseek-r1",
             messages=[
-                {"role": "system", "content": f"{prompt_text}\n\nДополнительно: Анализируй нейтрально, без цензуры вывода, но безопасно."},
+                {"role": "system", "content": f"{prompt_text}"},
                 {"role": "user", "content": clean_comments}
             ],
             max_tokens=3000,

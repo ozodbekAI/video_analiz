@@ -1,18 +1,24 @@
 import io
+import json
 from aiogram import Bot, Router, F
-from aiogram.types import Message, CallbackQuery, Document
+from aiogram.types import Message, CallbackQuery, Document, FSInputFile
 from aiogram.fsm.context import FSMContext
 from callbacks.admin import AdminCallback
+from services.sample_report_service import SampleReportsService
+from services.youtube_service import extract_video_id
+from services.pdf_generator import generate_pdf
 from states.admin import AdminFSM
 from keyboards.admin import (
     get_admin_menu_keyboard,
-    get_back_keyboard, 
+    get_back_keyboard,
+    get_evolution_step_keyboard, 
     get_prompt_category_keyboard, 
     get_prompt_type_keyboard, 
     get_advanced_subtype_keyboard, 
     get_prompts_keyboard,
+    get_sample_reports_keyboard,
     get_stats_keyboard,
-    get_user_management_keyboard  # YANGI
+    get_user_management_keyboard
 )
 from database.crud import (
     get_prompts, create_prompt, update_prompt, delete_prompt,
@@ -20,11 +26,13 @@ from database.crud import (
     get_users_today, get_videos_today, get_ai_requests_today,
     get_analysis_type_stats, get_top_active_users, get_recent_videos,
     get_average_comments_per_video, get_prompts_count,
-    get_user_by_id, set_user_limit, reset_user_analyses  # YANGI
+    get_user_by_id, set_user_limit, reset_user_analyses
 )
 from utils.texts import ADMIN_MENU, PROMPTS_LIST, ENTER_PROMPT_NAME, ENTER_PROMPT_TEXT, PROMPT_ADDED, PROMPT_UPDATED
 from utils.helpers import safe_edit_text
 from datetime import datetime
+from pathlib import Path
+import os
 
 router = Router()
 
@@ -37,15 +45,13 @@ async def admin_menu_handler(message: Message, is_admin: bool = False):
     await message.answer(ADMIN_MENU, reply_markup=get_admin_menu_keyboard())
 
 
-# ============ LIMIT BOSHQARUV ============
 
 @router.callback_query(AdminCallback.filter(F.action == "manage_users"))
 async def manage_users_handler(query: CallbackQuery, state: FSMContext):
-    """User limitlarini boshqarish"""
     await query.message.edit_text(
-        "👥 <b>УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ</b>\n\n"
+        "👥 УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ\n\n"
         "Отправьте User ID для управления его лимитами.\n"
-        "Пример: <code>123456789</code>",
+        "📨 Или просто перешлите сообщение от пользователя.",
         parse_mode="HTML",
         reply_markup=get_back_keyboard()
     )
@@ -54,30 +60,65 @@ async def manage_users_handler(query: CallbackQuery, state: FSMContext):
 
 @router.message(AdminFSM.waiting_for_user_id)
 async def process_user_id(message: Message, state: FSMContext):
-    """User ID qabul qilish"""
     try:
+        if message.forward_from:
+            user_id = message.forward_from.id
+            username = message.forward_from.username
+            full_name = message.forward_from.full_name
+
+            user = await get_user_by_id(user_id)
+
+            if not user:
+                await message.answer(
+                    f"❌ Пользователь с ID <code>{user_id}</code> не найден в базе.\n"
+                    f"Имя: {full_name or '—'}\n"
+                    f"Username: @{username or '—'}",
+                    parse_mode="HTML",
+                    reply_markup=get_admin_menu_keyboard()
+                )
+                await state.clear()
+                return
+
+            await state.update_data(target_user_id=user_id)
+
+            registration_date = user.created_at.strftime('%d.%m.%Y') if user.created_at else 'Неизвестно'
+            last_reset = user.last_reset_date.strftime('%d.%m.%Y') if user.last_reset_date else 'Никогда'
+
+            await message.answer(
+                f"👤 Пользователь найден\n\n"
+                f"🆔 ID: {user.user_id}\n"
+                f"👤 Username: @{user.username or '—'}\n"
+                f"📊 Использовано: {user.analyses_used}/{user.analyses_limit}\n"
+                f"📅 Регистрация: {registration_date}\n"
+                f"🔄 Последний сброс: {last_reset}\n\n"
+                f"Выберите действие:",
+                parse_mode="HTML",
+                reply_markup=get_user_management_keyboard()
+            )
+            await state.set_state(AdminFSM.managing_user)
+            return
+
         user_id = int(message.text.strip())
         user = await get_user_by_id(user_id)
-        
+
         if not user:
             await message.answer(
-                f"❌ Пользователь с ID <code>{user_id}</code> не найден",
+                f"❌ Пользователь с ID {user_id} не найден",
                 parse_mode="HTML",
                 reply_markup=get_admin_menu_keyboard()
             )
             await state.clear()
             return
-        
+
         await state.update_data(target_user_id=user_id)
-        
-    
+
         registration_date = user.created_at.strftime('%d.%m.%Y') if user.created_at else 'Неизвестно'
         last_reset = user.last_reset_date.strftime('%d.%m.%Y') if user.last_reset_date else 'Никогда'
-        
+
         await message.answer(
-            f"👤 <b>Пользователь найден</b>\n\n"
-            f"🆔 ID: <code>{user.user_id}</code>\n"
-            f"👤 Username: {user.username or 'Не указан'}\n"
+            f"👤 Пользователь найден\n\n"
+            f"🆔 ID: {user.user_id}\n"
+            f"👤 Username: @{user.username or '—'}\n"
             f"📊 Использовано: {user.analyses_used}/{user.analyses_limit}\n"
             f"📅 Регистрация: {registration_date}\n"
             f"🔄 Последний сброс: {last_reset}\n\n"
@@ -86,18 +127,18 @@ async def process_user_id(message: Message, state: FSMContext):
             reply_markup=get_user_management_keyboard()
         )
         await state.set_state(AdminFSM.managing_user)
-        
+
     except ValueError:
         await message.answer(
-            "❌ Неверный формат. Введите числовой User ID.",
+            "❌ Неверный формат. Введите числовой User ID или перешлите сообщение от пользователя.",
             reply_markup=get_admin_menu_keyboard()
         )
         await state.clear()
 
 
+
 @router.callback_query(AdminFSM.managing_user, AdminCallback.filter(F.action == "set_limit"))
 async def set_limit_handler(query: CallbackQuery, state: FSMContext):
-    """Limit o'rnatish"""
     await query.message.edit_text(
         "📊 <b>УСТАНОВКА ЛИМИТА</b>\n\n"
         "Введите новый лимит анализов для пользователя.\n"
@@ -109,7 +150,6 @@ async def set_limit_handler(query: CallbackQuery, state: FSMContext):
 
 @router.message(AdminFSM.waiting_for_limit)
 async def process_new_limit(message: Message, state: FSMContext):
-    """Yangi limitni qabul qilish"""
     try:
         new_limit = int(message.text.strip())
         
@@ -149,10 +189,8 @@ async def reset_usage_handler(query: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-
 @router.callback_query(AdminCallback.filter(F.action == "view_stats"))
 async def view_stats_handler(query: CallbackQuery):
-    """Statistikani ko'rsatish"""
     try:
         import asyncio
         
@@ -283,7 +321,6 @@ async def recent_videos_handler(query: CallbackQuery):
         )
 
 
-
 @router.callback_query(AdminCallback.filter(F.action == "view_prompts"))
 async def view_prompts_handler(query: CallbackQuery):
     await query.message.edit_text("Выберите категорию:", reply_markup=get_prompt_category_keyboard(add_mode=False))
@@ -306,9 +343,12 @@ async def select_type_handler(query: CallbackQuery, callback_data: AdminCallback
         prompts = await get_prompts(category=category, analysis_type="simple")
         message_text = PROMPTS_LIST + "\n".join([f"{p.id}: {p.name}" for p in prompts])
         await query.message.edit_text(message_text, reply_markup=get_prompts_keyboard(prompts, "simple", category))
+    
     elif analysis_type == "advanced":
         await query.message.edit_text("Выберите подтип для расширенного анализа:", reply_markup=get_advanced_subtype_keyboard(category, add_mode=False))
-
+    
+    elif analysis_type == "evolution":  # YANGI
+        await query.message.edit_text("Выберите этап эволюции:", reply_markup=get_evolution_step_keyboard(add_mode=False))
 
 @router.callback_query(AdminCallback.filter(F.action == "select_subtype"))
 async def select_subtype_handler(query: CallbackQuery, callback_data: AdminCallback, state: FSMContext):
@@ -344,6 +384,11 @@ async def process_add_type(query: CallbackQuery, callback_data: AdminCallback, s
     if analysis_type == "advanced":
         await query.message.edit_text("Выберите подтип (предыдущие или финальный):", reply_markup=get_advanced_subtype_keyboard(add_mode=True))
         await state.set_state(AdminFSM.waiting_for_subtype)
+    
+    elif analysis_type == "evolution": 
+        await query.message.edit_text("Выберите этап эволюции:", reply_markup=get_evolution_step_keyboard(add_mode=True))
+        await state.set_state(AdminFSM.waiting_for_subtype)
+    
     else:
         await query.message.edit_text(ENTER_PROMPT_NAME)
         await state.set_state(AdminFSM.waiting_for_prompt_name)
@@ -459,3 +504,321 @@ async def delete_prompt_handler(query: CallbackQuery, callback_data: AdminCallba
 async def back_to_admin_menu_handler(query: CallbackQuery, state: FSMContext):
     await state.clear()
     await query.message.edit_text(ADMIN_MENU, reply_markup=get_admin_menu_keyboard())
+
+
+
+@router.callback_query(AdminCallback.filter(F.action == "manage_samples"))
+async def manage_samples_handler(query: CallbackQuery):
+    try:
+        reports = await SampleReportsService.get_all_sample_reports(active_only=False)
+        
+        if not reports:
+            await query.message.edit_text(
+                "📄 <b>ДЕМО ОТЧЕТЫ</b>\n\n"
+                "Пока нет добавленных демо отчетов.\n"
+                "Добавьте первый отчет!",
+                parse_mode="HTML",
+                reply_markup=get_sample_reports_keyboard([])
+            )
+            return
+        
+        text = "📄 <b>ДЕМО ОТЧЕТЫ</b>\n\n"
+        active_count = sum(1 for r in reports if r['is_active'])
+        text += f"📊 Всего: <code>{len(reports)}</code> | Активных: <code>{active_count}</code>\n\n"
+        
+        for idx, report in enumerate(reports[:10], 1):
+            status = "✅" if report['is_active'] else "❌"
+            name_short = report['report_name'][:25]
+            text += f"{idx}. {status} <b>{name_short}</b> (ID: {report['id']})\n"
+        
+        if len(reports) > 10:
+            text += f"\n... и еще {len(reports) - 10} отчетов"
+        
+        await query.message.edit_text(
+            text,
+            parse_mode="HTML",
+            reply_markup=get_sample_reports_keyboard(reports[:10])
+        )
+    
+    except Exception as e:
+        await query.message.edit_text(
+            f"❌ Ошибка загрузки: {str(e)}",
+            reply_markup=get_back_keyboard()
+        )
+
+
+@router.callback_query(AdminCallback.filter(F.action == "add_sample"))
+async def add_sample_handler(query: CallbackQuery, state: FSMContext):
+    await query.message.edit_text(
+        "📝 <b>ДОБАВЛЕНИЕ ДЕМО ОТЧЕТА</b>\n\n"
+        "Шаг 1/3: Введите название отчета\n"
+        "Например: <code>Tech Review Demo</code>",
+        parse_mode="HTML"
+    )
+    await state.set_state(AdminFSM.waiting_for_sample_name)
+
+
+@router.message(AdminFSM.waiting_for_sample_name)
+async def process_sample_name(message: Message, state: FSMContext):
+    if not message.text:
+        await message.answer("❌ Пожалуйста, введите текст названия.")
+        return
+    
+    sample_name = message.text.strip()
+    
+    if len(sample_name) < 3:
+        await message.answer("❌ Название слишком короткое (минимум 3 символа)")
+        return
+    
+    await state.update_data(sample_name=sample_name)
+    
+    await message.answer(
+        f"✅ Название: <b>{sample_name}</b>\n\n"
+        f"Шаг 2/3: Введите URL видео\n"
+        f"Например: <code>https://youtube.com/watch?v=demo1</code>",
+        parse_mode="HTML"
+    )
+    await state.set_state(AdminFSM.waiting_for_sample_url)
+
+
+@router.message(AdminFSM.waiting_for_sample_url)
+async def process_sample_url(message: Message, state: FSMContext):
+    """Demo report URL ni qabul qilish"""
+    if not message.text:
+        await message.answer("❌ Пожалуйста, введите URL.")
+        return
+    
+    sample_url = message.text.strip()
+    await state.update_data(sample_url=sample_url)
+    
+    data = await state.get_data()
+    sample_name = data.get('sample_name')
+    
+    await message.answer(
+        f"✅ URL: <code>{sample_url}</code>\n\n"
+        f"Шаг 3/3: Отправьте PDF файл анализа\n\n"
+        f"📎 Прикрепите PDF документ с готовым анализом.\n\n"
+        f"<i>PDF будет сохранен и отправлен пользователям на бесплатном тарифе.</i>",
+        parse_mode="HTML"
+    )
+    await state.set_state(AdminFSM.waiting_for_sample_data)
+
+
+@router.message(AdminFSM.waiting_for_sample_data)
+async def process_sample_data(message: Message, state: FSMContext, bot: Bot):
+    
+    if not message.document:
+        await message.answer("❌ Пожалуйста, отправьте PDF файл.")
+        return
+    
+    if message.document.mime_type != 'application/pdf':
+        await message.answer("❌ Файл должен быть в формате PDF.")
+        return
+    
+    try:
+        data = await state.get_data()
+        sample_name = data.get('sample_name')
+        sample_url = data.get('sample_url')
+        
+        video_id = extract_video_id(sample_url)
+
+        demo_dir = Path("reports/demo")
+        demo_dir.mkdir(parents=True, exist_ok=True)
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        pdf_filename = f"demo_{video_id}_{timestamp}.pdf"
+        pdf_path = demo_dir / pdf_filename
+        
+        progress_msg = await message.answer("⏳ Сохранение PDF файла...")
+        
+        await bot.download(message.document, destination=str(pdf_path))
+        
+        analysis_data = {
+            "pdf_path": str(pdf_path),
+            "video_id": video_id,
+            "file_size": message.document.file_size,
+            "uploaded_at": datetime.now().isoformat()
+        }
+        
+        report_id = await SampleReportsService.add_sample_report(
+            report_name=sample_name,
+            video_url=sample_url,
+            analysis_data=analysis_data
+        )
+        
+        await progress_msg.delete()
+        
+        await message.answer(
+            f"✅ <b>ДЕМО ОТЧЕТ УСПЕШНО ДОБАВЛЕН!</b>\n\n"
+            f"🆔 ID: <code>{report_id}</code>\n"
+            f"📝 Название: <b>{sample_name}</b>\n"
+            f"🔗 URL: <code>{sample_url}</code>\n"
+            f"📄 PDF: <code>{pdf_filename}</code>\n"
+            f"💾 Размер: <code>{message.document.file_size / 1024:.1f} KB</code>\n"
+            f"📊 Статус: Активен\n\n"
+            f"Этот PDF будет отправляться пользователям на бесплатном тарифе.",
+            parse_mode="HTML",
+            reply_markup=get_admin_menu_keyboard()
+        )
+        
+        await state.clear()
+    
+    except Exception as e:
+        await message.answer(
+            f"❌ Ошибка сохранения: {str(e)}",
+            reply_markup=get_admin_menu_keyboard()
+        )
+        await state.clear()
+
+
+@router.callback_query(AdminCallback.filter(F.action == "toggle_sample"))
+async def toggle_sample_handler(query: CallbackQuery, callback_data: AdminCallback):
+    try:
+        report_id = callback_data.sample_id
+        
+        report = await SampleReportsService.get_sample_report_by_id(report_id)
+        
+        if not report:
+            await query.answer("❌ Отчет не найден", show_alert=True)
+            return
+        
+        if report['is_active']:
+            await SampleReportsService.deactivate_sample_report(report_id)
+            status_text = "деактивирован"
+        else:
+            await SampleReportsService.activate_sample_report(report_id)
+            status_text = "активирован"
+        
+        await query.answer(f"✅ Отчет {status_text}", show_alert=True)
+
+        await manage_samples_handler(query)
+    
+    except Exception as e:
+        await query.answer(f"❌ Ошибка: {str(e)}", show_alert=True)
+
+
+@router.callback_query(AdminCallback.filter(F.action == "view_sample"))
+async def view_sample_handler(query: CallbackQuery, callback_data: AdminCallback):
+    try:
+        report_id = callback_data.sample_id
+        report = await SampleReportsService.get_sample_report_by_id(report_id)
+        
+        if not report:
+            await query.answer("❌ Отчет не найден", show_alert=True)
+            return
+        
+        analysis_data = report['analysis_data']
+        pdf_path = analysis_data.get('pdf_path', 'Не указан')
+        video_id = analysis_data.get('video_id', 'Неизвестно')
+        file_size = analysis_data.get('file_size', 0)
+        uploaded_at = analysis_data.get('uploaded_at', 'Неизвестно')
+        
+        pdf_exists = "✅ Существует" if os.path.exists(pdf_path) else "❌ Не найден"
+        
+        status = "✅ Активен" if report.get('is_active', True) else "❌ Неактивен"
+        
+        message_text = (
+            f"📄 <b>ДЕМО ОТЧЕТ #{report_id}</b>\n\n"
+            f"📝 <b>Название:</b> {report['report_name']}\n"
+            f"🔗 <b>URL:</b> <code>{report['video_url']}</code>\n"
+            f"🎬 <b>Video ID:</b> <code>{video_id}</code>\n"
+            f"📊 <b>Статус:</b> {status}\n\n"
+            f"<b>📎 PDF Файл:</b>\n"
+            f"├ Путь: <code>{pdf_path}</code>\n"
+            f"├ Размер: <code>{file_size / 1024:.1f} KB</code>\n"
+            f"├ Загружен: <code>{uploaded_at[:10]}</code>\n"
+            f"└ Статус: {pdf_exists}"
+        )
+        
+        await query.message.edit_text(
+            message_text,
+            parse_mode="HTML",
+            reply_markup=get_back_keyboard()
+        )
+    
+    except Exception as e:
+        await query.answer(f"❌ Ошибка: {str(e)}", show_alert=True)
+
+
+@router.callback_query(AdminCallback.filter(F.action == "delete_sample"))
+async def delete_sample_handler(query: CallbackQuery, callback_data: AdminCallback):
+    try:
+        report_id = callback_data.sample_id
+        
+        success = await SampleReportsService.deactivate_sample_report(report_id)
+        
+        if success:
+            await query.answer("✅ Отчет удален", show_alert=True)
+            await manage_samples_handler(query)
+        else:
+            await query.answer("❌ Не удалось удалить", show_alert=True)
+    
+    except Exception as e:
+        await query.answer(f"❌ Ошибка: {str(e)}", show_alert=True)
+
+
+@router.callback_query(AdminCallback.filter(F.action == "download_sample"))
+async def download_sample_handler(query: CallbackQuery, callback_data: AdminCallback):
+    try:
+        report_id = callback_data.sample_id
+        report = await SampleReportsService.get_sample_report_by_id(report_id)
+        
+        if not report:
+            await query.answer("❌ Отчет не найден", show_alert=True)
+            return
+        
+        analysis_data = report['analysis_data']
+        pdf_path = analysis_data.get('pdf_path')
+        
+        if not pdf_path or not os.path.exists(pdf_path):
+            await query.answer("❌ PDF файл не найден", show_alert=True)
+            return
+        
+        await query.message.answer_document(
+            FSInputFile(pdf_path),
+            caption=f"📄 <b>{report['report_name']}</b>\n\n"
+                    f"🆔 ID: <code>{report_id}</code>\n"
+                    f"🔗 <code>{report['video_url']}</code>",
+            parse_mode="HTML"
+        )
+        
+        await query.answer("✅ PDF отправлен", show_alert=False)
+    
+    except Exception as e:
+        await query.answer(f"❌ Ошибка: {str(e)}", show_alert=True)
+
+
+@router.callback_query(AdminCallback.filter(F.action == "select_evolution"))
+async def select_evolution_handler(query: CallbackQuery, callback_data: AdminCallback, state: FSMContext):
+    subtype = callback_data.subtype 
+    data = await state.get_data()
+    category = data.get('category', 'my')
+    
+    prompts = await get_prompts(category=category, analysis_type=subtype)
+    message_text = f"📊 <b>ЭВОЛЮЦИЯ - {subtype.replace('evolution_', 'Этап ')}</b>\n\n"
+    
+    if prompts:
+        message_text += "\n".join([f"ID {p.id}: {p.name}" for p in prompts])
+    else:
+        message_text += "Пока нет промптов для этого этапа."
+    
+    await query.message.edit_text(
+        message_text,
+        reply_markup=get_prompts_keyboard(prompts, subtype, category),
+        parse_mode="HTML"
+    )
+
+
+@router.callback_query(AdminCallback.filter(F.action == "add_select_evolution"))
+async def process_add_evolution(query: CallbackQuery, callback_data: AdminCallback, state: FSMContext):
+    subtype = callback_data.subtype
+    await state.update_data(analysis_type=subtype)
+    
+    step_name = "Этап 1" if "step1" in subtype else "Этап 2"
+    
+    await query.message.edit_text(
+        f"📊 <b>ЭВОЛЮЦИЯ - {step_name}</b>\n\n"
+        f"Введите имя промпта:"
+    )
+    await state.set_state(AdminFSM.waiting_for_prompt_name)
+

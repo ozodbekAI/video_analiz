@@ -21,7 +21,6 @@ async def strategic_hub_handler(query: CallbackQuery):
 
 
 @router.callback_query(MenuCallback.filter(F.action.in_({
-    "content_evolution", 
     "audience_map", 
     "risk_monitoring", 
     "strengths", 

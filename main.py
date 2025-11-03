@@ -6,7 +6,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from config import Config
 from database.engine import create_db
-from handlers import start_router, menu_router, analysis_router, cabinet_router, admin_router
+from handlers import start_router, menu_router, analysis_router, cabinet_router, admin_router, verification_router, evolution_router
 from middlewares.admin_check import AdminMiddleware
 
 logging.basicConfig(level=logging.INFO)
@@ -30,6 +30,8 @@ async def main():
     dp.include_router(menu_router)
     dp.include_router(cabinet_router)
     dp.include_router(admin_router)
+    dp.include_router(verification_router)
+    dp.include_router(evolution_router)
 
     await create_db()
     

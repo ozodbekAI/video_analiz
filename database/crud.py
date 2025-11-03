@@ -1,16 +1,15 @@
 from sqlalchemy import select, insert, update, delete, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-from .models import User, Video, Comment, Prompt, AIResponse
+from .models import User, Video, Comment, Prompt, AIResponse, VerificationAttempt
 from .engine import async_session
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 
 async def get_user(user_id: int):
     async with async_session() as session:
         result = await session.execute(select(User).where(User.user_id == user_id))
         user = result.scalar_one_or_none()
-        
-        # Oylik reset tekshirish
+
         if user:
             await check_and_reset_monthly_limit(user, session)
         
@@ -18,7 +17,6 @@ async def get_user(user_id: int):
 
 
 async def check_and_reset_monthly_limit(user: User, session: AsyncSession):
-    """Har oyda limitni reset qilish"""
     now = datetime.now(tz=timezone.utc)
     
     if user.last_reset_date:
@@ -51,7 +49,6 @@ async def create_user(user_id: int, username: str):
 
 
 async def update_user_language(user_id: int, language: str):
-    """Foydalanuvchi tilini yangilash"""
     async with async_session() as session:
         stmt = update(User).where(User.user_id == user_id).values(language=language)
         await session.execute(stmt)
@@ -59,7 +56,6 @@ async def update_user_language(user_id: int, language: str):
 
 
 async def update_user_analyses(user_id: int, used: int):
-    """So'rovlar sonini yangilash"""
     async with async_session() as session:
         stmt = update(User).where(User.user_id == user_id).values(analyses_used=used)
         await session.execute(stmt)
@@ -67,7 +63,6 @@ async def update_user_analyses(user_id: int, used: int):
 
 
 async def set_user_limit(user_id: int, new_limit: int):
-    """ADMIN: Foydalanuvchi limitini o'zgartirish"""
     async with async_session() as session:
         stmt = update(User).where(User.user_id == user_id).values(analyses_limit=new_limit)
         await session.execute(stmt)
@@ -75,7 +70,6 @@ async def set_user_limit(user_id: int, new_limit: int):
 
 
 async def reset_user_analyses(user_id: int):
-    """ADMIN: Foydalanuvchi so'rovlarini 0 ga qaytarish"""
     async with async_session() as session:
         stmt = update(User).where(User.user_id == user_id).values(
             analyses_used=0,
@@ -167,7 +161,6 @@ async def create_ai_response(user_id: int, video_id: int, chunk_id: int, analysi
         await session.commit()
 
 
-# STATISTIKA FUNKSIYALARI
 
 async def get_total_users():
     async with async_session() as session:
@@ -333,3 +326,302 @@ async def get_user_by_id(user_id: int):
             select(User).where(User.user_id == user_id)
         )
         return result.scalar_one_or_none()
+    
+
+
+
+async def get_user_with_verification(user_id: int):
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = result.scalar_one_or_none()
+        
+        if user:
+            await check_and_reset_monthly_limit(user, session)
+        
+        return user
+
+
+async def update_user_verification(
+    user_id: int,
+    channel_id: str,
+    method: str,
+    status: str = 'verified'
+):
+    
+    async with async_session() as session:
+        stmt = update(User).where(User.user_id == user_id).values(
+            youtube_channel_id=channel_id,
+            verification_method=method,
+            verification_status=status,
+            verification_date=datetime.now(tz=timezone.utc) if status == 'verified' else None
+        )
+        await session.execute(stmt)
+        await session.commit()
+
+
+async def create_verification_attempt(
+    user_id: int,
+    channel_url: str,
+    verification_code: str,
+    method: str = 'code'
+):
+    async with async_session() as session:
+        user_result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = user_result.scalar_one_or_none()
+        
+        if not user:
+            raise ValueError("Foydalanuvchi topilmadi")
+        
+        attempt = VerificationAttempt(
+            user_id=user.id,
+            channel_url=channel_url,
+            verification_code=verification_code,
+            verification_method=method,
+            status='pending',
+            created_at=datetime.now(tz=timezone.utc)
+        )
+        
+        session.add(attempt)
+        await session.commit()
+        await session.refresh(attempt)
+        
+        return attempt.id
+
+
+async def get_verification_attempt(attempt_id: int):
+    async with async_session() as session:
+        result = await session.execute(
+            select(VerificationAttempt).where(VerificationAttempt.id == attempt_id)
+        )
+        return result.scalar_one_or_none()
+
+
+async def update_verification_attempt_status(
+    attempt_id: int,
+    status: str,
+    verified: bool = False
+):
+    async with async_session() as session:
+        values = {'status': status}
+        
+        if verified:
+            values['verified_at'] = datetime.now(tz=timezone.utc)
+        else:
+            attempt_result = await session.execute(
+                select(VerificationAttempt).where(VerificationAttempt.id == attempt_id)
+            )
+            attempt = attempt_result.scalar_one_or_none()
+            if attempt:
+                values['attempts'] = attempt.attempts + 1
+        
+        stmt = update(VerificationAttempt).where(
+            VerificationAttempt.id == attempt_id
+        ).values(**values)
+        
+        await session.execute(stmt)
+        await session.commit()
+
+
+async def get_latest_verification_attempt(user_id: int):
+    async with async_session() as session:
+        user_result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = user_result.scalar_one_or_none()
+        
+        if not user:
+            return None
+        
+        result = await session.execute(
+            select(VerificationAttempt)
+            .where(VerificationAttempt.user_id == user.id)
+            .where(VerificationAttempt.status == 'pending')
+            .order_by(VerificationAttempt.created_at.desc())
+        )
+        return result.scalar_one_or_none()
+
+
+async def check_user_tariff_access(user_id: int, feature: str) -> bool:
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            return False
+        
+        feature_tariffs = {
+            'simple': ['starter', 'pro', 'business', 'enterprise'],
+            'advanced': ['pro', 'business', 'enterprise'],
+            'strategic_hub': ['business', 'enterprise'],
+            'emotional_dna': ['enterprise'],
+            'what_if': ['enterprise']
+        }
+        
+        allowed = feature_tariffs.get(feature, [])
+        return user.tariff_plan in allowed
+
+
+async def get_user_verification_stats(user_id: int) -> dict:
+    async with async_session() as session:
+        user_result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = user_result.scalar_one_or_none()
+        
+        if not user:
+            return {
+                'total_attempts': 0,
+                'verified': False,
+                'pending_attempts': 0
+            }
+        
+        total_result = await session.execute(
+            select(func.count(VerificationAttempt.id))
+            .where(VerificationAttempt.user_id == user.id)
+        )
+        total_attempts = total_result.scalar() or 0
+        
+        pending_result = await session.execute(
+            select(func.count(VerificationAttempt.id))
+            .where(VerificationAttempt.user_id == user.id)
+            .where(VerificationAttempt.status == 'pending')
+        )
+        pending_attempts = pending_result.scalar() or 0
+        
+        return {
+            'total_attempts': total_attempts,
+            'verified': user.verification_status == 'verified',
+            'pending_attempts': pending_attempts,
+            'channel_id': user.youtube_channel_id,
+            'verification_date': user.verification_date
+        }
+    
+async def update_ai_response_txt_path(user_id: int, video_id: int, txt_path: str):
+    async with async_session() as session:
+        stmt = update(AIResponse).where(
+            AIResponse.user_id == user_id,
+            AIResponse.video_id == video_id,
+            AIResponse.analysis_type.in_(['simple', 'advanced'])
+        ).values(txt_file_path=txt_path)
+        
+        await session.execute(stmt)
+        await session.commit()
+
+
+async def update_video_channel_id(video_id: int, channel_id: str):
+    async with async_session() as session:
+        stmt = update(Video).where(Video.id == video_id).values(channel_id=channel_id)
+        await session.execute(stmt)
+        await session.commit()
+
+
+async def get_user_verified_channels_with_names(user_id: int):
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            return []
+        
+        stmt = select(Video.channel_id, func.count(Video.id).label('video_count')).where(
+            Video.user_id == user.id,
+            Video.channel_id.isnot(None)
+        ).group_by(Video.channel_id)
+        
+        result = await session.execute(stmt)
+        channels = result.all()
+        
+        channels_with_names = []
+        
+        for channel_id, video_count in channels:
+            try:
+                from services.youtube_service import get_channel_info_by_id
+                channel_info = await get_channel_info_by_id(channel_id)
+                channel_title = channel_info.get('title', channel_id[:20])
+            except Exception:
+                channel_title = channel_id[:20] + "..."
+            
+            channels_with_names.append({
+                'channel_id': channel_id,
+                'channel_title': channel_title,
+                'video_count': video_count
+            })
+        
+        return channels_with_names
+
+async def get_user_verified_channels(user_id: int):
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            return []
+        
+        stmt = select(Video.channel_id, func.count(Video.id).label('video_count')).where(
+            Video.user_id == user.id,
+            Video.channel_id.isnot(None)
+        ).group_by(Video.channel_id)
+        
+        result = await session.execute(stmt)
+        channels = result.all()
+        
+        return [{'channel_id': ch[0], 'video_count': ch[1]} for ch in channels]
+
+
+async def get_channel_analysis_history(user_id: int, channel_id: str, limit: int = 10):
+    async with async_session() as session:
+        user_result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = user_result.scalar_one_or_none()
+        
+        if not user:
+            return []
+        
+        stmt = select(Video, AIResponse).join(
+            AIResponse, Video.id == AIResponse.video_id
+        ).where(
+            Video.user_id == user.id,
+            Video.channel_id == channel_id,
+            AIResponse.txt_file_path.isnot(None),
+            AIResponse.analysis_type.in_(['simple', 'advanced'])
+        ).order_by(Video.processed_at.desc()).limit(limit)
+        
+        result = await session.execute(stmt)
+        history = result.all()
+        
+        return [
+            {
+                'video_id': video.id,
+                'video_url': video.video_url,
+                'processed_at': video.processed_at,
+                'txt_path': ai_response.txt_file_path,
+                'analysis_type': ai_response.analysis_type
+            }
+            for video, ai_response in history
+        ]
+
+
+async def get_evolution_prompts():
+    async with async_session() as session:
+        stmt = select(Prompt).where(
+            Prompt.analysis_type.in_(['evolution_step1', 'evolution_step2'])
+        ).order_by(Prompt.analysis_type)
+        
+        result = await session.execute(stmt)
+        prompts = result.scalars().all()
+        
+        return {
+            'step1': next((p for p in prompts if p.analysis_type == 'evolution_step1'), None),
+            'step2': next((p for p in prompts if p.analysis_type == 'evolution_step2'), None)
+        }
