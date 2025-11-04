@@ -276,16 +276,22 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             if user.tariff_plan not in ['pro', 'business', 'enterprise'] and user_id not in ADMIN_IDS:
                 raise ValueError("❌ Превышен лимит в 2000 комментариев для анализа.")
 
-        save_comments_to_file(comments_data, comments_file)
-        
+        # Timestamplarni olish
         await update_progress_message(
             progress_msg, 
             f"✅ Загружено {comments_len} комментариев\n🔄 Получение timestamps..."
         )
         
-        # Timestamplarni olish
         timestamps_info = await get_video_timestamps(url)
         timestamps_text = format_timestamps_for_analysis(timestamps_info['timestamps'])
+        
+        # Commentlarni faylga saqlash
+        save_comments_to_file(comments_data, comments_file)
+        
+        # Timestamplarni ham shu faylga qo'shish
+        if timestamps_info['has_timestamps']:
+            with open(comments_file, "a", encoding="utf-8") as f:
+                f.write(timestamps_text)
         
         await update_progress_message(
             progress_msg, 
@@ -298,11 +304,9 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             f"Comments: {comments_file}"
         )
         
+        # Fayldan o'qish (endi commentlar + timestamps)
         with open(comments_file, "r", encoding="utf-8") as f:
-            comments_text = f.read()
-        
-        # Kommentlar va timestamplarni birlashtirish
-        full_context = comments_text + timestamps_text
+            full_context = f.read()
         
         if analysis_type == "simple":
             await update_progress_message(
@@ -497,7 +501,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             f"Ошибка: {str(e)}\n\nВернуться в меню:",
             reply_markup=get_main_menu_keyboard()
         )
-
 
 @router.message(AnalysisFSM.waiting_for_url)
 async def process_video_url(message: Message, state: FSMContext):
