@@ -13,3 +13,5 @@ downloads/
 eggs/
 .eggs/
 venv/
+migrations/
+/migrations/

@@ -13,9 +13,11 @@ from keyboards.client import (
     get_after_analysis_keyboard
 )
 from services.youtube_service import (
-    extract_video_id, 
+    extract_video_id,
+    format_timestamps_for_analysis, 
     get_video_comments, 
-    get_video_comments_count, 
+    get_video_comments_count,
+    get_video_timestamps, 
     save_comments_to_file, 
     get_comments_file_path,
     get_video_channel_info
@@ -278,7 +280,16 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         
         await update_progress_message(
             progress_msg, 
-            f"✅ Загружено {comments_len} комментариев\n🔄 Сохранение в базу данных..."
+            f"✅ Загружено {comments_len} комментариев\n🔄 Получение timestamps..."
+        )
+        
+        # Timestamplarni olish
+        timestamps_info = await get_video_timestamps(url)
+        timestamps_text = format_timestamps_for_analysis(timestamps_info['timestamps'])
+        
+        await update_progress_message(
+            progress_msg, 
+            f"✅ Загружено {comments_len} комментариев\n✅ Timestamps: {timestamps_info['timestamps_count']}\n🔄 Сохранение в базу данных..."
         )
         
         db_video_id = await create_video(
@@ -289,6 +300,9 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         
         with open(comments_file, "r", encoding="utf-8") as f:
             comments_text = f.read()
+        
+        # Kommentlar va timestamplarni birlashtirish
+        full_context = comments_text + timestamps_text
         
         if analysis_type == "simple":
             await update_progress_message(
@@ -301,7 +315,7 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
                 raise ValueError("Нет промпта для простого анализа")
             
             prompt_text = simple_prompts[0].prompt_text
-            ai_response = await analyze_comments_with_prompt(comments_text, prompt_text)
+            ai_response = await analyze_comments_with_prompt(full_context, prompt_text)
             
             await create_ai_response(
                 user.id, 
@@ -329,7 +343,7 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             
             tasks = []
             for idx, prompt in enumerate(advanced_prompts):
-                task = analyze_comments_with_prompt(comments_text, prompt.prompt_text)
+                task = analyze_comments_with_prompt(full_context, prompt.prompt_text)
                 tasks.append((idx, task))
             
             results = await asyncio.gather(*[t[1] for t in tasks])
@@ -403,6 +417,7 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             txt_file.write(f"Video URL: {url}\n")
             txt_file.write(f"Tahlil turi: {'Oddiy' if analysis_type == 'simple' else 'Chuqur'}\n")
             txt_file.write(f"Kommentlar soni: {comments_len}\n")
+            txt_file.write(f"Timestamps soni: {timestamps_info['timestamps_count']}\n")
             txt_file.write(f"Sana: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}\n")
             txt_file.write(f"\n{'='*50}\n\n")
             txt_file.write(final_ai_response)
@@ -430,6 +445,7 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             caption=f"📊 <b>Анализ готов!</b>\n\n"
                     f"📹 Видео: <code>{video_id}</code>\n"
                     f"📝 Комментариев: {comments_len}\n"
+                    f"⏱ Timestamps: {timestamps_info['timestamps_count']}\n"
                     f"🎯 Тип: {'Простой' if analysis_type == 'simple' else 'Углубленный'}\n\n",
             parse_mode="HTML",
         )
