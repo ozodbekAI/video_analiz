@@ -257,8 +257,7 @@ async def select_channel_handler(query: CallbackQuery, state: FSMContext):
         
         await query.message.answer(
             f"✅ Анализ эволюции завершен!\n\n"
-            f"{'👑 Админ режим активен\n\n' if is_admin else ''}"
-            f"Выберите действие:",
+            f"{'👑 Админ режим активен\n\n' if is_admin else ''}Выберите действие:",
             reply_markup=get_main_menu_keyboard()
         )
         
