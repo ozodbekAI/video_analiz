@@ -625,3 +625,168 @@ async def get_evolution_prompts():
             'step1': next((p for p in prompts if p.analysis_type == 'evolution_step1'), None),
             'step2': next((p for p in prompts if p.analysis_type == 'evolution_step2'), None)
         }
+    
+async def create_admin_verified_channel(user_id: int, channel_id: str, channel_title: str):
+    """
+    Admin tomonidan tahlil qilingan kanalni 'admin_verified' sifatida saqlash
+    Bu kanal evolution uchun ishlatilishi mumkin
+    """
+    async with async_session() as session:
+        # Avval bu kanal allaqachon mavjudligini tekshiramiz
+        existing_attempt = await session.execute(
+            select(VerificationAttempt).where(
+                VerificationAttempt.user_id == user_id,
+                VerificationAttempt.channel_url.contains(channel_id),
+                VerificationAttempt.status == 'verified'
+            )
+        )
+        
+        if existing_attempt.scalar_one_or_none():
+            # Agar kanal allaqachon verified bo'lsa, yangi qo'shmaymiz
+            return
+        
+        # Yangi verification attempt yaratamiz (admin verified)
+        attempt = VerificationAttempt(
+            user_id=user_id,
+            channel_url=f"https://www.youtube.com/channel/{channel_id}",
+            verification_code="ADMIN_VERIFIED",
+            verification_method='code',  # yoki 'admin' deb yangi enum qo'shish mumkin
+            status='verified',
+            verified_at=datetime.now(tz=timezone.utc),
+            created_at=datetime.now(tz=timezone.utc)
+        )
+        
+        session.add(attempt)
+        await session.commit()
+
+
+async def get_user_verified_channels_with_names(user_id: int):
+    """
+    User yoki admin tomonidan verified qilingan barcha kanallarni olish
+    Evolution uchun ishlatiladi
+    """
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            return []
+        
+        # Video'lardan channel_id olish
+        stmt = select(Video.channel_id, func.count(Video.id).label('video_count')).where(
+            Video.user_id == user.id,
+            Video.channel_id.isnot(None)
+        ).group_by(Video.channel_id)
+        
+        result = await session.execute(stmt)
+        channels = result.all()
+        
+        # Verification attempt'lardan ham olish (admin verified kanallar uchun)
+        verified_attempts = await session.execute(
+            select(VerificationAttempt.channel_url).where(
+                VerificationAttempt.user_id == user.id,
+                VerificationAttempt.status == 'verified'
+            )
+        )
+        
+        # Channel ID'larni extract qilamiz
+        verified_channel_ids = set()
+        for (channel_url,) in verified_attempts.all():
+            # URL'dan channel ID'ni ajratib olamiz
+            import re
+            match = re.search(r'channel/([^/?]+)', channel_url)
+            if match:
+                verified_channel_ids.add(match.group(1))
+            # Handle @username format
+            match = re.search(r'@([^/?]+)', channel_url)
+            if match:
+                verified_channel_ids.add(match.group(1))
+        
+        channels_with_names = []
+        processed_ids = set()
+        
+        # Video'lardan kelgan kanallar
+        for channel_id, video_count in channels:
+            if channel_id not in processed_ids:
+                processed_ids.add(channel_id)
+                
+                try:
+                    from services.youtube_service import get_channel_info_by_id
+                    channel_info = await get_channel_info_by_id(channel_id)
+                    channel_title = channel_info.get('title', channel_id[:20])
+                except Exception:
+                    channel_title = channel_id[:20] + "..."
+                
+                channels_with_names.append({
+                    'channel_id': channel_id,
+                    'channel_title': channel_title,
+                    'video_count': video_count
+                })
+        
+        for channel_id in verified_channel_ids:
+            if channel_id not in processed_ids:
+                processed_ids.add(channel_id)
+                
+                # Bu kanaldagi video'lar sonini sanash
+                count_result = await session.execute(
+                    select(func.count(Video.id)).where(
+                        Video.user_id == user.id,
+                        Video.channel_id == channel_id
+                    )
+                )
+                video_count = count_result.scalar() or 0
+                
+                try:
+                    from services.youtube_service import get_channel_info_by_id
+                    channel_info = await get_channel_info_by_id(channel_id)
+                    channel_title = channel_info.get('title', channel_id[:20])
+                except Exception:
+                    channel_title = channel_id[:20] + "..."
+                
+                channels_with_names.append({
+                    'channel_id': channel_id,
+                    'channel_title': channel_title,
+                    'video_count': video_count
+                })
+        
+        return channels_with_names
+
+
+async def get_channel_analysis_history(user_id: int, channel_id: str, limit: int = 10):
+    """
+    Kanal uchun barcha tahlillarni olish (evolution uchun)
+    """
+    async with async_session() as session:
+        user_result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = user_result.scalar_one_or_none()
+        
+        if not user:
+            return []
+        
+        # Channel ID bo'yicha video'larni topish
+        stmt = select(Video, AIResponse).join(
+            AIResponse, Video.id == AIResponse.video_id
+        ).where(
+            Video.user_id == user.id,
+            Video.channel_id == channel_id,
+            AIResponse.txt_file_path.isnot(None),
+            AIResponse.analysis_type.in_(['simple', 'advanced'])
+        ).order_by(Video.processed_at.desc()).limit(limit)
+        
+        result = await session.execute(stmt)
+        history = result.all()
+        
+        return [
+            {
+                'video_id': video.id,
+                'video_url': video.video_url,
+                'processed_at': video.processed_at,
+                'txt_path': ai_response.txt_file_path,
+                'analysis_type': ai_response.analysis_type
+            }
+            for video, ai_response in history
+        ]

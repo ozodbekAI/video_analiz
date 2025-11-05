@@ -196,7 +196,12 @@ async def send_sample_report_and_ask(message: Message, user_id: int):
         )
 
 
-async def check_video_ownership(user_id: int, video_url: str) -> tuple[bool, str, Optional[str]]:
+async def check_video_ownership(user_id: int, video_url: str, is_admin: bool = False) -> tuple[bool, str, Optional[str]]:
+    """
+    Video ownership tekshirish
+    Admin uchun - avtomatik verified
+    User uchun - verification kerak
+    """
     try:
         from services.youtube_service import get_video_channel_info
         
@@ -209,6 +214,13 @@ async def check_video_ownership(user_id: int, video_url: str) -> tuple[bool, str
         video_channel_id = channel_info['channel_id']
         video_channel_title = channel_info['channel_title']
         
+        # ============ ADMIN UCHUN ============
+        if is_admin:
+            # Admin uchun har doim verified qaytaramiz
+            # Lekin databasega qo'shish logikasi run_analysis_task da bo'ladi
+            return True, f"👑 Админ доступ: {video_channel_title}", None
+        
+        # ============ USER UCHUN ============
         verification_status = await VerificationService.get_user_verification_status(user_id)
         
         if not verification_status['is_verified']:
@@ -229,10 +241,13 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
     progress_msg = None
     try:
         user = await get_user(user_id)
+        is_admin = user_id in ADMIN_IDS
         
-        is_owner, ownership_msg, channel_url_to_verify = await check_video_ownership(user_id, url)
+        # Ownership check with admin flag
+        is_owner, ownership_msg, channel_url_to_verify = await check_video_ownership(user_id, url, is_admin=is_admin)
         
-        if user_id not in ADMIN_IDS:
+        # ============ ADMIN BO'LMAGAN USER UCHUN VERIFICATION ============
+        if not is_admin:
             if not is_owner:
                 from aiogram.utils.keyboard import InlineKeyboardBuilder
                 
@@ -256,7 +271,8 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
                 )
                 return
         
-        if user_id not in ADMIN_IDS:
+        # ============ LIMIT CHECK (faqat user uchun) ============
+        if not is_admin:
             if user.analyses_used >= user.analyses_limit:
                 await message.answer(
                     f"❌ Достигнут лимит анализов.\n\n"
@@ -273,10 +289,10 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         comments_len = get_video_comments_count(url)
 
         if comments_len >= 2000 and analysis_type == "advanced":
-            if user.tariff_plan not in ['pro', 'business', 'enterprise'] and user_id not in ADMIN_IDS:
+            if user.tariff_plan not in ['pro', 'business', 'enterprise'] and not is_admin:
                 raise ValueError("❌ Превышен лимит в 2000 комментариев для анализа.")
 
-        # Timestamplarni olish
+        # Timestamps
         await update_progress_message(
             progress_msg, 
             f"✅ Загружено {comments_len} комментариев\n🔄 Получение timestamps..."
@@ -285,10 +301,9 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         timestamps_info = await get_video_timestamps(url)
         timestamps_text = format_timestamps_for_analysis(timestamps_info['timestamps'])
         
-        # Commentlarni faylga saqlash
+        # Save comments + timestamps
         save_comments_to_file(comments_data, comments_file)
         
-        # Timestamplarni ham shu faylga qo'shish
         if timestamps_info['has_timestamps']:
             with open(comments_file, "a", encoding="utf-8") as f:
                 f.write(timestamps_text)
@@ -298,13 +313,38 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             f"✅ Загружено {comments_len} комментариев\n✅ Timestamps: {timestamps_info['timestamps_count']}\n🔄 Сохранение в базу данных..."
         )
         
+        # ============ DATABASE'GA SAQLASH ============
         db_video_id = await create_video(
             user.id, 
             url, 
             f"Comments: {comments_file}"
         )
         
-        # Fayldan o'qish (endi commentlar + timestamps)
+        # ============ KANAL ID NI OLISH VA SAQLASH ============
+        try:
+            channel_info = await get_video_channel_info(url)
+            channel_id = channel_info.get('channel_id') if channel_info else None
+            channel_title = channel_info.get('channel_title') if channel_info else None
+        except Exception:
+            channel_id = None
+            channel_title = None
+
+        # Video'ga channel_id ni qo'shamiz
+        from database.crud import update_video_channel_id
+        if channel_id:
+            await update_video_channel_id(db_video_id, channel_id)
+        
+        # ============ ADMIN UCHUN AVTOMATIK VERIFICATION ============
+        if is_admin and channel_id:
+            # Admin uchun bu kanalni "admin_verified" sifatida database'ga qo'shamiz
+            from database.crud import create_admin_verified_channel
+            await create_admin_verified_channel(
+                user_id=user.id,
+                channel_id=channel_id,
+                channel_title=channel_title or channel_id[:30]
+            )
+        
+        # ============ AI ANALYSIS ============
         with open(comments_file, "r", encoding="utf-8") as f:
             full_context = f.read()
         
@@ -401,6 +441,7 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         else:
             raise ValueError("Неизвестный тип анализа")
         
+        # ============ PDF GENERATION ============
         await update_progress_message(
             progress_msg,
             "📄 Генерация PDF отчета..."
@@ -414,32 +455,27 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         os.rename(pdf_file, str(saved_pdf_path))
         pdf_file = str(saved_pdf_path)
 
+        # ============ TXT FILE SAQLASH ============
         txt_file_path = reports_dir / f"{video_id}_{analysis_type}.txt"
         with open(txt_file_path, "w", encoding="utf-8") as txt_file:
             txt_file.write(f"=== ANALIZ NATIJALARI ===\n\n")
             txt_file.write(f"Video ID: {video_id}\n")
             txt_file.write(f"Video URL: {url}\n")
+            txt_file.write(f"Kanal: {channel_title or 'Unknown'}\n")
+            txt_file.write(f"Kanal ID: {channel_id or 'Unknown'}\n")
             txt_file.write(f"Tahlil turi: {'Oddiy' if analysis_type == 'simple' else 'Chuqur'}\n")
             txt_file.write(f"Kommentlar soni: {comments_len}\n")
             txt_file.write(f"Timestamps soni: {timestamps_info['timestamps_count']}\n")
             txt_file.write(f"Sana: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}\n")
+            if is_admin:
+                txt_file.write(f"Admin tomonidan tahlil qilindi\n")
             txt_file.write(f"\n{'='*50}\n\n")
             txt_file.write(final_ai_response)
         
-
         from database.crud import update_ai_response_txt_path
         await update_ai_response_txt_path(user.id, db_video_id, str(txt_file_path))
         
-        try:
-            channel_info = await get_video_channel_info(url)
-            channel_id = channel_info.get('channel_id') if channel_info else None
-        except Exception:
-            channel_id = None
-
-        from database.crud import update_video_channel_id
-        if channel_id:
-            await update_video_channel_id(db_video_id, channel_id)
-        
+        # ============ SEND PDF ============
         if progress_msg:
             await progress_msg.delete()
             progress_msg = None
@@ -448,13 +484,16 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             FSInputFile(pdf_file),
             caption=f"📊 <b>Анализ готов!</b>\n\n"
                     f"📹 Видео: <code>{video_id}</code>\n"
+                    f"📺 Канал: {channel_title or 'Unknown'}\n"
                     f"📝 Комментариев: {comments_len}\n"
                     f"⏱ Timestamps: {timestamps_info['timestamps_count']}\n"
-                    f"🎯 Тип: {'Простой' if analysis_type == 'simple' else 'Углубленный'}\n\n",
+                    f"🎯 Тип: {'Простой' if analysis_type == 'simple' else 'Углубленный'}\n"
+                    f"{'👑 Админ анализ' if is_admin else ''}\n",
             parse_mode="HTML",
         )
 
-        if user_id not in ADMIN_IDS:
+        # ============ STATISTICS MESSAGE ============
+        if not is_admin:
             remaining = user.analyses_limit - (user.analyses_used + 1)
             await message.answer(
                 f"✅ Анализ завершен!\n\n"
@@ -465,12 +504,14 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         else:
             await message.answer(
                 f"✅ Анализ завершен!\n\n"
-                f"👑 Вы администратор - безлимитный доступ\n\n"
+                f"👑 Вы администратор - безлимитный доступ\n"
+                f"✅ Канал добавлен для эволюции\n\n"
                 f"Выберите действие:",
                 reply_markup=get_after_analysis_keyboard()
             )
         
-        if user_id not in ADMIN_IDS:
+        # ============ UPDATE ANALYSES COUNT ============
+        if not is_admin:
             await update_user_analyses(user.id, user.analyses_used + 1)
         
     except ValueError as e:
@@ -501,7 +542,7 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             f"Ошибка: {str(e)}\n\nВернуться в меню:",
             reply_markup=get_main_menu_keyboard()
         )
-
+        
 @router.message(AnalysisFSM.waiting_for_url)
 async def process_video_url(message: Message, state: FSMContext):
     url = message.text.strip()
