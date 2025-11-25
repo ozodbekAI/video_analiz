@@ -25,8 +25,7 @@ async def strategic_hub_handler(query: CallbackQuery):
     "risk_monitoring", 
     "strengths", 
     "growth_plan", 
-    "anomaly_detector",
-    "motivation"
+    "anomaly_detector"
 })))
 async def in_development_handler(query: CallbackQuery):
     await query.answer(FEATURE_IN_DEVELOPMENT, show_alert=True)
@@ -37,6 +36,8 @@ async def main_menu_handler(query: CallbackQuery, state: FSMContext):
     await state.clear()
     await safe_edit_text(
         query,
-        "Главное меню. Выберите действие:",
-        reply_markup=get_main_menu_keyboard()
+        "🏠 <b>Главное меню</b>\n\n"
+        "Выберите действие:",
+        reply_markup=get_main_menu_keyboard(),
+        parse_mode="HTML"
     )

@@ -16,10 +16,10 @@ def get_language_keyboard():
 
 def get_main_menu_keyboard():
     builder = InlineKeyboardBuilder()
+    builder.button(text="🎬 Анализ Shorts", callback_data=MenuCallback(action="analyze_shorts"))
     builder.button(text="📈 Анализ моего видео", callback_data=MenuCallback(action="analysis_my_video"))
     builder.button(text="🥊 Анализ конкурента", callback_data=MenuCallback(action="analysis_competitor"))
     builder.button(text="📊 Стратегический хаб", callback_data=MenuCallback(action="strategic_hub"))
-    builder.button(text="💪 Мотивация", callback_data=MenuCallback(action="motivation"))
     builder.button(text="⚙️ Личный кабинет", callback_data="personal_cabinet")
     builder.adjust(1)
     return builder.as_markup()

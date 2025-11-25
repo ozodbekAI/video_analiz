@@ -21,7 +21,6 @@ class ProgressTracker:
         self.is_running = True
         self.status_message = await self.message.answer(initial_text)
         
-        # Animatsiyani ishga tushirish
         self.animation_task = asyncio.create_task(self._animate())
     
     async def update(self, step: int, text: str = None):
@@ -39,7 +38,6 @@ class ProgressTracker:
                 pass  
     
     async def complete(self, text: str = "✅ Готово!"):
-        """Progress tugallash"""
         self.is_running = False
         
         if self.animation_task:
@@ -51,7 +49,6 @@ class ProgressTracker:
             pass
     
     async def error(self, text: str = "❌ Ошибка"):
-        """Xatolik holatini ko'rsatish"""
         self.is_running = False
         
         if self.animation_task:

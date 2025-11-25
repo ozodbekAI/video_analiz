@@ -109,7 +109,6 @@ class VerificationService:
         channel_description: str
     ) -> Tuple[bool, str]:
         async with async_session() as session:
-            # Attempt ni topish
             result = await session.execute(
                 select(VerificationAttempt).where(VerificationAttempt.id == attempt_id)
             )

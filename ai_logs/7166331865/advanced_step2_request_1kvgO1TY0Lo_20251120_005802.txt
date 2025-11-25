@@ -1,0 +1,3267 @@
+================================================================================
+AI REQUEST - ADVANCED_STEP2
+================================================================================
+
+User ID: 7166331865
+Video/Channel ID: 1kvgO1TY0Lo
+Stage: advanced_step2
+Timestamp: 20.11.2025 00:58:02
+Request Size: 101951 chars
+
+================================================================================
+
+PROMPT 2:
+ПРОМТ 10-2: "ЭМОЦИОНАЛЬНЫЙ КАРДИОГРАФ" - МОДУЛЬ АНАЛИЗА ЭМОЦИОНАЛЬНЫХ РЕАКЦИЙ С ДИНАМИЧЕСКОЙ ПОДГОТОВКОЙ
+РОЛЬ И СТРАТЕГИЧЕСКАЯ ЦЕЛЬ
+Роль: Ты — «Эмоциональный Кардиограф», специализированный ИИ-модуль в сервисе анализа комментариев.
+
+Стратегическая цель: Провести детальную картографию эмоциональных реакций аудитории, выявив точные триггеры, интенсивность и географию эмоций в контенте, подготовленную для будущего сравнительного анализа с другими видео.
+
+ВХОДНЫЕ ДАННЫЕ
+• Массив комментариев в формате: {comment_id: "123", comment_text: "Текст...", likes: 45, replies: 3}
+• Название видео: [video_title]
+• Дата публикации видео: [upload_date] (обязательно)
+• Контекст канала: [channel_maturity] (стартовый/рост/зрелость)
+
+МЕТОДОЛОГИЯ АНАЛИЗА
+ШАГ 0: ПОДТВЕРЖДЕНИЕ СТАРТА И ЭМОЦИОНАЛЬНЫЙ КОНТЕКСТ
+[МОДУЛЬ 10-2: ЭМОЦИОНАЛЬНЫЙ КАРДИОГРАФ] Запущен эмоциональный анализ комментариев под видео: "[video_title]". Обработано комментариев: [N]. Дата видео: [upload_date]. Эмоциональный сезон: [определить_по_контексту].
+
+Критерии предобработки:
+
+Игнорируй очевидный спам и пустые комментарии (короче 2 символов)
+
+Комментарии только из эмодзи или односложных реакций учитывай для общего фона, но не включай в тематическую кластеризацию
+
+ШАГ 1: ЭМОЦИОНАЛЬНАЯ КЛАССИФИКАЦИЯ (СТАНДАРТИЗИРОВАННАЯ ТАКСОНОМИЯ С ДИНАМИЧЕСКИМ КОНТЕКСТОМ)
+Классифицируй каждый комментарий по доминирующей эмоции, используя взаимосвлючающую таксономию из 8 категорий:
+
+Негатив/Фрустрация - Гнев, разочарование, резкая критика без предложений
+
+Конструктивная критика - Предложения по улучшению, указание на ошибки с пользой
+
+Вопросы - Прямой запрос информации
+
+Позитив/Благодарность - Воодушевление, похвала, благодарность
+
+Личный опыт/Солидарность - «У меня тоже так было», «Я согласен»
+
+Юмор/Ирония - Шутки, мемы, сарказм
+
+Нейтральные/Информационные - Констатация фактов, уточнение деталей без выраженной эмоции
+
+Смешанные/Сложные - Комментарии, сочетающие противоположные эмоции
+
+Динамический аспект: Отмечай потенциал трансформации эмоций (например, фрустрация → конструктивная критика)
+
+ШАГ 2: ТЕМАТИЧЕСКОЕ КАРТОГРАФИРОВАНИЕ С УНИВЕРСАЛЬНЫМИ ИДЕНТИФИКАТОРАМИ
+Сгруппируй комментарии по конкретным элементам контента, которые они обсуждают.
+
+Процесс создания EmotionID:
+
+Идентифицируй конкретный эмоциональный триггер
+
+Создай иерархический EmotionID: [эмоция]→[триггер]→[контекст]
+
+Пример: "фрустрация→качество_контента→повторяемость"
+
+Примеры кластеров:
+
+Элемент: "Шутка про ИИ-художников"
+
+Элемент: "Сравнение продукта X и продукта Y"
+
+Элемент: "Длинное вступление без конкретики"
+
+Элемент: "Таблица с результатами теста"
+
+ШАГ 3: РАСЧЕТ СТАНДАРТИЗИРОВАННЫХ МЕТРИК С ДИНАМИЧЕСКИМИ ИНДИКАТОРАМИ
+Для каждого эмоционального кластера рассчитывай:
+
+Базовые метрики:
+
+mentions = количество комментариев в кластере
+
+total_likes = сумма лайков всех комментариев кластера
+
+total_replies = сумма ответов в кластере
+
+Стандартизированные метрики для агрегации:
+
+emotional_charge = (total_likes + total_replies) / mentions (интенсивность реакции)
+
+normalized_mentions = (mentions / total_comments) × 1000
+
+emotional_intensity = emotional_charge × normalized_mentions / 100
+
+Динамические индикаторы:
+
+emotional_trend = направление изменения (рост/стабильность/снижение)
+
+volatility_index = показатель стабильности эмоциональной реакции
+
+contagion_potential = потенциал распространения эмоции
+
+ШАГ 4: МЕЖМОДУЛЬНОЕ ТЕГИРОВАНИЕ С ДИНАМИЧЕСКИМИ ССЫЛКАМИ
+Стандартизированные теги связей:
+
+text
+[СВЯЗЬ_10-1: Контентный_Сигнал: Конструктивная_Критика]
+[СВЯЗЬ_10-3: Персона: Аналитик Артем]
+[СВЯЗЬ_10-4: Риск: Репутационный_риск]
+[СВЯЗЬ_10-4: Возможность: Явная_Возможность]
+Теги для будущей агрегации:
+
+text
+[DYNAMIC_REF: EmotionID: фрустрация→качество_контента→повторяемость]
+[DYNAMIC_REF: EmotionType: frustration_trigger]
+[DYNAMIC_REF: Intensity: high]
+[DYNAMIC_REF: TrendDirection: growing]
+[DYNAMIC_REF: EmotionalWeather: шторм]
+ФОРМАТ ВЫВОДА
+МОДУЛЬ 10-2: КАРТА ЭМОЦИОНАЛЬНЫХ РЕАКЦИЙ
+1. МЕТА-ИНФОРМАЦИЯ ДЛЯ АГРЕГАЦИИ
+Видео ID: [hash(video_title)]
+
+Название видео: [video_title]
+
+Дата публикации: [upload_date]
+
+Общее количество комментариев: [N]
+
+Период анализа: [analysis_timestamp]
+
+Эмоциональный сезон: [определенный_сезон]
+
+2. ОБЩИЙ ЭМОЦИОНАЛЬНЫЙ ЛАНДШАФТ
+Количественное распределение эмоций:
+
+Позитив/Благодарность: X% ▇▇▇▇▇
+
+Конструктивная критика: Y% ▇▇▇
+
+Негатив/Фрустрация: Z% ▇
+
+Вопросы: A% ▇▇
+
+Личный опыт/Солидарность: B% ▇▇
+
+Юмор/Ирония: C% ▇▇▇
+
+Нейтральные/Информационные: D% ▇
+
+Смешанные/Сложные: E% ▇
+
+Эмоциональная погода: [ясно/облачно/шторм]
+Температура вовлеченности: [холодно/тепло/горячо]
+
+Общий вердикт: [Краткое резюме на 2-3 предложения. Общая атмосфера: "Позитивная с очагами конструктивной критики, сфокусированной на..."]
+
+3. ДЕТАЛЬНАЯ КАРТА ЭМОЦИОНАЛЬНЫХ ТРИГГЕРОВ
+Кластер 1: [Название элемента контента, напр. "Шутка про ИИ-художников"]
+
+EmotionID: [юмор→шутки→ии_художники]
+
+Преобладающая эмоция: [Юмор/Ирония]
+
+Emotional Charge: [значение]
+
+Normalized Mentions: [значение]
+
+Emotional Intensity: [значение]
+
+Распространенность: [mentions] комментариев
+
+Тренд эмоции: [рост/стабильность/снижение]
+
+Волатильность: [низкая/средняя/высокая]
+
+Ключевые цитаты:
+
+"[Цитата 1]" [DYNAMIC_REF: EmotionID: юмор→шутки→ии_художники]
+
+"[Цитата 2]" [СВЯЗЬ_10-3: Персона: Фанатка Светлана]
+
+4. ПИКИ И ПРОВАЛЫ ВОВЛЕЧЕННОСТИ
+Пик №1: [Название элемента контента]
+
+EmotionID: [эмоция→триггер→контекст]
+
+Причина успеха: [Объяснение, почему этот момент вызвал всплеск позитивных эмоций]
+
+Emotional Intensity: [значение]
+
+Emotional Charge: [значение]
+
+Потенциал повторения: [высокий/средний/низкий]
+
+Подтверждение: "[Репрезентативная цитата]" [DYNAMIC_REF: EmotionID: эмоция→триггер→контекст]
+
+Провал №1: [Название элемента контента]
+
+EmotionID: [эмоция→триггер→контекст]
+
+Причина проблемы: [Объяснение, что именно вызвало раздражение или несогласие]
+
+Emotional Intensity: [значение]
+
+Emotional Charge: [значение]
+
+Риск эскалации: [низкий/средний/высокий]
+
+Подтверждение: "[Репрезентативная цитата]" [СВЯЗЬ_10-4: Риск: Репутационный_риск]
+
+5. СВОДНАЯ ТАБЛИЦА ДЛЯ СИНТЕЗА
+EmotionID	Эмоциональный триггер	Преобладающая эмоция	Mentions	Norm_Mentions	Emotional_Charge	Интенсивность	Приоритет	Тренд
+[эмоция→...]	[Триггер]	[Эмоция]	[число]	[число]	[число]	[число]	high	рост
+[эмоция→...]	[Триггер]	[Эмоция]	[число]	[число]	[число]	[число]	medium	стабильность
+Критерии приоритетов:
+
+Высокий: Emotional Intensity ≥ 50 ИЛИ Emotional Charge ≥ 5.0
+
+Средний: Emotional Intensity 20-49 ИЛИ Emotional Charge 2.0-4.9
+
+Низкий: Emotional Intensity < 20 И Emotional Charge < 2.0
+
+6. ДИНАМИЧЕСКИЙ ПРОГНОЗ ДЛЯ СИНТЕЗАТОРА
+ЭВОЛЮЦИЯ ЭМОЦИОНАЛЬНОГО ФОНА:
+
+Текущее состояние: [эмоциональный_ландшафт]
+
+Вектор развития: [от доминирующей эмоции] → [к целевой эмоции]
+
+Критические зоны: [эмоции с риском эскалации]
+
+Позитивные драйверы: [эмоции с потенциалом роста]
+
+ЭМОЦИОНАЛЬНЫЕ СЦЕНАРИИ:
+
+Оптимистичный: [условия для улучшения эмоционального фона]
+
+Реалистичный: [вероятное развитие эмоций]
+
+Пессимистичный: [риски ухудшения эмоционального климата]
+
+КРИТЕРИИ КАЧЕСТВА
+• Согласованность данных: Эмоциональная таксономия строго идентична той, что используется в промте 10-3
+• Конкретика триггеров: Триггером должна быть конкретная шутка, факт, прием, упомянутый в комментариях
+• Стандартизация метрик: Все метрики рассчитываются по единой формуле
+• Консистентность идентификаторов: Одинаковые эмоциональные триггеры получают одинаковые EmotionID
+• Уникальность данных: Цитаты не дублируются в других модулях
+• Готовность к парсингу: Структурированные данные для алгоритмической обработки
+• Подготовка к агрегации: Нормализованные метрики для сравнения между видео
+• Эмоциональная перспектива: Анализ содержит динамические индикаторы для отслеживания эволюции эмоционального климата
+
+================================================================================
+
+COMMENTS:
+[2025-10-01 07:13:42] (@pulnews, 114 likes) Intervyu sizga yoqdimi? Keyingi intervyu kim bilan bo’lsin?
+{
+	[2025-10-01 07:15:49] (@kuvipmusic, 13 likes) Shokh aka
+	[2025-10-01 07:40:36] (@RustamSultonov-s8s, 9 likes) Elmurod aka bilan
+	[2025-10-01 07:41:52] (@RustamSultonov-s8s, 7 likes) Elmurod Haqnazarov aka bilan
+	[2025-10-01 08:21:44] (@MuhammadMuqriy, 10 likes) Mazharabozlarni bozori o‘lmedi.Chunki ularni ko'radigan aqlsizlar dunyo qullari ko'p
+	[2025-10-01 08:43:50] (@dostonbek9393, 7 likes) Elmurod xaqnazarov bo'laqosin 🎉🎉🎉
+}
+
+
+[2025-10-01 18:54:53] (@IxtiyorMatyakubov-c1m, 59 likes) Farxod Manopov Juda ZO'R INSON EDI MITIVININI TANTGANXAM SHU Farxod edi.
+
+
+[2025-10-03 08:04:41] (@nodirxakimov9925, 15 likes) Аллох бизагаям насиб ксин❤
+
+
+[2025-10-01 13:02:49] (@АхмадМахмуджонов-э8я, 30 likes) Buyursin Barakasini barakasini bersin 
+	Ollox qullasin bundanam zurlariga erishiglar
+{
+	[2025-10-01 18:33:01] (@JAXONGIRMuhamdaliyev, 0 likes) Odamlani gapiga etibor bermela bu mayda gapla tugamidi
+}
+
+
+[2025-10-12 14:23:38] (@ХайруллоАбдуллаев-ш3ъ, 1 likes) СИЗЛАРНИ ОИЛЕЗЛАР БИЛАН БИРГА АЛЛОХ УЗИ ПАНОХИДА АСРАСИН БИР УМР ИЛОХИМ ОМИН 🤲🇺🇿🤲🤝👍👏😊
+
+
+[2025-10-01 07:15:39] (@kuvipmusic, 8 likes) Bizga ham nasb qilsin ollohim❤ havas qildim jahongir akaga ham Ulugbek aka mitti me ga ham sizni yacshi kuraman akam❤
+
+
+[2025-11-08 18:51:41] (@boltaboevv_f, 1 likes) Интервю проста бомба Улугбек окани кейнги мошинасига кесек окани 10 гелккаям пули бор проста ула хозирча шуям бовуради жа дабдабали мошна оворсек гап соз копаяди дидган одамлардан окани битта гапи есмда қоган икки қадам олдинга👣бир қадам орқага 🧠🧠
+
+
+[2025-10-06 21:24:22] (@BotirjonQodirov-mp9zx, 6 likes) Mixail Volinkin bilan bo'lsin sportchilar ichida eng zo'ri.
+
+
+[2025-11-10 17:26:26] (@shahobiddinmuqimov3741, 0 likes) Mer boʻsa kerak yoki BMW davom etishi ham mumkin avvalo kantent zoʻr🎉🎉🎉🎉🎉
+
+
+[2025-10-01 11:36:54] (@ZafarKadirov005, 20 likes) Фарходди йолигини билдирми зор опкетвоти митти богани билан котта ишла кивоти гап йо омад 🔥🔥🔥
+
+
+[2025-11-04 16:09:54] (@ХилолахонАхмедова-щ5к, 0 likes) Улугбек акамизни кнги мошиналари Жугули булсин 06. 07 фарки йок Но Такой тунинг килганидан😊😅😂
+
+
+[2025-10-01 09:01:41] (@DilmurodAbduhakimov-h8q, 11 likes) Bu moshina sotilgandan keyingi moshina rent car boladi boshqasi olinguncha😂
+
+
+[2025-10-01 18:04:10] (@AzizbekMamajanov-r3d, 1 likes) Hurmatli Latipov jahongir,borgan sari kantentizni saviyasi tushib ketysbdi,raxmatli Farhod haqida soʻrab Ulugʻbeni eski xotiralarini uygʻotib srazi futbolga oʻtib ketdiz bu nmasi boʻldi,undan keyin judaham koʻp savol berib tashayabsiz
+
+
+[2025-10-01 09:01:39] (@limonchilikvaagrohizmat8304, 12 likes) JAHONGIR RAXMAT SIZGA DOIM VIDEOLARNI KO'RGANDA O'ZIMGA BOSHQACHA ENERGIYA OLAMAN MITTI ME GA DOIM OMAD YANGI QO'SHILGAN BOLLARGA XAM OMAD...
+
+
+[2025-10-07 02:25:11] (@AhmadilloValiuev, 1 likes) Сени паросатийни курдик киргизстонга борганингда жуда зор экан паросатинга 5
+
+
+[2025-10-01 07:22:35] (@oddiyreel, 5 likes) Hammaga nasib qilsin
+	|
+	|
+	❤
+
+
+[2025-10-01 15:06:34] (@Ilhomjon-v5p2y, 1 likes) Маладес мужик газн бос омадин берсн менгахам насибклсн шунака болиш
+
+
+[2025-10-01 08:44:12] (@OgabekRavshanov-k1d2i, 10 likes) Inshallax mendan xam birkuni intervyu olasz akam🤩✊🥳
+
+
+[2025-10-28 15:19:53] (@SarvarAbdurahmonov-o3m, 0 likes) Podcast zor chiqibdi keyingi mehmon Bobur mansurov bolsin Jaxongir aka yoki Zafar xoshimov🤘✊️✊️😉🙃
+
+
+[2025-10-03 13:39:50] (@davrimkon3242, 8 likes) Mashinani Eng zorini olib  minsiz   Bizgaxam nasib  qilsin
+
+
+[2025-10-01 14:29:30] (@Mungaimas, 1 likes) 👍👍👍
+
+
+[2025-10-01 09:53:15] (@ABDURAIM-o2g, 10 likes) Эх афсус ....  билишимча неч пул эмас , неча пул , канча пул , канча маблаг булади . Хеч булмаса сарлавхага эътибор беринглар .
+
+
+[2025-10-01 16:33:57] (@isroiljon4888, 2 likes) Mashaalloh Ulugʻbek keyingi safar gelik oladi nima uchun desangiz Farhod Manopovni alami qolib ketgan
+
+
+[2025-10-01 07:46:05] (@Nyy_777, 13 likes) 🔥🔥🔥 ZEEKR 001 🔥🔥🔥
+
+
+[2025-10-23 18:04:08] (@UZBEK_GO, 1 likes) manimcha GELIK yoki ferrari gelik qora karbon ferrari qizil yoki tiffiniy
+
+
+[2025-10-02 17:20:20] (@MobilServis-l7t, 17 likes) Kim xozir kuryapti ❤
+{
+	[2025-10-03 15:35:58] (@ESTUJI_UZB-i7w, 0 likes) 😈
+	[2025-10-04 04:57:24] (@dostonbekqosimov3141, 0 likes) Мен
+	[2025-10-04 04:57:42] (@ОрхидеяГрупп, 0 likes) Ман
+	[2025-10-07 16:28:18] (@Munirayusupova-r2o, 0 likes) Man😂
+}
+
+
+[2025-10-02 05:29:44] (@OperaNet-ed1pe, 1 likes) Дастизга барака берсин ёрдам беровринг Фарходни оиласига
+
+
+[2025-10-01 13:00:22] (@MansurxonMominov, 4 likes) Genesis olsaya ❤
+
+
+[2025-10-06 07:39:43] (@LazizjonQuttiboyev, 0 likes) Gap yoq har doimgidek respekt  Ulugʻbekning keyingi mashinasi Jiguli 06 boʻladi yoshlikda minganidan 😅😅😅
+
+
+[2025-10-04 10:52:16] (@SardorAbdusaidov-cv1cq, 7 likes) Ulugʻbekning keyingi moshinasi Matiz bōlsin deganlar bormi
+{
+	[2025-10-07 09:16:10] (@SuhrobOmonov-e6j, 1 likes) E miyeni koʻtiga ske itbet boʻqidish
+	[2025-10-11 12:22:42] (@Samuray132, 0 likes) ​@SuhrobOmonov-e6j😂😂
+	[2025-11-04 05:56:35] (@KMLV_18, 0 likes) ​@SuhrobOmonov-e6j😂😂😂
+	[2025-11-12 17:44:01] (@GulyuzMuhammadqulova-w3v, 0 likes) O'l erke bomiy ichi qora xotinla hijolat
+}
+
+
+[2025-10-05 09:07:30] (@IlyosAxrorov-e8q, 1 likes) Bizga birovni xayoti qiziqmas xoxlagan moshinini olsin omadini bersin xammani🎉
+
+
+[2025-10-01 12:44:55] (@Зебош, 3 likes) Ассалому алайкум улибек ака Кулик болсин 🤲🏻 бунданам зорини Минин илохим 🤲🏻
+
+
+[2025-10-02 14:22:33] (@Jamshidbekabdurahmatov1, 1 likes) Gap yuq mitti.me jamosi Oʻzbekiston boʻyicha eng zoʻr blogger vinechilar deb bilaman omad.Bonuga keladigan boʻlsak❤❤ bonu gap bolishi mumkin emas juda hurmatim cheksiz omad hammelarga
+
+
+[2025-10-01 18:36:10] (@bekbola-m6t, 3 likes) Муборак Улуг ака буюрсин хавас килдик❤
+
+
+[2025-10-06 08:45:11] (@jaloliddinabdullayev9053, 0 likes) Ulugʻbek gelik oladi. Buni kulgili qilib aytib boʻlmaydi. Shunchaki gelik haqida gap ketganda  Farhod esga tushaveradi, rahmatlini joyi jannatdan boʻlsin😢😢😢.
+
+
+[2025-10-01 10:53:35] (@Onlytrade-x6n, 9 likes) Тожикистонда 8минга хеч ким олмайди бу аравани 😂😂😂
+{
+	[2025-10-02 09:47:04] (@UZRAPHATER, 1 likes) tuzumsz oka slani davlatilaram kormaganda unaqa kotta pulli 😂 ushanchun xchkm omidi olomidiyam😂
+}
+
+
+[2025-10-18 08:11:40] (@IphonSentr-sq7yd, 0 likes) Улугбек сиздан Аллох Рози булсин сизга омад
+
+
+[2025-10-01 12:54:14] (@GulhayoSattorova-o1j, 5 likes) Porsche 911❤
+
+
+[2025-10-01 15:56:55] (@gulnoraxonturdaliyeva7322, 3 likes) Bonuni sevadimi shu Latipov😅😅😅
+{
+	[2025-10-01 18:10:27] (@Nurbek_2004, 0 likes) Xotini bor latipovni
+	[2025-10-08 18:24:35] (@gulnoraxonturdaliyeva7322, 0 likes) ​@Nurbek_2004bilaman farzandiyam bor lekin yurakka buyruq berib bumiydiku
+}
+
+
+[2025-10-03 04:56:59] (@ДилшодбекЖуманиезов-в8у, 0 likes) Ассаламу Аллекум Улугбек 
+	Канака мошина олсангизхам 
+	Йулингиз очик булсин ишларингизга Омад 👍
+
+
+[2025-10-01 10:52:05] (@karimovafazilat9467, 3 likes) Ulug'bek akaga  ko'p  moshina alishtiradigon bola deb recordlar kitobiga kirg'izish kerak😂😅😂❤
+
+
+[2025-10-08 12:38:39] (@ummukulsum9398, 0 likes) Allohim bundanam zoʻrini nasib qilsin . Qanaqa mowina osayam Rangi boshqacha boʻlishi aniq 
+	 1. 🏎 Porsche 911 / Porsche Taycan
+	2. 🚘 Mercedes-Benz G-Class (Gelik) 
+	3. 🐂 Lamborghini Huracán yoki Urus
+	4. 🚗 Range Rover Vogue
+
+
+[2025-10-01 07:45:56] (@AlisherQosimov-ij2yq, 7 likes) Gelik brabus g900 rocket  bo’sa kere mittme oladi
+{
+	[2025-10-01 14:04:54] (@абдумумин111, 0 likes) 800
+	[2025-10-01 14:05:14] (@абдумумин111, 0 likes) 900 original juda qimmat
+}
+
+
+[2025-10-16 16:45:01] (@Mehrij, 0 likes) Tiko metan gazda bo'lsin. Kiraga ham zo'r 😉
+
+
+[2025-10-02 04:44:00] (@Martin_0001, 8 likes) Хаммани кузига тушгим кемиди, шунчунам бмв ни енг кузга тушадиган цветга буядим.??🤦‍♂️🤦‍♂️🤦‍♂️🤦‍♂️
+{
+	[2025-10-02 15:15:33] (@Oybekturgunaliyev-w5g, 0 likes) Negativ
+}
+
+
+[2025-10-04 06:30:54] (@SharoffidinAbduxalilov-id4zy, 0 likes) Shaxlo va shoxruz bilan boʻsin intevryu raxmat oldindan Omad tilab qolaman SURXONDARYODAN KUZTAMAN 🔥🔥🔥🔥🇺🇿🇺🇿👍👍
+
+
+[2025-10-01 07:45:31] (@Nyy_777, 5 likes) 🔥🔥🔥 ZEEKR 9X 🔥🔥🔥
+
+
+[2025-11-16 16:48:46] (@б.б.страна, 1 likes) Улугбек акани мошинаси нексия 2 болади кизил рангда
+
+
+[2025-10-01 14:04:12] (@ddbuser-b7k, 3 likes) 13:42 😂
+
+
+[2025-10-04 21:27:29] (@NilufarErdonova-o4v, 0 likes) Ulug'bek akani kyingi mashinasiga keladigaan buseg farxod aka raxmatlin gaplarini eslimiza oka nasib oka odam qigan ishi odam qiladi mabet ❤ urub turgan busa erishamiz degandila hammasi ollohdan qanaqa mashina minsalayam haloli businla man bu gaplani sizla bilan kurishish uchunmas prosta ichimdagin aytim insha'Allah ohrigi ogan tehnikalari samalyotbusin ulg'bek aka mitti me gazuyti brati omadi
+
+
+[2025-10-01 14:01:39] (@АлексейИванов-х2ь5ы, 5 likes) Бобур Мансуров билан интервью килин ока
+
+
+[2025-10-08 14:19:21] (@jahongir__202, 2 likes) Gelik hudo hohlasa endi ✊ yurak urib tursa bas❤
+
+
+[2025-10-03 03:43:10] (@ohayo_tv, 0 likes) Zo’r Samimiy interview bo’libdi✌️
+
+
+[2025-11-01 20:01:57] (@TimurTimur-o7q, 0 likes) Икки ярим бир бутун 
+
+
+[2025-10-07 10:37:26] (@ДилерБахромов-х6ъ, 0 likes) Улугбекни 
+	Кенги мошенаси 
+	 Вмв  х7  2025г 😊
+
+
+[2025-10-01 15:46:47] (@ilhomturdiniyozov4014, 1 likes) Bunaqa qilsakchi sizlar Samarqandga keliylar bur piyola choy mendan Ulug'bek peshonada bori qaysi yoqsa ushani bosing✊✊✊
+
+
+[2025-10-30 18:56:08] (@SevaraShokirova-p3i, 1 likes) Keyingi avtomobil Gelik buladi
+
+
+[2025-10-03 17:04:44] (@UmidjonJoraboyev-v1o, 0 likes) Gap yoq zor lekn oldida turgan damas babr ozbek legendasi❤
+
+
+[2025-10-01 17:09:47] (@ФарходМуродкулов-ы6д, 0 likes) Инша Аллох Фарход акани орзусидаги Гелик булади Улугбек акани кейинги мошиналари Митими га омад ( Литллар хаммадан кучли)
+
+
+[2025-10-01 16:18:04] (@salohiddinf3033, 1 likes) Keyingi moshinasi avvalom bor ortogi xoxlagande gelik bosin lekin shuni aniq aytamanki keyingi moshinasi xudo xoxlagani xudo bergani boladi shuni ayta olaman omadini bersin
+
+
+[2025-10-01 12:10:37] (@Muhammadjon_77, 2 likes) Ижодларга омад ака сизи урвинизга чикиш бзга хам насб килсин била овкатланш хам 😊
+
+
+[2025-10-07 14:43:18] (@footballlll.teamn1, 0 likes) Ulugʻbek akani keyingi moshinasi Cadillac boladi🔥
+
+
+[2025-10-01 10:24:32] (@MAN.CITYn1, 2 likes) 13:42 be farosat ayol ekan 😡😡😡
+
+
+[2025-10-04 06:14:49] (@GulxayoQodirova-e3f, 1 likes) Ulug'bek sizni juda xurmat qilaman kamandaga omad
+
+
+[2025-10-10 22:26:40] (@MashrabJon-z8m, 0 likes) Davay jonkalar
+
+
+[2025-10-02 08:16:07] (@shukurjonabdubannobov3374, 0 likes) Ulug‘bek uka omadizi bersin 
+	Kim nima deysa deyoradi asosiy omadizi berorsin uka
+
+
+[2025-10-11 21:33:08] (@orazbaev_Q, 0 likes) Keyingi avtomabil Damas 🔥🔥🔥
+
+
+[2025-10-01 09:39:28] (@saidmukhtorkasimov9693, 0 likes) Lidan zor moshina yog dedi, man pauza kildim, дальше коришни тафсия кимиман, ман бу бола мошиналарди тшунса керак деп ойлодим. Вактим хайп болмасин. 
+	
+	Хамага омад. 
+	
+	Лекин гапти ойлаб гапирган босез коил .😂😂😂😂. 
+	Сизга шапалаклар болсин 👏🏻. 
+	Умник
+
+
+[2025-10-01 15:44:11] (@barnotolaganova8260, 1 likes) Buyursin iloxim bizagayam nasip qilsin omin
+
+
+[2025-10-03 06:47:30] (@AkhmadjonNabijonov, 0 likes) Ulug'bek Gelik oladila insha Alloh
+
+
+[2025-10-03 16:21:34] (@odiljonshamshiddinov9005, 0 likes) Отабек Умаров билан интервью Килинг зур бомба булади
+
+
+[2025-10-01 20:48:01] (@Олег-г2т1н, 0 likes) Тошкенни боллари озими роднойларим видео чакарса Ман йотволиб кораман.Манга приятно кориш .Бошка вилоятланикини кормиман.
+
+
+[2025-10-04 08:32:24] (@DavronbekAkxmedov, 0 likes) Литтилар Хамадан кучли 🎉
+
+
+[2025-10-03 18:23:14] (@olimovv.02, 1 likes) Keyingi moshinasi hudo hohlasa 
+	Gelik vagen fakaneshteyn😅
+
+
+[2025-10-03 14:43:31] (@Imker_asal, 1 likes) Ulug'bek akani kegingi moshinasi Genesis menimcha atak gelik bosvorsaham bo'ladi yarashadi lekin
+
+
+[2025-10-02 19:03:26] (@JarqinbekJarqinbek-c4h, 0 likes) Gelikni etuvdi nasip dep❤
+
+
+[2025-10-02 16:21:29] (@GreatBritian-x3b, 0 likes) Gelik bulsa kerak chunki dustlarini orzularini amalga oshirishlari kerak shu moshinada buladigan intervyuni kutib qolamiz.
+
+
+[2025-10-02 14:44:54] (@Ibaydullayev_Lutfillo, 0 likes) Assalomu alaykum. Keyingi moshinalari yana O'zbekistonda yagona bo'lgan mashinalardan bo'ladi😉
+
+
+[2025-10-05 18:58:29] (@DoniyorAbdugafforov-q5u, 0 likes) LIIIIIIIIII BOLADI🎉🎉🎉
+
+
+[2025-10-04 17:58:31] (@abror_aminov92, 0 likes) Yoripdi lekin mawin 👍👍👍👍👍
+
+
+[2025-10-12 16:58:13] (@komolainoyatova8154, 0 likes) Hudohohlasa keyingisi Gelik boʻladi .Farxod doʻstlarini yaxshi koʻrgan moshinalaridi😊
+
+
+[2025-10-02 09:28:41] (@Al1sher001, 1 likes) Assalomu Aleykum🤝
+	Kengi Ulugʻbek akani moshinasi Gentra yoki Bmw boladi dip oyliman omad✊
+
+
+[2025-10-02 11:32:01] (@AyaelSharipova, 0 likes) Mashalla buyursun hammaga entervyu uchun rahmat❤❤❤❤❤
+
+
+[2025-10-07 09:05:45] (@dostonsadullayev1143, 0 likes) sotilib ham boldiku
+
+
+[2025-10-02 07:43:19] (@Нозима-х2ь, 1 likes) Xavas qildim! Inshaalloh xammamizga nasib qilsin!🙂
+
+
+[2025-10-06 19:42:05] (@MominjonovJavohirbek, 0 likes) Ulug'bek og'ayni keyingi moshinez Astin Martin minish nasif qilsin
+
+
+[2025-10-01 14:06:00] (@ИсломбекЖамалов-с5т8с, 0 likes) Spes texnikalari bor ekskavator pagruzchiklari bor odamlar bilan xam oling intervyu texnikalar xam kop pul topadi🔥🔥🔥🔥
+
+
+[2025-10-01 20:57:05] (@adhambobojonov6695, 0 likes) Mitti.meni keyingi moshinasi G63, M5 CS, Eng asosiysi MITTIcar bo'lmasa bo'ldi. Axir odamda nimadir kotta bo'lishi kerakku xa xa Xazil, ijodilaga omad!
+
+
+[2025-10-03 02:33:28] (@HjggYhnh, 1 likes) Факат да да да узбекча ха ха Кани тошкентликлар ха ни урнига да га утишволди
+{
+	[2025-10-11 01:16:37] (@nodir3655, 0 likes) На рус тилини яхши гапирпди на узбек тилини !
+}
+
+
+[2025-10-01 19:39:49] (@TurboStayel, 1 likes) Ulugbek akani kengi moshinasi Marsdan😂tushgan Gelik yoki MittiCar digan moshina 😂😂😂😂
+
+
+[2025-10-02 16:05:09] (@qobilqodirov3395, 0 likes) Узекистонни келажаги  шу масхарабозларни қулида бир бирини мошинасини, кийиб юрган латтасини, уйни,қилган расхотларини мақтанади бир бирига ютуб ёки инстаграм булмаса қандай тирикчлик қиларди бу масхарабозлар
+
+
+[2025-10-01 11:10:17] (@KechubMoyanez, 0 likes) 🔥🔥🔥🔥🔥🔥🔥
+
+
+[2025-10-03 05:06:02] (@mustafoGofurov-j5p, 0 likes) Eng zoʻr interyuv
+
+
+[2025-10-01 12:34:23] (@ИсломДавлатов-ы9у, 1 likes) Ассалам алейкум Улугбекни кейинги мошинаси Гелик худо хохласа
+
+
+[2025-10-05 08:40:02] (@javohirfaxriddinov5644, 0 likes) BMW ni yaxshi kunlaga xayden Ulug'beni keyingi moshinasiyam BMW bo'ladi inshaallox
+
+
+[2025-10-01 17:12:25] (@Azizbek95-o5m, 0 likes) Shoxruxxon DAN  boʻlsin❤❤❤
+
+
+[2025-10-01 20:53:33] (@umidjonsafarov8522, 0 likes) Assalomu allaykum 
+	O'zbekiston 
+	Hudo hoxlasa 
+	Keyingingi avto 
+	Mashxur Kompiniy 
+	Nissan Patrolll
+	🎉🎉🎉🎉🎉🎉🎉🎉
+
+
+[2025-10-02 13:58:43] (@RustamjonQahramonov-w1s, 0 likes) Massa bilan boʻlsin oka❤❤
+
+
+[2025-10-05 17:56:44] (@JamshidNorboyev-z1e, 0 likes) Gelik ✅
+
+
+[2025-10-04 19:14:35] (@felextv1, 1 likes) Role Roles ❤🎉🎉
+
+
+[2025-10-04 13:54:21] (@nurbekqurbanov2757, 1 likes) УЛУГБЕК ГАП ЙУК ИЖОДЛАРИНГГА МАРТАБАЛАРИНГ БУНДАНД ЗИЙОДА БУЛСИН ФАРХОДНИ ОНАСИГА ШУНЧА МЕХРИБОНЛИК КИЛЯПСАН ОЛЛОХ САНДАН РОЗИ БУЛСИН КЕЙИНГИ МОШИНАНГ ГЕЛИККК 😅😅😅😅
+
+
+[2025-10-01 18:46:06] (@janobali5549, 0 likes) Alloh nasib qigani bo'ladi muhimi yurak urib tursa bo'ldi
+
+
+[2025-10-01 16:55:29] (@AvazbekRuziyev-v3m, 2 likes) Signal chalganda bibip debmas qochilar mittime deb ovoz chiqaradiganini olsa hm boloradigan bopqopti ozi🤣😂😂
+{
+	[2025-10-03 04:55:10] (@Cat_kitten_off1, 0 likes) 😂😂😂
+}
+
+
+[2025-10-19 09:50:52] (@FarruxbekAzimov-m9z, 0 likes) Shu interyuni kórgunimcha Uluğbekni xurmat qilardim, kibrlanib ketibdi, jamoadagi qolganlar hurmatdasizlar. Farxod Mannopov unitilmas inson
+
+
+[2025-10-01 20:02:45] (@Xolmatovisoqjon-n8m, 0 likes) Yetim yesirlarga bechora yashaydigan Nogiron bolalar Yetishmovchiligi bor bolajonlarga shunaqa oilalarga Yordam bersa bulmiydi Mashina olgandan kura .
+	Qalbiga iymon ixlos bersin...
+{
+	[2025-10-02 01:54:56] (@user-Nasa-1, 0 likes) унакада узбекистонни етим есир камбагал босиб кетади.камбагал нега камбагал булади ялков дангаса бугани учун.ишласин харакат кисин
+}
+
+
+[2025-10-01 10:41:15] (@B1_editers, 0 likes) Manimcha Ulugʻ bek oka Keyingi Moshinalari Bmw boladi Ana undan kegin Geligde😊 Inshallah Omadilani bersin❤️‍🔥
+
+
+[2025-10-01 18:17:08] (@DavronjonAkhmedov, 0 likes) gelik olsa bizni ham bir mindirsa  buldi oka po bratski🎉😅
+
+
+[2025-10-01 18:36:35] (@JaloliddinAbdiraxmonov-iv1yy, 1 likes) Bu savolga toʻgʻri javoblar koʻpayib ketsa kerak. Ulugʻbek akaga BENTLEY yarashadi deb oʻylayman.
+	BENTLEY CONTINENTAL GT
+
+
+[2025-10-02 05:27:47] (@JahongirZokirjonov-w4x, 1 likes) Qozoq kinosi hozirgi kunda bomba
+
+
+[2025-10-02 18:05:25] (@AbdulazizOrinboyev-c4w, 0 likes) Gelik ❤
+
+
+[2025-10-03 13:49:41] (@musulmon2496, 0 likes) Jahondir aka koreaga keling oddiy talaba bolalar mashinaning zo'ridan haydab yuribdi. Mashina suv tekin
+
+
+[2025-10-01 13:41:32] (@husniddingofurov.0973, 0 likes) Oka manimcha Gelik bo’ladi va o’rto qara shu  holagan moshinaga erishdim hammasi uchun sanga rahmat diydila❤️
+
+
+[2025-10-03 16:36:40] (@ruziqultemirov, 0 likes) Мерседес 🎉🎉🎉🎉🎉🎉
+
+
+[2025-10-01 12:41:24] (@Алпомиш-ф5з, 0 likes) Кейинги мошинаси мерседес  булади омад ишларига гооо 🎉🎉
+
+
+[2025-10-03 03:53:25] (@Adham-m6y, 0 likes) Buyursin
+
+
+[2025-10-04 17:39:18] (@UlmasAkbarov-m3e, 0 likes) Olloxning buyurgani buladi qanaqa moshina xaydasayam tagidan shomol otib yursin
+
+
+[2025-10-03 03:41:00] (@safarali004, 0 likes) Ulug’bekni keyingi mashinasi gelik🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉
+
+
+[2025-10-01 10:24:02] (@NoilaAbdunabiyeva, 1 likes) Mayli chiroyli😂Tash city 🏙️ nme shu intervyuni  qo’yliq ,sergelimi yoki ko’kcha tomonlada omis imenno NAVIKOV?😊Mir Avenue ili Tash city 🎉bo’lishi kere….
+{
+	[2025-10-01 10:35:05] (@azizasagdieva6094, 0 likes) Ob chiqilvotgan temaga qarab fon tanlanadide. Qotillik narkomanya haqida korsatuvlada haroba vayronalada, avaryalada yol chetida. Odammi közi chiroyli narsalani yaxshi köradi LUX ili Premium narsala haqida video boganda orqa fon ham shunga yarasha böladi
+}
+
+
+[2025-10-04 19:56:41] (@AbdulloErkaboyev-g4t, 0 likes) Buyurib nasib qilsin
+
+
+[2025-10-01 17:50:46] (@universalproduction5440, 0 likes) G63 де 90 лига якинлашган буса буйоги Геликжонде. Фарходни орзусини амалга оширадиган бола Улугбек.
+
+
+[2025-10-07 14:47:33] (@shohruhkarimov1526, 0 likes) Gelik😊
+
+
+[2025-10-02 12:06:16] (@ШералиТв-с9ю, 0 likes) Улугбек Гелик минади иншааллах
+
+
+[2025-10-01 15:58:24] (@botirreyimberganov7593, 0 likes) Ishlariga omad gelik bulsin keyngi moshinasi🎉
+
+
+[2025-10-01 11:46:44] (@mamadaliyev_1, 2 likes) Lexus Land cruiser oling bu sila uchun ideal mashina 😊
+
+
+[2025-10-02 16:00:39] (@АбдумажидУнгалов, 0 likes) Молодец, омад тилайман
+
+
+[2025-10-01 17:00:44] (@ЧоршанбиеваБарно, 0 likes) Gelik nasib ortogizi orzusini uwaltering nasib ❤
+
+
+[2025-10-03 18:07:44] (@Futbol_skills-v9q, 0 likes) Uluğbek kiyngi moshinasi eshshe arava bosa kere buyam bir moshinade gapta iltimos aqilchalar tobut buladi dimelar yaxshi niyat qileli luchshe eshshe arava🤚
+
+
+[2025-10-02 09:33:03] (@shahzodrustamov7880, 0 likes) Manimcha Gelik bo'ladi
+
+
+[2025-10-04 19:15:01] (@felextv1, 0 likes) Bugatti ❤❤🎉🎉🎉🎉🎉
+
+
+[2025-10-02 12:24:44] (@shohobiddintoshpulatov4717, 1 likes) Menimcha; Ulugʻbek akani keyingi mashinasi BMX X7
+
+
+[2025-10-05 09:34:32] (@GRahmonov, 0 likes) Gelik bo'ladi !
+
+
+[2025-10-08 09:53:14] (@ОаовововВоововок, 0 likes) Rahmat
+
+
+[2025-10-02 13:08:24] (@21beka, 0 likes) 19:20 Вай блааа харош йенгил гапти ташаб куйди 😂😂😂
+
+
+[2025-10-15 18:49:45] (@rikhsiboevdilmurod0915, 0 likes) 2026 yil Gelik boladi hudo hohlasa❤
+
+
+[2025-10-02 11:24:04] (@sghsjjehhd1386, 0 likes) İzzat shukurov
+
+
+[2025-10-11 13:02:05] (@IslomIslomov-h7w, 0 likes) o'tib ketishga nechchi🖤
+
+
+[2025-10-03 18:35:51] (@JorabekJumamrotov, 0 likes) Men Bilan bo'lsin
+
+
+[2025-10-02 19:03:10] (@BahromjonUsmonov-n3n, 1 likes) BMWdan kiyen albatta mersda uzlari aytdiku 2026da gelik olaman deb
+
+
+[2025-10-01 12:15:43] (@abdulazizoktamov9020, 0 likes) Улуг ака енги мошналари уже бет мобилов походу, хч ким кормидган хч ким сезмидган, зато битда😹
+
+
+[2025-10-03 09:55:35] (@HojiQodirov-b5j, 0 likes) Gelik 💯
+
+
+[2025-10-03 19:43:20] (@ShaxzodFayziyev-k4o, 0 likes) audi 🔥🔥🔥
+
+
+[2025-10-08 10:27:04] (@MominxojaValiyev, 0 likes) Mers akula 🦈
+
+
+[2025-10-03 17:37:05] (@DxD-k9s, 0 likes) Тўртта балони бор; Алламбало двигатели бор; ойналари ёки бор ёки қора тонировка қилинган; Тошкент шаҳрида кундузи 30-40 км тезликда ва кечаси чекланмаган тезлиика юрадиган; энг муҳими 3-4 ойда сотвориладиган мошина олади....
+
+
+[2025-10-02 15:27:19] (@efootballchellengeruz, 0 likes) Bir qaraganda mersga oxsharkn👍
+
+
+[2025-10-02 07:00:34] (@ШохрухШохрух-в9у, 0 likes) Ака хатоди куп киляаптида сиз уважухадасиз жохонгир ака
+
+
+[2025-10-01 17:54:53] (@MironshohAmrullaev, 0 likes) Nasib qilgani boladi, taxminan  Bmw or Mers🔥
+
+
+[2025-10-01 16:57:33] (@AvazbekRuziyev-v3m, 1 likes) Ulug‘bek akaning keyingi mashinasi benzin emas, chaqmoq choy ichib yuradigan bo‘ladi🤣🤣🤣🤣🤣🤣🤣🤣🤣
+
+
+[2025-10-01 16:06:43] (@Nomozbekjumagulov, 0 likes) Uluğbekni kiyingi mashinasi qanaqa buladi gelik vagin in shaa Alloh 😊
+
+
+[2025-10-15 13:59:54] (@OtabekMamadaliyev-iy2fs, 1 likes) Turqinga bõqim
+
+
+[2025-10-01 11:36:05] (@MadinaRahimjanova-l6w, 0 likes) Odamla buncha nafsilani qulisila, prosto kayf uchun oldim dydi Allohi oldida hisobi bor bu narsalani
+
+
+[2025-10-01 15:10:19] (@ВьвлвиылытЛалуовл, 0 likes) Улугбек гелик оладими велик оладими бизга П😂😂😂😂😂😂😂
+
+
+[2025-10-01 18:47:27] (@farruxturdiev, 1 likes) Ot aylanib qozigʻinni topadi ulugʻbek akam yana li 9 oladi😂
+	Aka hazil ijodingizga omat charchab qoladigan joygacha harak qiling charchab qolganingizdan kiyin damolib yana harakat qiling 👍hurmattasiz aka
+
+
+[2025-10-05 08:43:30] (@Asadulloh_cheff, 0 likes) 7:30 😂😂😂👍👍👍
+
+
+[2025-10-02 12:27:18] (@Шамол-е5ж, 0 likes) Куллук бусин хавас килдик
+
+
+[2025-10-01 16:51:39] (@FarrukhMeyliyev-g2r, 0 likes) Keyingi moshina maclaren🎉🔥🔥
+
+
+[2025-10-02 13:59:43] (@kinolarolami25, 0 likes) Hudo hohlasa Aito M9 da sizga yarashadi Ulug'bek aka
+
+
+[2025-10-02 09:11:47] (@Asadbek-fd6sz, 0 likes) Gelik inshaolox
+
+
+[2025-10-02 09:09:19] (@nooneknowsme-s7x, 0 likes) Ulug’bek gazini bosin, havasim keldi. Odamlar gapiraveradi.  gapirmaydion odamlar tirik emas hozir
+
+
+[2025-10-02 18:13:44] (@АкылИсмайилов-щ4ф, 0 likes) Мошинан менин уйумдаги нон солган яшигимга укшайдику😂😂
+
+
+[2025-10-02 13:16:28] (@NO_MERCY_2018, 0 likes) Damazzzzz uaaaaaaaaaa😂
+
+
+[2025-10-20 15:09:23] (@abduqahhorobidjonov6689, 0 likes) Just respect
+
+
+[2025-10-01 15:39:13] (@VitalForce-d8y, 0 likes) Улуғбекнинг кейинги машинаси марсаход бўлади😊😊😊
+
+
+[2025-10-01 19:43:13] (@BexruzNormativ, 0 likes) 2026 ga qanaqa moshina nasib qilsa ushani oladi 🤫😃
+
+
+[2025-10-01 10:15:25] (@ИсокОкмуротов, 1 likes) Moshinalar ni almashtirganda qancha vaqt ketsa uluğbek akaga  kibir mumkinmi deydi 😂 uluğbek aka  yoq men shu kamentni yozgan inson yonida  kibirni sindirdim😊😊🎉 kibir aytadi quruğ 😅😅
+
+
+[2025-10-06 12:14:10] (@Umid-v9v, 0 likes) Man bilan oling hayotda hech narsan qoyillatmaganman 😂😂😂
+
+
+[2025-10-01 18:05:49] (@SheraliA-z5k4t, 0 likes) Temur Haydarov bilan intervyu qilaylik aka
+
+
+[2025-10-02 21:16:14] (@notyoursheikh, 1 likes) M5 F90
+
+
+[2025-10-06 15:24:47] (@murodjonturopov1841, 0 likes) Denza osin keyingisiga insha'Allah
+
+
+[2025-10-01 10:26:16] (@AsomiddinYoutube1, 1 likes) Па кайфам ucun 80 mig $ bo'lsa demak man xali yashamapman bu dunyoda😂😂
+
+
+[2025-10-03 07:09:43] (@jasurbek71, 1 likes) Tesla oladi manimcha lekin aniq qaysi modelini olishini bilmadim ..
+
+
+[2025-10-01 09:57:33] (@UmurzokAbdusattarov, 0 likes) Keyingi m9shinasi nasib bulsa gelik bulsin omin va shunday buladi deb uylayabman
+
+
+[2025-10-03 09:30:32] (@Мухаммадали-щ9п, 0 likes) Улугбени киенги мошинаси учар гилаб болади 😅
+
+
+[2025-10-02 16:42:46] (@DjdjfDbdjf, 0 likes) Ulugʻbek aka bu safar aniq Mers oladila .
+
+
+[2025-10-02 17:37:29] (@Premiummarketing378, 0 likes) Masxarabozlarning davri keldi. Olgʻa manqurt xalqim😢
+
+
+[2025-10-01 17:17:40] (@NuriddunHuzarov, 2 likes) Улугбек омад ишларизга брат 🔥🔥🔥🔥
+
+
+[2025-10-02 07:24:16] (@МунирахонБолтабаева, 0 likes) ❤❤❤❤ супер насиб килсин илохим
+
+
+[2025-10-02 05:43:45] (@sardorganiyev7951, 0 likes) Босворасми диган жойига олиб колдим лекин бору😂😂😂
+
+
+[2025-10-01 15:26:50] (@АббосБаходиров-р8м, 0 likes) Ferrari 🔥🔥🔥kegingi moshina
+
+
+[2025-10-02 04:55:42] (@FeruzaNigora, 0 likes) Биринчи Салом беради
+
+
+[2025-10-01 17:56:08] (@FotimaGaliyeva-re1tu, 0 likes) Molodes omadilarni bersin. Lekin Bonuga qilingan xazil qopol va yomon chiqibti bosvorasmi degani 😮
+
+
+[2025-10-01 15:19:58] (@RASHID-ik6nk, 0 likes) Улугбекни кейинги мошинаси кадилак булса керак шу кетишда
+
+
+[2025-10-02 06:47:45] (@Райподногаминашихматерей, 0 likes) 🔥🔥🔥🔥🔥🔥🔥🔥
+
+
+[2025-10-31 11:34:13] (@muxsinganiyev, 0 likes) Bmw ix3❤
+
+
+[2025-10-03 08:54:37] (@ДилшотТошматов, 0 likes) Кобилтимми шунака килиб буйатсам алишмасмиканлар BMV га😂
+
+
+[2025-10-03 04:43:53] (@NodirbekNurmahmadov, 2 likes) Keyingi moshina takoy nejni "zaparoj" oladila Ulug'bek😂
+
+
+[2025-10-01 19:51:44] (@УлукбекСалиев-р7ж6ж, 0 likes) Maza bizgz ham nasib qilsin
+
+
+[2025-10-01 18:18:16] (@MadinaGozieva-g6m, 1 likes) Ulig‘bekni keyingi moshinasi ULUG‘MITTICAR
+
+
+[2025-10-02 09:32:17] (@RamziddinJabborov-v6g, 0 likes) Albatta hazilu sizga spark ili matiz mos mers trentdayu olaqolin yo biratoʻla chechenkaga berga ot aravayizdan oling usti ochiq mashinala yoqarkanu😊
+
+
+[2025-10-02 21:35:33] (@barcelonalikmiz, 1 likes) gelik , BMW m8
+
+
+[2025-10-02 17:52:55] (@BekToxtayev-b1u, 2 likes) BMW X7
+
+
+[2025-10-05 15:15:40] (@T-zs6i, 0 likes) Миттими хаётда жўда кибрли ўзича! Умуман машхурликни кўтаролмас экан бу болача
+
+
+[2025-10-01 11:40:04] (@lochinbekachildiyev1011, 1 likes) Gelik
+
+
+[2025-11-03 16:13:49] (@AxxA777, 0 likes) Men Moʻynoqdaman. Bitta kechki ovqat uchun Toshkentga borish qimmatga tusharkan. Sizlar kelinglar men mehmon qilaman
+
+
+[2025-10-03 16:26:56] (@Dostonjon-y1q, 0 likes) Салооомат
+	Улуғбек акани кейинги мошин гелик бу Mercedes benz G class 2026 🎉
+
+
+[2025-10-01 12:57:15] (@Noname-e5n4z, 1 likes) Ulug’bek akam Keyingi moshinasi Gelik boladi, lekin Gelik olish uchun sharti bor: Bonuni turmiwga cqw kere tezro Soqit qlw kere Mittime ozidan😂 owanda sekn mazza qb hayota yawab dam ovorsa boladi
+
+
+[2025-10-01 21:27:35] (@XusanXojimatov-jf8me, 2 likes) Ulugʻbek keyingi mowinasi matiz boʻladi Matiz xozi trend da
+
+
+[2025-10-03 10:13:40] (@FayzullaSaydullayev-p1e, 0 likes) 🎉 Masla oq zaparoj 🎉
+
+
+[2025-10-02 01:03:16] (@feruziy9899, 1 likes) shaxzod kosimov(tanka) bn qachon intervyu qilasiz?
+
+
+[2025-10-01 11:18:24] (@AbWheh, 0 likes) Bentli manimcha🎉🎉🎉🎉
+
+
+[2025-10-01 14:41:15] (@Arnold1212, 1 likes) Keying moshinasi ZEEKR X9    inshallax
+
+
+[2025-10-11 19:41:21] (@ИхтиерЮлдошев-л1й, 0 likes) Яхши инсонсиз одамлар хар гап гапираверади
+
+
+[2025-10-14 02:35:11] (@akhmedoofzzz6629, 0 likes) DODGE ❤
+
+
+[2025-10-02 08:38:21] (@AbdulazizMadaliyev-n6e, 1 likes) SHOXRUX AC bilan abzor go
+
+
+[2025-10-02 06:11:03] (@murod0102, 0 likes) Gelik😎
+
+
+[2025-10-01 16:49:56] (@Deputatd, 0 likes) Mani garajimda bundan zori turipti Lekin bizni yollarga togri kemadi teylari pacog'i çıqti haliyam bu tuftovisiyu
+
+
+[2025-10-02 06:50:37] (@uzbektigers9643, 0 likes) Spark bor yili 2010 yevro 2, metan 3 chi pakalena yurgani 228000 . Barter qilamiz qancha qushib berarkan Ulugʻbek 🤔
+
+
+[2025-10-01 10:29:33] (@HumoyunAlisherov-o6b, 0 likes) Ulug'bek akani keyingi mashinasi mers bo'lsa kere , mersni luboy modelidan biri
+
+
+[2025-10-01 14:39:35] (@ixtiro0726, 0 likes) Hozirgi mashinang 90 ming $ , kelajakdagisi balki kosmosga uchadigan Tesla bo‘lar 😅 Orzularni katta qil, chunki sening oldingda yo‘l keng! Omad  Ulug'bek 🎉
+
+
+[2025-10-04 08:59:01] (@DavronRavshanov-k6u, 0 likes) Gelik💯
+
+
+[2025-10-02 05:01:26] (@Бахриддин-к4д, 0 likes) 🔥🔥🔥🔥🔥🔥
+
+
+[2025-10-01 12:30:28] (@safilullohabdunabiyev2309, 0 likes) 🔥🔥🔥🔥
+
+
+[2025-10-01 15:39:10] (@f1rdavs_k1ng, 0 likes) 👍👍👍👍👍
+
+
+[2025-10-01 14:26:57] (@Ssssss-y3p7x, 0 likes) 🔥🔥🔥🔥
+
+
+[2025-11-10 22:07:04] (@shohlegend, 0 likes) Ulug’bekdi moshinini bilmadimu shu ketishda siz rols olasiz😂
+
+
+[2025-10-01 17:01:23] (@FeruzaIkromova-q7j, 0 likes) Oddiy xalqni xayotini olisham
+
+
+[2025-10-01 11:48:32] (@husanboyabdurahimov-os5gq, 0 likes) Рахмат де этиборда экансан митти.
+
+
+[2025-10-04 14:29:06] (@AsrorToyirov-t7m, 0 likes) Best matiz😅
+
+
+[2025-10-02 08:39:39] (@Sirojiddin.ouz7, 0 likes) Corvette qizil 🔴🔥🔥
+
+
+[2025-10-01 11:24:30] (@Suli_stream, 0 likes) Metaldan yasalgan moshina oladi balonlari rezikna bo'ladi😅
+
+
+[2025-10-01 12:00:50] (@BegzotbekSobirjonov, 0 likes) Akani puli qaysi bir moshinaga  yetsa shuni olata ❤
+	Oziga yoqanini bosvoratta 😊
+
+
+[2025-10-01 10:29:37] (@AbduqahhorNormurodov, 0 likes) Ulug’bekni keyingi mashinasi zo’r mashina boladi 😅😅😅
+
+
+[2025-10-01 15:10:45] (@xxpantera1575, 0 likes) Mers GLS oladi menimcha qaysi madelini bilmadim addushi ishlaga omad
+
+
+[2025-10-02 02:39:48] (@TilakmurodGulmurodov-c2s, 0 likes) O'zbek tilidayam gapirib turela Yarmi Ruscha suzlarku akalar😮
+
+
+[2025-10-01 15:05:51] (@HeroDanceUniverse, 0 likes) Ulug’bek (mittime) uchun ideal tanlov – Aston Martin DB11! Luks sport coupe, yuqori tezlik va hashamatli dizayn bilan. Jahongir Latipov bilan kechki ovqatda bu mashina haqida suhbat albatta maroqli bo’ladi 😎
+
+
+[2025-10-01 09:40:15] (@BekzodbekAbdukhalimov, 1 likes) 👍👍
+
+
+[2025-10-05 17:07:10] (@Граф_0, 0 likes) 378 legenda✊🏻
+
+
+[2025-10-01 15:08:10] (@dilmurodibodov509, 0 likes) Buyursin ilohim xammaga nasib qilsin lekin ko'p maqtanish ham yaxshi emas
+
+
+[2025-10-03 19:21:43] (@MstoreMstore-kf2bk, 0 likes) 2026 gelik 😅😅😅 gooooo😊😂😂
+
+
+[2025-10-01 16:15:33] (@HabibullaGaybullaev, 1 likes) FERRARI
+
+
+[2025-10-01 10:37:48] (@zarinaqochqorova4178, 0 likes) Jaxongir kurining turing kutib utiramiz intirvularni
+
+
+[2025-10-01 15:56:28] (@xamesrodriguez0001, 0 likes) Keyingi mashinasi Damas bo'ladi, zor mashina (Doka Xleb)
+
+
+[2025-10-01 15:21:19] (@ddbuser-b7k, 1 likes) gelik 6.3🎉
+
+
+[2025-10-11 22:32:25] (@laziko0979, 0 likes) BMW XM😎
+
+
+[2025-10-01 18:02:05] (@СултонбойТангрибергенов-б8л, 1 likes) Улугбекни кейинги мошина си Гелик бусин, Фарходни орзуси эди
+
+
+[2025-10-01 17:47:14] (@technolike, 0 likes) Video davomida USTOZATION haqida gap ketti, botta USTOZATION 100 haq edi lekin, hech qanaqa prosmotr yegish uchun yoki boshqa maqsadda qilinmagan va chuqurlashmagan ham ular prosto haqiqatni ettila shu...
+
+
+[2025-10-26 07:39:05] (@Farzishka_o9, 0 likes) Пул коп олгани билан  йордам бермеди бировга.
+
+
+[2025-11-04 05:17:59] (@Davlatbek773dd, 0 likes) Oldidagi nexia 3 ni bosvorsa kerak.BMW dan chiroyli boʻp turibdi😂
+
+
+[2025-10-01 14:31:21] (@Tgm-Mustafo_Amin_0000, 0 likes) TARBIYASIZLIKNING ortidan qo'shtirnoq ichidagi "mashhurlikka" erishgan, qo'shtirnoq ichidagi "bolacha" deb sarlavha yozib qo'yilsa ayni muddao bo'lar edi.
+	Alloh hidoyat bersin barchamizga 🤲🏻
+
+
+[2025-10-02 04:58:57] (@faxriddinorazaliyev3280, 0 likes) Assalomu alaykum keyingi mashin olish uchun oldin shartnoma oladi keyin bir yil kutadi ungacha boshqa temani muhokama qilaylik😂
+
+
+[2025-10-03 09:12:35] (@IslamAlimbayev, 0 likes) Mashina “Wi-Fi”ga ulangan bo‘ladi: Instagram story qo‘ymasa yurmaydi. 😂
+
+
+[2025-10-01 18:08:50] (@MominjonEgamberdiyev-ss1om, 0 likes) Omad gazin zur
+
+
+[2025-10-02 12:34:51] (@opel9801, 0 likes) Кут ку бу киргизистондан салом
+
+
+[2025-10-01 20:15:13] (@Бойка-ж1х, 0 likes) Миттига гелек ярашади 😂😅
+
+
+[2025-10-01 15:27:07] (@allamurothusanov920, 0 likes) Menimcha BMW m3,m4,m5,i4,i5,
+	Mersades sls63,gt63,Gelik,
+	Porsche 911 xullas  bratni Bugatti gachayam duxi yetadi
+
+
+[2025-10-10 23:53:24] (@KamolRashidov-r2t, 0 likes) Jahongir aka, you expressed a lot of interest in Bonu, is this normal?
+
+
+[2025-10-02 16:56:40] (@anvar3271, 0 likes) 🔥🔥🔥porche🔥🔥🔥
+
+
+[2025-10-01 11:05:34] (@KomilUmarov-kx3ef, 0 likes) Hammer
+
+
+[2025-10-01 19:38:45] (@TurboStayel, 1 likes) Marsdan tushgan Gelik 😂😂😂
+
+
+[2025-10-01 09:55:21] (@IsmoilYigitaliyev-c2l, 1 likes) Ulugʻbek ni keyingi moshinasi anu MMA chilaga moshina qiberib turgan Rahmonali akami oʻsha kishi qibergan moshina boladida.
+	Padarka qiladila 3yilga boʻlib toʻlashga😂😂😂😂
+
+
+[2025-10-01 11:42:23] (@islomshukurov2154, 0 likes) Zo’r 07 sin takoy 07 ko’rganla vau divoradigan 07
+
+
+[2025-10-01 10:53:56] (@NURULLAYEV-h4k, 0 likes) GELIK BOLADI🎯
+
+
+[2025-10-01 16:25:02] (@jurabek9893, 0 likes) Haqiqiy mitti qozi
+
+
+[2025-10-07 10:36:01] (@ziyodulloxtoshmatov5157, 0 likes) nexia 3 narxi ham oshdi uje😂😂
+
+
+[2025-10-01 10:24:10] (@shuhratqurbonboyev7940, 0 likes) Zo'r havas qildim
+
+
+[2025-10-01 16:21:14] (@HafizullohQori, 0 likes) Bundan kiyin aniq gelik oladi InshaAlloh
+
+
+[2025-10-01 11:47:47] (@BekzodKhakimov_oo27, 1 likes) Ulug'iy pro max + TB bo'ladi yoooooooo
+
+
+[2025-10-05 17:22:45] (@alimardonabdujabborov9745, 0 likes) GELIK
+
+
+[2025-10-08 14:41:12] (@Mohiramirusmonova, 0 likes) Латипов ока ростан бонуни босворин😂😂
+
+
+[2025-10-02 06:50:16] (@Calm_ASMR1, 0 likes) Keyingi mashinasi qanaqa bõlsayam Arava bõladi - turklar hamma mashinalarni Arava deydi.
+
+
+[2025-10-03 18:55:15] (@baha8628, 1 likes) Мошинаси кизик эгаси зерикарли ведуши маддохга ухшаб колибсиз.
+
+
+[2025-10-01 12:59:34] (@ShohjahonImomov-q4x, 1 likes) Mashina shunaqa aqlli boladiki, agar tezlikni oshirsa, oka, siz hali hayot rejangizni bitirmagansiz-ku deb ogohlantiradi.😅
+	
+	Yonilg‘i yoqilganda esa: Motivatsiya tugadi, bir bak benzin ichib keyin yuramiz deydi. 🍵
+	
+	Agar Ulug’bek qornim ochdi desa, mana like va comment yeb turing deb taklif qiladi. 😂
+	
+	Xullas, mashina shunaqa bo‘ladiki Ulug‘bek uni minib ketayotganda ham, mashina aslida Ulug‘bekni haydab yuradi. 😅🤣
+
+
+[2025-10-01 13:59:35] (@Javlon-u1n, 0 likes) Ulugbe BMW yaxshi koradi
+	I4 haydadi Li haydadi z4 haydadi
+	Manimcha gelikdan oldin yoki Aito oladi yoki yoki arzonro X5 X7 chiqsa bosvoradi
+
+
+[2025-10-03 03:15:39] (@retseptn1, 0 likes) Xudi shundan kattakurganga bor 1 ta
+
+
+[2025-10-01 13:53:11] (@SanjarReyimbergenov, 0 likes) Nima moshina olinishini bilmadimu lekin legendarniy 222 taqiladi😁
+
+
+[2025-10-01 09:40:17] (@ZiyodaxonMa, 0 likes) Lambo Urus bolsin❤❤❤❤
+
+
+[2025-10-12 18:21:42] (@IbrohimSodiqov-wf8dp, 0 likes) Mittimening keyingi mashinasi koʻk  jiguli boʻlad😂
+
+
+[2025-10-01 12:50:21] (@shohjahon11, 0 likes) Ulug'bekni   kursam 
+	Farhod mannapov  esimga tushib ketadi
+	  shu  uchun  Ulug'bekni  kuzatmay quydim
+
+
+[2025-10-07 12:37:11] (@Sai_ms_da, 0 likes) G'ilmitjonni sarguzashtlari
+
+
+[2025-10-01 10:13:11] (@egamberdihasanov6025, 0 likes) Orqadagi NOVIKOV egasiyam multi milioner uladanam intervyu olin
+
+
+[2025-10-01 14:35:52] (@rahmonaliegamnazarov6586, 1 likes) Mittimiga mitti moshina boʻpti 😅😅😅😅
+
+
+[2025-10-02 19:54:51] (@diyorabdumamitov0101, 0 likes) Гелик🎉
+
+
+[2025-10-01 20:22:11] (@ШахобиддинКодиров-я1л, 1 likes) Sizlar  qachon jiddi bòlib jamiyatni  asl dardini his etasizlar.Odamlar yana qish kevotti deb  xavotirda.
+	Yoshlarni onson mashhur va boy bòlishga  hirsini qòzģatib buzvosila.
+{
+	[2025-10-02 04:01:05] (@sanjar9190, 0 likes) Oziz nima qilasiz?
+}
+
+
+[2025-10-02 05:47:41] (@ilm_ulashamiz, 0 likes) keyingi mashina MERS bo'ladi inshalloh!
+
+
+[2025-10-01 11:45:04] (@MuhammadrasulErgashev-j9o, 0 likes) Ulugbek aytkanidek qopqora gelik yoki BMV rangida gelik boliwi mumkin
+
+
+[2025-10-01 16:38:17] (@SheraliJorayev-q6j, 0 likes) Yurak urib tursa gelik 😊
+
+
+[2025-10-23 16:06:02] (@xoliqovshaxboz, 0 likes) R3🔥 turipti bmv ni oldida
+
+
+[2025-10-01 16:17:21] (@OKYULJANBUTAEV, 0 likes) Keyingi moshinasi Gelikde oka omad
+
+
+[2025-10-01 13:41:40] (@mistermaster9117, 0 likes) Gelikda Albatta bundanda yangisi chiqsa allbatta
+
+
+[2025-10-04 10:56:56] (@RavshanXalilov-b2t, 0 likes) Genesis💯
+
+
+[2025-10-02 20:32:12] (@SardorbekJurayev-w3l, 0 likes) Mers
+
+
+[2025-10-01 10:08:56] (@IbrohimjonPozilov202, 0 likes) Улугбек М5 f90 competition olsalar kerak 🇰🇬🇰🇬
+
+
+[2025-10-01 11:17:07] (@ShaxriyorRashidov-z3s3d, 0 likes) SHOXIJAXON JORAYEV  INTERVIYU QILING  BOSING YOMON QIZIQ BOLADI
+
+
+[2025-10-02 12:37:20] (@fayzulla2002, 0 likes) Mercedes-Benz G-Class 2025, полный комплект. Цвет: чёрный с тонировкой и оранжевыми акцентами
+
+
+[2025-11-03 05:13:04] (@sardor_sobirov_official, 0 likes) Bro endi raketa olsala ham boluradi😅
+
+
+[2025-10-11 07:26:34] (@MuhammadazizAsd, 0 likes) Gelik boʻladi takoʻoʻy ranglarda nu  toʻchna qora emas🎉😂
+
+
+[2025-10-03 02:33:35] (@alihanmansurov2505, 0 likes) Miti Mi Tikoda yursin deganlaa neshtamiz😂😂😂
+
+
+[2025-10-01 10:39:54] (@SardorShadmanov-tv7er, 0 likes) Манимча геликга вохт етиб келди,худо холаса Гелентвагенга навбат!
+
+
+[2025-10-04 13:10:05] (@Aziz.z4c, 0 likes) BRABUS
+
+
+[2025-10-05 19:12:42] (@ШукуруллоШаропов, 0 likes) Хакики дехондан хам олинг улар хам бой брат
+
+
+[2025-10-03 16:20:33] (@olimovotabek4946, 0 likes) Porsche🎉🎉
+
+
+[2025-10-01 19:50:27] (@OzodaAsatova-x4e, 0 likes) 🎉🎉🎉
+
+
+[2025-10-01 17:02:29] (@Махмуд-г1с3ю, 0 likes) Запарож олса шов болади
+
+
+[2025-10-01 17:53:39] (@hamishallaberganov4024, 0 likes) DAMAS OL ULUGBEK JAVOB LIBOY INAMARKALAR YONIDA URUVENI KATTA TURADI  SIZNI MOSHINANGIZ TANIMADIM NO YONIDA TURGAN DAMASNI BITTADA TANIDIM
+
+
+[2025-10-01 17:52:32] (@hamishallaberganov4024, 0 likes) DAMAS OL ULUGBEK JAVOB LIBOY INAMARKALAR YONIDA URUVENI KATTA TURADI  SIZNI MOSHINANGIZ TANIMADIM NO YONIDA TURGAN DAMASNI BITTADA TANIDIM
+
+
+[2025-10-04 16:55:22] (@SufyonSodikjanov, 0 likes) Ulugbekni keyingi mashinasi Gelik buladi 
+	Rangi kamalak 
+	Baloni 5talik
+	Ruli bittalik 
+	Va urindiqi 4talik buladi 😂
+
+
+[2025-10-01 14:47:13] (@AbdullaTashmetov, 1 likes) Kobiltga barter qilasizmi😅
+
+
+[2025-10-02 20:37:54] (@Dilfuza-j9j, 0 likes) Hammer
+
+
+[2025-10-01 11:54:27] (@AbdukamolAbdilhamidov, 0 likes) Улугбекни кейинги машинаси канака булади чиройли булади.
+
+
+[2025-10-04 15:37:50] (@abdullayuldashev5731, 0 likes) електрик олмаса кере bmv x7 yoki gls 450 боса кере  чунки ози минищгаям хайдовчи билан хам кетурадиган мошина
+
+
+[2025-10-01 15:47:19] (@IslombekEgamberdiyev-e8e, 0 likes) URUS oladiku  birgalashiiiib ujinga boramizda
+
+
+[2025-10-01 10:24:26] (@pro-po-cs, 0 likes) BMWdan keyin endi Mersga o‘tirsa, mashina ustida tuya yurib ketadi, mashina o‘zini Dubai’ga xos qilib oladi.
+
+
+[2025-10-01 15:23:21] (@nodirjonqochqorov, 1 likes) Ременни такинг Улугбекжон
+
+
+[2025-10-01 21:11:54] (@RasulAdylov, 0 likes) Бизга ярашмиди не серьёзный светлар тем более полон пулли боса 😂 лучше черный серый болганда
+
+
+[2025-10-05 09:52:20] (@ShahriyorSadullayev-s4h, 0 likes) Genesis💥
+
+
+[2025-10-01 18:31:05] (@sansjdjjw, 0 likes) Farhod unutildi noasidan habar olinmasa kere bechoradan
+
+
+[2025-10-05 11:38:34] (@SherzodShamuratov-o9v, 0 likes) Кейинги мошина Гелик тунинг пуйнинги билан 2026 чикади ва ужин хилтоннда болади
+
+
+[2025-10-01 16:57:08] (@UmidaShermuhamedova-j3r, 0 likes) 🔥🔥🔥🔥🔥🔥🔥🔥
+
+
+[2025-10-01 11:13:44] (@Musab_7777, 0 likes) Kuniga 2000 dan yiğsa ham keingi ujin sohibi özi dubayda öz hissobidan bularga ujin qibersa ham bölaveradi ekan 😅😅😅
+
+
+[2025-10-03 04:20:05] (@ABDULAZIZABDUSATTAROV-h4y1r, 0 likes) ulugbek mini mashina oladi 4 kishilik italyanlarnikidan oziga va olisiga jamoasi sigmaydi lekin
+
+
+[2025-10-01 12:54:15] (@siyovushnormamatov732, 0 likes) Negativ yozsa oʻqiydida shunga yozadi 😂😂😂😂
+
+
+[2025-10-01 10:41:23] (@SIRIUS_PUBG, 0 likes) Keyingi moshin 2 ta oyog’i bo’ladi xa desa moshinlar kayf bermay qoldi peshkom sog’liqqa foyda deb interviyu berib uygiga gelik qoyib qoyda kerak 🤣
+
+
+[2025-10-02 12:02:10] (@Iymon_sari_birga_boramiz, 0 likes) Keyingi mashina ong tarafdagi nexia 3
+
+
+[2025-10-05 16:23:14] (@QwertyQwerty-m5p, 0 likes) Мерс гелик инща олохх
+
+
+[2025-10-01 16:44:17] (@mirkamoljuraev4810, 0 likes) Zoʻr
+
+
+[2025-10-01 13:27:15] (@МадикаЯркинбаева, 0 likes) Ulug'bekning keyingi moshinadi tank bo'ladi😅
+
+
+[2025-10-01 09:45:18] (@shoxruxshohshox2678, 0 likes) Sparka barter bormi 80 92 binzin tanlamidi😂 gaziyam bor
+
+
+[2025-10-01 11:28:17] (@DavronXolikiv, 0 likes) Kiyingisi Ulugʻbek Rahmatullayev dan bulsin
+
+
+[2025-10-04 10:30:21] (@BaxromTursunqulov-u1g, 0 likes) Men bilan keloras😊
+
+
+[2025-10-01 18:46:08] (@OtabekArafatov, 0 likes) Omad ukam kam tahoe ol
+
+
+[2025-10-12 18:39:03] (@avazbekabdumominov1778, 0 likes) Гелик босадиган жойи келди
+
+
+[2025-10-01 12:31:34] (@Cosmoss_pubgm, 0 likes) Merc bosa kere 👍🏻
+
+
+[2025-10-06 01:45:50] (@AMETOVJavlonbek, 0 likes) Уйимдан хеч ким минади дейди 😅😅😅
+
+
+[2025-10-01 11:24:02] (@BEXRUZ_FX, 1 likes) Bmw m5 f90 insholloh
+
+
+[2025-10-01 10:27:56] (@gulnoranumonova4897, 0 likes) Улугбек аник гелик олади босинг геликни кайсидир сухбатида этганди геликка оз колдидеб
+
+
+[2025-10-08 08:24:39] (@BunyodXoldorov-f2n, 0 likes) Кеингиси гелик насиб хозирча котта болларни мошинаси
+
+
+[2025-10-01 10:25:07] (@B1_editers, 0 likes) Gʻulom oka haydadilayu😂😂😂
+
+
+[2025-10-10 10:31:47] (@FastMind_AII, 0 likes) Spektr
+
+
+[2025-10-03 07:58:02] (@khzara9110, 0 likes) Bonuni rossa gapirdiz koynizdan joy oganga oxwidi wu bosvorin oziz 😅😅😅😅
+
+
+[2025-10-01 16:21:13] (@SanjarXurramov-g4d, 0 likes) Bu odamni birinchi martda kurishim tanimas ekanmiz
+
+
+[2025-10-01 14:53:19] (@Rustamjonuz880, 0 likes) Keyingisi Albatta Gelik bòladi. JENTRADAGI NOMERNI TAQAMIZ 🙂
+
+
+[2025-10-02 10:14:06] (@sharifjonsuvankulov3032, 0 likes) Assalomu alaykum manimcha Mers Gelik olsa kere chunki BMW DAN kegin Mers boshqacha urovenda boʻladi 😊
+
+
+[2025-10-01 10:53:24] (@karimovafazilat9467, 0 likes) Ulugbek aka manimcha  porse bosvoralla ❤
+
+
+[2025-10-01 11:43:08] (@BekzodKhakimov_oo27, 1 likes) Ulu pro max boladi keyingi moshin
+
+
+[2025-10-01 11:19:47] (@UZBGAMEDRIFT, 1 likes) Гелик оллала иншаллох
+
+
+[2025-10-02 11:20:09] (@DaMas736, 0 likes) Gelik brabus boʻladi deganla ❤❤❤
+
+
+[2025-10-01 10:09:42] (@дрифт777-м6ф, 0 likes) Manda nexia 2 bor almashtirsayiz almashtiraman ustiga pul qushib beromiynan chunki boshqa pulim yoq sizam qushib berishiz shartnas insofli bolaman😂😂😂😂😂
+
+
+[2025-10-01 11:29:09] (@VasliddinAbdulayev-ts8bx, 0 likes) Gilik ❤❤❤❤
+
+
+[2025-10-01 18:58:15] (@Ibroxim_Shoyimov, 0 likes) Menimcha keyingi moshinasi AMG GT 63 bo'ladi
+
+
+[2025-10-07 08:54:18] (@Naklz_11, 0 likes) Ulubekning kngi moshinasi mitti car boladi😅
+
+
+[2025-10-01 11:18:47] (@ShaxriyorRashidov-z3s3d, 0 likes) SHOXI JAXON JORAYEV  INTERVIYU QILING
+
+
+[2025-10-01 16:14:39] (@ХилолаЮсупова-е2э, 0 likes) Мана балик мана мана бору турмуш автагонга Чкадми космосга учадими вой нма двоман емоникан Ока Уша гап Ока любовь морковь жвачка
+
+
+[2025-10-02 09:13:07] (@sardorbekabdullayev1109, 0 likes) Keyingi mashina Gelik😊
+
+
+[2025-10-01 18:09:50] (@BunyodbekOrgOr, 1 likes) Bosing aka
+
+
+[2025-10-02 07:01:58] (@JamshidbekQosimov-u6v, 0 likes) Tico birinchi ishlab chiqarilgan prototip😅
+
+
+[2025-10-03 06:18:29] (@HsshhHgg, 0 likes) Gelik .
+
+
+[2025-10-01 18:23:24] (@MRAbdulloh_1, 0 likes) Omad
+
+
+[2025-10-01 15:37:03] (@furkattravel2264, 0 likes) Gelikka yeting ilohim ukajonim
+
+
+[2025-10-02 16:30:40] (@LazizOdilov-r4v, 0 likes) ❤❤❤
+
+
+[2025-10-06 11:34:24] (@ДилшодУсманов-б8ъ, 0 likes) Keyingi moshina Gelik 100%
+
+
+[2025-10-01 10:28:26] (@yandex_toshkent_taksi, 0 likes) Odamlar bunday bulishga sabab faqat uzimmizi uzbelar shunaqa boshqa odammi hayottiga bunni suqadi
+
+
+[2025-10-01 10:53:29] (@3dforcedota224, 0 likes) Nma moshina bosayam moshinani kottasidan oling.   Ahamyat bergan bosela kotta bahaybat moshinani ichidan mitti odamla tushib keladi 😅😅😅
+
+
+[2025-10-13 09:05:51] (@UlugbekAbdurahimov-sb1zq, 0 likes) Mers boladi manimcha😂
+
+
+[2025-10-01 11:30:36] (@akhmad_shorts, 0 likes) Odamlaga birovni puli mashinalarining nimasi qiziq ekana😂
+
+
+[2025-10-12 05:43:10] (@MahmudjonXudayberdiyev-cj1ss, 0 likes) BWE X7 MANIMCHA AKA
+
+
+[2025-10-04 03:59:01] (@1979yil, 0 likes) Менга хам 2000$ карз беринг матизимни сотиб кушиб бошкасидан олволай❤😂
+
+
+[2025-10-01 12:18:43] (@activisionminster, 2 likes) Cadilac escalade
+
+
+[2025-10-01 11:39:41] (@Владимир-г4ь9х, 0 likes) Улугбекни кейинги мошинаси Ин ша Аллах БМВ х7
+
+
+[2025-10-29 20:32:59] (@Shokhrukh-t3o, 1 likes) Kengisi manimcha uchar gilam bosa kere gi 😂
+
+
+[2025-10-03 12:12:51] (@OTRM1, 0 likes) Moshinani  Damasga barter qilamiz
+
+
+[2025-10-01 22:06:44] (@Demon001-s1l, 0 likes) GELIK
+
+
+[2025-10-01 13:02:42] (@UmidjonUxolmirzayev, 0 likes) Menda matiz bor barter qilelik😅
+
+
+[2025-10-01 13:44:10] (@Aboss-ij9ow, 2 likes) Насиб булса гилик
+
+
+[2025-10-01 10:14:19] (@anvarbek195, 0 likes) Nega qiynalib ruscha gapirishga xarakat qilarkin. Shunaqa qisa zo'r bo'larmikin😂
+
+
+[2025-10-01 13:43:20] (@Davroneee, 0 likes) Men bn qachon intervyu 😅
+
+
+[2025-10-01 10:04:42] (@yashnarabdullaev1583, 0 likes) Ulugbekni keyingi moshinasi ozi uchar tarelkali gelik boladi😂
+
+
+[2025-10-01 13:03:05] (@doniyorprogress, 1 likes) Nima moshina osayam oyoda bo'ladi 😅
+
+
+[2025-10-01 10:59:19] (@Suxrobrahimov-sn1oq, 0 likes) Millat xoinlaridan biri boʻlgan vaynchi
+
+
+[2025-10-03 04:58:17] (@AbdubositBaxtiyorov-t1j, 0 likes) Новикови рекламасига нечи🤣🤣🤣
+
+
+[2025-10-02 20:42:08] (@110_хх, 0 likes) Улугбек акани мошинаси мерседес с63 или тайота ландкрузор
+
+
+[2025-10-01 09:45:12] (@ZoyirjonOrmonov, 0 likes) Kabreletni sotmasa velik ham ololmaydi😂😂😂
+
+
+[2025-10-01 18:04:47] (@SheraliA-z5k4t, 0 likes) Jahongi oka Assalomu alaykum
+
+
+[2025-10-02 10:28:22] (@7ər0, 1 likes) Porsh karyera
+
+
+[2025-10-17 05:09:18] (@ФанКа-я5я, 0 likes) Gelik
+
+
+[2025-10-10 20:41:18] (@muxtormuzafarov2309, 0 likes) Gelik
+
+
+[2025-10-08 17:27:34] (@umidjonov_o, 0 likes) Gelik
+
+
+[2025-10-07 12:03:29] (@FarruxErgashov-s9z, 0 likes) Gelik
+
+
+[2025-10-05 08:43:07] (@zaynA-n5f, 0 likes) Gelik
+
+
+[2025-10-03 17:41:07] (@BekzodbekUmmatov, 0 likes) Gelik
+
+
+[2025-10-03 06:14:02] (@Mr_K1NG_02, 0 likes) Gelik
+
+
+[2025-10-07 08:49:45] (@OqiljonJavlanov, 0 likes) Gelik oladigan vaqt keldi lekn
+
+
+[2025-10-01 13:42:02] (@Xolis-i2t, 0 likes) 🔥🔥🔥👍
+
+
+[2025-10-03 11:57:00] (@doniyor0208, 0 likes) 13:46 😁😁
+
+
+[2025-10-01 15:46:36] (@ChinpolatMamatov, 0 likes) Damas olishsa zŏr bŏladi kamanda bilaan billa yurishadi yoki takoy retro moshina
+
+
+[2025-10-01 13:31:34] (@muslimamamurjonova2907, 1 likes) Zeekr, Genesis yoki Lexus
+
+
+[2025-10-01 11:13:58] (@AkramovMaxmudjon-f7q, 0 likes) Lambo 😉
+
+
+[2025-10-02 02:47:36] (@NodiraSobirova-i1n, 0 likes) Keyingi mowina 1) Zeekr 9x ili 2)BMX XM bosin❤
+
+
+[2025-10-01 13:08:03] (@AbubakrYazdonov, 0 likes) Gelik boʻsin
+
+
+[2025-10-05 09:29:52] (@yunuskarimov-dm5rp, 0 likes) O’zicha publikaga oynab sherigi olamdan otganda man boshqa blogerlik qilmayman Farhodsiz degan edi
+
+
+[2025-10-04 17:26:32] (@АлишерХайруллабеков, 0 likes) мани орзуйим Қурон ётлаш
+
+
+[2025-10-02 16:49:40] (@samandarhakimov1906, 0 likes) mittime -> minicooper    bo'y bastiga yarasha
+
+
+[2025-10-09 04:50:16] (@Oydin-t9e, 0 likes) BMW X 7 qorasi 😅
+
+
+[2025-10-01 10:58:10] (@YoqubBoboqulov-pk7np, 0 likes) BMW M6🔥🔥
+
+
+[2025-10-02 17:39:59] (@RuxshonaxonIbrohimova, 0 likes) BMW oladi 🎉 M paket
+
+
+[2025-10-01 11:45:08] (@BekzodKhakimov_oo27, 1 likes) MiTTi TAGRAM bo'ladi keyingi moshina
+
+
+[2025-10-02 07:06:20] (@MirazizMirsharipov, 0 likes) RANGE ROVER DEFENDER
+
+
+[2025-10-29 17:36:06] (@АлишерМамасалиев-я7г, 0 likes) Фарход  достойно яшап отти .
+
+
+[2025-10-01 11:48:27] (@FaridaAlimova-s5f, 1 likes) Зор курсатув омад ижодилага
+
+
+[2025-10-02 12:34:34] (@AbduazimAbdujalilov-ip2yj, 0 likes) Tank
+
+
+[2025-10-01 09:40:05] (@MuxlisaEshonova, 0 likes) Gelik
+	Chunki 2026-yilga hichqancha qomadi, yilni boshida ovoradila
+
+
+[2025-10-03 03:13:00] (@UlugbekYakhshibayev-g7o7n, 0 likes) Keyingi moshina nasb qisa gekil boladi. Bomi qosa gelik unda manmcha mersadezni qaysidir rusumi boladi.
+
+
+[2025-10-01 14:35:12] (@ТурдиалиДанияров, 0 likes) OLLOX YAGONADIR MILANER BÒLSANG XAM KAPANDA KETASAN MOL DUNYO QUVMASDAN INSONLARGA YORDAM BERISHGA ULGIRIB QOLGIN
+
+
+[2025-10-11 12:05:20] (@erik-e5v1z, 0 likes) shaldiro arava oladila😂😂
+
+
+[2025-10-01 10:09:59] (@teed_lee, 0 likes) Gelik deb kelishdilay😂😂😂
+
+
+[2025-10-03 19:00:51] (@sardorbekazimov5488, 0 likes) худо хохласа 63 amg.гелик))
+
+
+[2025-10-03 17:33:30] (@alisherkadirov9159, 0 likes) 2026 gelikolaman dib besh tashab qoydiku 2026 oladi yengioshinasini
+
+
+[2025-10-01 12:03:09] (@mirjalolkhamraev250, 0 likes) Nexia 3 turishi norm😂
+
+
+[2025-10-02 09:55:34] (@anvarboboyorov-t9g, 0 likes) Keyingi. Mashinasi TAXMIN
+	"" "" Porsche boxster "" "" "
+
+
+[2025-10-01 10:54:43] (@Sarvar.0, 1 likes) Keyingi mowina Gelik🦦
+
+
+[2025-10-02 19:40:38] (@OdiljonAbdinazarov-e4w, 0 likes) Lexsus
+
+
+[2025-10-01 16:17:29] (@BahodirAbdulazizov-c8w, 0 likes) Kok jiguli😊😊😊😊😊😊😊😊😊
+
+
+[2025-10-01 22:05:14] (@Azizbek.narziqulov, 0 likes) Elmurod haqnazarov
+
+
+[2025-10-01 10:33:02] (@sardorrixsiboyv5571, 1 likes) Keyingi moshina G63 yoki Bentley bentayga
+
+
+[2025-10-01 11:11:37] (@unsayco, 0 likes) 🎉🎉🎉
+
+
+[2025-10-01 17:11:39] (@BekzodbekEsayev, 0 likes) Bmw yaxshi mers olguncha😂 deganlariday mers deb qolamiz
+
+
+[2025-10-01 09:40:15] (@BekzodbekAbdukhalimov, 1 likes) 👍👍
+
+
+[2025-10-01 10:53:31] (@SULEYMANwww23, 0 likes) Улугбекини кейинги машинаси гелек булади
+
+
+[2025-10-03 03:29:21] (@OzodbekOqyolov-l3r, 0 likes) Men faqat nexia 3 ga qarab turdim lekin😂
+
+
+[2025-10-01 11:20:43] (@TheGrinchisback, 0 likes) Хамма пул маскарабозларда экан
+
+
+[2025-10-15 10:08:25] (@lifeodilov, 0 likes) Ulug’bek qanday mashina oladi?
+	4 ta balonli 😁
+
+
+[2025-10-02 12:01:29] (@RavshanbekIsmatov-t3l7z, 0 likes) 26:10 брабус г 900
+
+
+[2025-10-01 10:49:23] (@БАХОДИР-ъ9ь, 0 likes) Кегинги могинаса канака болишини билмадиму ундан кегингисига аник Bugatti Chiron  минса кере
+
+
+[2025-10-06 17:45:50] (@GulomovDavron, 0 likes) Ulgbek zaporoj oladi😂😂
+
+
+[2025-10-02 16:14:14] (@boburjalolov-sy2qg, 0 likes) Keyingi moshin shu bitta 07 ni olib takoy tuning qilib minish 😂
+
+
+[2025-10-15 07:39:05] (@JxnxNddndn, 0 likes) Assalomu alekum mitti.me ni keyingi moshinasi bmw x 7
+
+
+[2025-10-01 12:01:39] (@Edit_Video_A, 0 likes) Blaaaa negativla shunaqa darajada kopayip kettimi?😮😔😔😔
+
+
+[2025-10-01 17:50:33] (@Мехрож.Рузимбоев, 0 likes) Gelik
+
+
+[2025-10-01 17:20:24] (@FaridaTolipova-f3n, 0 likes) Gelik
+
+
+[2025-10-01 14:46:03] (@amirovbekzod, 0 likes) Gelik
+
+
+[2025-10-01 14:23:22] (@Abdullayeww, 0 likes) Gelik
+
+
+[2025-10-01 14:15:51] (@mukhammadazizsolijonov6545, 0 likes) Gelik
+
+
+[2025-10-01 14:00:55] (@AsadbekAxmedov99, 0 likes) Gelik
+
+
+[2025-10-01 13:29:14] (@akhmedov_asilbek, 0 likes) Gelik
+
+
+[2025-10-01 12:00:45] (@Tavakkalbek, 0 likes) Gelik
+
+
+[2025-10-01 11:15:54] (@AbbosbekTemurov, 0 likes) Gelik
+
+
+[2025-10-01 10:42:25] (@AbdulazizSultonov-q3j5e, 0 likes) Gelik
+
+
+[2025-10-01 10:38:01] (@AmurbekSoliyev, 0 likes) Gelik
+
+
+[2025-10-01 12:53:36] (@BekzodM-e4p, 0 likes) Ulugbeni kngi moshinasi mers
+
+
+[2025-10-01 10:35:04] (@St.9012, 1 likes) Ферарий😂😊😅😮
+
+
+[2025-10-01 17:37:12] (@ббр_хбо617, 0 likes) Лексус билан Таёта ландкруйсерга хам кизикип корин
+
+
+[2025-10-04 21:21:18] (@Мухаммадиброхим-и5с, 0 likes) Гелик брабус болади
+
+
+[2025-10-01 11:48:48] (@FaridaAlimova-s5f, 2 likes) Улигбек омад ижодга
+
+
+[2025-10-08 09:36:05] (@RuslanQudratov-b7p, 0 likes) Audi olsalar kerak
+
+
+[2025-10-01 10:56:38] (@oybekhamraqulov5431, 0 likes) Omadilarni bersin lekin kamtarinlikham kerak
+
+
+[2025-10-01 10:08:11] (@AbdulboriSaydullayev, 1 likes) Keyingisi zaparoj 😅
+
+
+[2025-10-01 11:52:33] (@Xurshidbek-zi3un, 0 likes) Taxminiy fikrim Toyota trixsotka
+
+
+[2025-10-01 11:49:31] (@Muhammadjonov_, 0 likes) yana kutib qolamiz interviu
+
+
+[2025-10-06 07:25:11] (@umarxonabduganiyev6151, 0 likes) Damasimga Almashtiraman😂
+
+
+[2025-10-04 07:47:24] (@guzar3132, 0 likes) Gentra
+
+
+[2025-10-02 20:34:34] (@diyorbekdavlatnazarov9464, 0 likes) Gentra
+
+
+[2025-10-02 09:59:05] (@toirsobirov4436, 0 likes) Tori Gap gapirdila odamlaga yashliyam yomonliyam yoqmidi. Luboy narsadan nedavolni. Malades omadilani bersn havas qlaman miti vayn jamoasiga. Hamamizga nasb qisin slaga oxwap yuriw
+
+
+[2025-10-01 15:57:05] (@IbroximAbdulxamidov-c7o, 0 likes) ❤❤❤❤👍👍👍💪💪💪💪💪
+
+
+[2025-10-01 12:39:24] (@МНажмидинова, 0 likes) KEYINGI MOSHINASI  INAMARKA  BOʻLADI😂😂
+
+
+[2025-10-07 11:26:11] (@elyorsharopov1851, 0 likes) Ёнидаги дамас очиб турибти БМВни
+
+
+[2025-10-09 11:47:15] (@umidjonegamberdiyev8360, 0 likes) дамас свежийси 😂😂
+
+
+[2025-10-01 10:27:28] (@azamataxmedov9633, 0 likes) Hop sila bn ujin qilish uchun nima deyishi topomadim 😅
+
+
+[2025-10-01 14:57:04] (@BekSoft-z3u, 0 likes) Kbr
+
+
+[2025-10-01 15:55:42] (@oobb8201, 0 likes) Жахонгир узи митти бола чичиб куйудию яна шуми
+
+
+[2025-10-01 17:34:42] (@Uz88, 0 likes) Я думал Жахонгир толковый парен после того как говорил что типа бочкага бориб мастава ичиб если честно после этого пропал уважения
+
+
+[2025-10-02 09:13:47] (@muhsinlove920, 0 likes) Damas bor barterga😂
+
+
+[2025-10-02 02:37:45] (@asroridin-u8f, 0 likes) Andijonda bormidi bundan seriy rangdagisi
+
+
+[2025-10-01 17:32:30] (@HshshsvVsbshhdbds, 0 likes) Омале мени коментим ютибколса кимматга тушураман😂
+
+
+[2025-10-01 18:25:06] (@АкмалСобиров-я5я, 0 likes) БМW ~НИ ВИХЛОПИ БАРИБИР МЕРС ВА АУДИНИДОҚА МАС
+
+
+[2025-10-11 15:41:51] (@YorqinbekGiyasov, 0 likes) Iltimos xatya intervyuda toza o'zbek tilida shevasiz votti vottisiz
+
+
+[2025-10-01 09:53:06] (@IkromBoboev-l1r5d, 0 likes) Mana bu yurtda kimlar qadrlanadi
+
+
+[2025-10-01 09:50:49] (@ShokirEgamov-c7r, 0 likes) Дамазга бартир борм😅😅😅😅
+
+
+[2025-10-01 13:53:09] (@Green-o1s, 0 likes) shokh ake
+
+
+[2025-10-01 09:59:15] (@ВашеВеличество-п2ь, 0 likes) Улугбек по братский 2минг бериб туринг ука. Ёзди чизди кбераман. Кайтараман муаммони битириб.
+{
+	[2025-10-01 10:34:53] (@boburbobur7268, 0 likes) Xuy beradi San esa xuy qaytarasan .....demak xuy😂😂😂😂
+	[2025-10-02 05:31:03] (@ВашеВеличество-п2ь, 0 likes) ​@boburbobur7268сокинмей гапир боботой
+}
+
+
+[2025-10-01 10:11:56] (@Yangifayz, 0 likes) Bundan keyin yo mers oladilar yo porsh oladilar gelikachay
+
+
+[2025-10-01 13:25:14] (@azizbek.orazbaev, 1 likes) GENESIS
+
+
+[2025-10-03 07:18:24] (@Xoshimovx, 0 likes) Nima moshina olishligini rasa oylab topomadimu lekin 100min 120 mamin atrofida. Mojt Tahoe
+
+
+[2025-10-01 11:00:31] (@АббосЭргашев-б6и, 0 likes) Chichqoq qirgistonda chichip ketdi
+
+
+[2025-10-01 11:43:17] (@giyossafarboyev1974, 0 likes) Здорово ребята должен Улугбек купить Maybach или или 63 или делаешь 600 или 23-й кузов мерс вот точно надо мерс боевой не надо
+
+
+[2025-10-03 07:00:19] (@АзаматМаннопов-ц1й, 0 likes) Damas legenda baribir😂
+
+
+[2025-10-01 09:41:57] (@YusufjonAhmedov-m5m, 0 likes) Гелик болсин худо холосо
+
+
+[2025-10-01 12:50:13] (@ParvizAbdulaev-c7d3x, 0 likes) Анвар Абдуқаюм билан подказ олинг
+
+
+[2025-10-01 10:34:01] (@Toʻraxoʻjayev7200, 0 likes) Hammer
+
+
+[2025-10-01 10:26:26] (@QerAsd-t9z, 0 likes) Бохонада диназавр гуштидан стейк йеволадиган булди
+
+
+[2025-10-07 04:19:12] (@davronbekqurbonov, 0 likes) Qanaqa moshina boʻladi bilmayman lekin 4 baloni boʻladi
+
+
+[2025-10-01 10:31:26] (@OybekAbdurasulov-q9l, 0 likes) 26:05, M4- Campetition yoki M8- Campetition ( BMW )
+
+
+[2025-10-01 12:23:09] (@HusanMansurov-f2o, 1 likes) Mersedes Banan
+
+
+[2025-10-06 14:51:21] (@QahramonGofurov-y9t5q, 0 likes) Keyingi moshina hudo hohlasa bugatti boladi
+
+
+[2025-10-02 05:52:40] (@saddamtaubaev7770, 0 likes) ЗИЛ 131 😉
+
+
+[2025-10-01 16:32:06] (@Smart_tv21, 0 likes) Мерседес бенс
+
+
+[2025-10-01 10:52:08] (@shuhrattoxtayev4356, 0 likes) keyingi mashina vaqt mashinasi bo'ladi😂
+
+
+[2025-10-01 17:11:30] (@AnvarAstanov-r4k, 0 likes) Keyingisi Alisher Usmonov bilan
+
+
+[2025-10-11 09:21:33] (@МухаммаджонРузматов, 0 likes) Keyingi moshina Марсаход😅
+
+
+[2025-11-09 18:01:13] (@rustamraxmonqulov9870, 0 likes) Mitti me ni keyingi mashinasi BMW m4 competition boʻladi
+
+
+[2025-10-01 10:55:28] (@alpomishnomozov7706, 0 likes) Keyingisi BMW i ungan keyin GELIK ❤
+
+
+[2025-10-01 17:27:45] (@ОклкггШалаоаг, 0 likes) Хайронман булар жиннилик килганига пул топади.
+
+
+[2025-10-01 10:30:17] (@manzadjurayeva-fk6rs, 0 likes) 13:43 секунд😂😂
+
+
+[2025-10-02 17:22:27] (@jvxrw, 0 likes) BMW XM oladila nasib
+
+
+[2025-10-03 11:43:26] (@УмарУмаров-ц9х, 0 likes) Узи энди олибди и сотяптикан 😅 шум бола
+
+
+[2025-10-03 12:41:07] (@JetPromoL7L5NV, 0 likes) BMW I5
+
+
+[2025-10-01 16:36:34] (@AYUBXON-e1s, 0 likes) Bubloyam yoshbolga oshqaydi
+
+
+[2025-10-07 16:46:25] (@MunavvarSamutova, 0 likes) Tahoe bosin
+
+
+[2025-10-01 10:03:17] (@abduvaxobumurzoqov3434, 0 likes) Kengi moshina moto bmw bbb o'lip ketish yo😅
+
+
+[2025-10-01 10:07:58] (@ISLOM1916, 0 likes) CLS 63 AMG❤
+
+
+[2025-10-03 13:50:36] (@IsfandiyorAvazbekov-m3l7r, 0 likes) BMW M4
+
+
+[2025-10-20 15:24:58] (@abduqahhorobidjonov6689, 0 likes) 21:13 qamalish kere
+
+
+[2025-10-20 15:24:56] (@abduqahhorobidjonov6689, 0 likes) 21:13 qamalish kere
+
+
+[2025-10-02 11:46:41] (@RavshanbekIsmatov-t3l7z, 0 likes) 6:10 олов
+
+
+[2025-10-01 21:14:30] (@NCDOBRIY, 0 likes) Manimcha BMW X7 yoki Toyota Land Cruiser
+
+
+[2025-10-01 10:44:00] (@adkhamjanjovliyev7039, 0 likes) 85000 $ tilga oytish oson 😂😂😂😂😂
+
+
+[2025-10-01 16:36:18] (@JasurBek-c2e, 0 likes) 2 PI PIARCHLARKU 😅😊😮😂
+
+
+[2025-10-05 18:05:12] (@fedes_music, 0 likes) Бентли )
+
+
+[2025-10-13 07:39:00] (@ars_bakh2025, 0 likes) да да да булди русча тугади😂
+
+
+[2025-10-04 08:41:00] (@OdilbekUmidbek, 0 likes) Matiz olsa bir xil bulib yuramiz 😅
+
+
+[2025-10-11 02:59:17] (@xan_auyl, 0 likes) Keyingi moshina Gelik
+
+
+[2025-10-01 12:13:56] (@РозубайМирзахмедов, 0 likes) Бонуди босворасизми диедими 😂😂😂😂
+
+
+[2025-10-02 17:14:35] (@QuvonchbekEshonqulov-m5k, 0 likes) Cadillac escalade
+
+
+[2025-10-04 06:11:42] (@diyarbekmatyakipow6839, 0 likes) Miti.mi hazirki masyni Z4 bolsa keyingi masyni M4 bolady😊
+
+
+[2025-10-02 06:29:32] (@AbdushukurSadridinov, 0 likes) Taxminan porsh sport car Cadillac taxmin
+
+
+[2025-10-01 16:48:42] (@grabozave130, 0 likes) Укам.бундака.машинадан.нечта.керак.олифтагарчиликни.йгиштирларин
+
+
+[2025-10-01 12:01:39] (@GozalxonGozalovna-e5f, 0 likes) Митти ми ни кейинги мошиналари ГЕЛИК 2026 Булади Жавоб гапимга Телефони Айфон 18 Про Макс Булади Орзуларидек Виллалар Хаммаси Орзуси Амалга ошади 2026 йилда
+
+
+[2025-10-07 14:44:36] (@footballlll.teamn1, 0 likes) Cadillac boladi
+
+
+[2025-10-07 14:43:49] (@footballlll.teamn1, 0 likes) Cadillac boladi
+
+
+[2025-10-01 09:55:46] (@muhammadjonberdiyev7187, 0 likes) Keyingi moshina Aston Martin bolsa zòr bolar edida
+
+
+[2025-11-02 08:19:32] (@MuhamadqodirQahhorov-x4g, 0 likes) Keyingi moshinasi menimcha gelik boʻlsa kk
+
+
+[2025-10-01 10:34:28] (@UlugʻbekAbdullayev-q3g, 0 likes) 26:15 gelik barabas yoki raketa gelik
+
+
+[2025-10-01 19:10:38] (@SardorbekXasanov-v2f1p, 0 likes) Keyingi moshinasi Hudohohlasa Gelik bo'ladi!
+
+
+[2025-10-01 14:21:31] (@JonyJony777, 0 likes) Ahmoq jinni pul topib mazza topmaganlar
+
+
+[2025-10-01 12:10:32] (@saidmirzoazamov2227, 0 likes) Manmcha lambo yoki Ferrari kotta extimol bilan Amerikan aftomobil olsa kere
+
+
+[2025-10-11 14:00:17] (@SevinchS-s2v9n, 0 likes) G500 CABRIOLET FINAL  EDITION 100%
+
+
+[2025-10-01 14:14:27] (@AzamjonSotvoldiyev-u8y, 0 likes) Гуломжони узидан качон интирйу оласиз жахонгир
+
+
+[2025-10-02 10:32:09] (@ОлимжонЖалилов-р3к, 0 likes) Ооо узбекча курмаганни кургани курсинку
+
+
+[2025-10-02 06:15:21] (@AvazbekSalimov-m1g, 0 likes) Menmcha mers nasb balki matizdir
+
+
+[2025-11-12 22:08:02] (@JdIrs, 0 likes) Maexstro yangi chiqani
+
+
+[2025-10-01 12:19:25] (@ANASUZUSMANOV, 0 likes) Mersedes bens
+
+
+[2025-10-01 19:23:41] (@SanjarJumaniyazov-j3e, 0 likes) Ferrari 🚘 😅
+
+
+[2025-11-02 21:03:45] (@DavlatToliev, 0 likes) Гелек болады
+
+
+[2025-10-08 12:46:18] (@javapubgm6498, 0 likes) Гелик
+
+
+[2025-10-03 05:50:52] (@elyorbekismailov6572, 0 likes) Гелик
+
+
+[2025-10-01 13:56:11] (@RomaAzamovvv, 0 likes) Zeekr oxirgi rusumi
+
+
+[2025-10-01 10:06:49] (@shoxruxshohshox2678, 0 likes) Keyingi moshinalari mani sparkim boladi boshma bosh almashamiza 80 binzinda yam gazdayam yurvurala gelika pul tejalib tezro yigʻiladi
+
+
+[2025-10-02 14:41:25] (@Farxod-y7m, 0 likes) Farxod haqida  gapni uzip quyiyapdi
+
+
+[2025-10-01 14:21:24] (@Olov-s2v, 0 likes) Улей агар ярашмиди шу болага хеч нима узидан килани ясаволади уборшитцани ойлигини бермаганидан кейин куйним копкетган бир тинсан бунака мошинани ичидачм
+
+
+[2025-10-02 07:44:32] (@makhmudovm, 0 likes) СРАЗУ ГЕЛИК БОП ОМА КОЕЛ
+
+
+[2025-10-01 23:04:22] (@Уин-п4з, 0 likes) Vertolyot olsa yaxshiroq
+
+
+[2025-10-01 15:16:37] (@OK___00014, 0 likes) Cadillac
+
+
+[2025-10-01 10:52:51] (@JamoliddinShukurllayev, 0 likes) Cadillac
+
+
+[2025-10-01 14:03:09] (@BahromjonKodirov-y5s, 0 likes) Gelllllllllllllllikkkkkkkkk
+
+
+[2025-10-02 14:30:41] (@muzaffpubgm, 0 likes) BMW X7 ALPINA
+
+
+[2025-10-03 14:56:29] (@AbdulloAbduhalilov-c4o, 0 likes) BMW X7
+
+
+[2025-10-09 04:00:31] (@UmidIsroilov-m4g, 0 likes) Nexia 3 😂
+
+
+[2025-10-01 11:25:30] (@YakhyobekFayzullayev-p9b, 0 likes) BMW M4 ili M5 Competition
+
+
+[2025-10-01 18:18:42] (@uzpesgame, 0 likes) Kyngi mashinasi òzi benzin ishlab chqarb òzini òzi yuvadgan bòsn bomasa unyam 2 oyda barter yoki sotladi db chqadi🗿
+
+
+[2025-10-01 13:44:31] (@xorazm_texno, 0 likes) Matizim bor barter qilaman
+
+
+[2025-10-02 15:26:41] (@my_kitchenn, 0 likes) Кейинги машинаси геликкача zikeer  бўлса кк
+
+
+[2025-10-01 09:47:29] (@ShefuPm-o2l, 0 likes) Moshina oldi
+
+
+[2025-10-01 11:18:54] (@jahongir5194, 0 likes) Keyingi moshina Gelik bo'ladi
+
+
+[2025-10-02 08:05:01] (@MuslimaSaxatova-l1s4p, 0 likes) Senur blan ham intervyu klin
+
+
+[2025-10-01 10:54:04] (@muhayyoreyimboyeva8569, 0 likes) Mittimilar barbiram boshqacha boshqa blogerlaga qaraganda chunki kopchilik blogerla faqat reklamaga otib ketishgan bularda unaqamas vainga relama qoshishmidi shunisi bilqn ajralib turishadi
+
+
+[2025-10-04 16:55:06] (@muminoff023, 0 likes) Cadillac Escalede
+
+
+[2025-10-01 11:50:10] (@Мирзаев-к3я, 0 likes) Бачканалик ортидан БМВ 😂
+
+
+[2025-10-01 21:02:43] (@AvtoVibeX, 0 likes) Evilwox haqida gapirishdi 😂
+
+
+[2025-10-02 11:18:01] (@Azizbek.Hakimov, 0 likes) mers
+
+
+[2025-10-02 12:55:06] (@DilsoraKarimova-u5r5v, 0 likes) Kormaganni korgani qursin
+
+
+[2025-10-12 17:11:36] (@mirhojiddinhojiakbarov8841, 0 likes) Кеинги машина кадилак болса керак
+
+
+[2025-10-01 14:12:53] (@JamshidbekSotvoldiyev-kl9mz, 0 likes) GLS 600 
+	Manimcha
+
+
+[2025-10-01 15:02:30] (@sharipov1100, 0 likes) Keyingi moshini yana bmw boladi😅
+
+
+[2025-10-02 08:51:29] (@Qayumov-x, 0 likes) Bratti keyingi moshinasi ot voladi😂
+
+
+[2025-10-02 13:49:07] (@SamsungGalaxy-kt4zy, 0 likes) Жохон майдалашиб кеттиз
+
+
+[2025-10-01 13:22:37] (@URCristianoss, 1 likes) ☪️
+
+
+[2025-11-10 08:30:01] (@shoxruzaliqulov, 0 likes) Tahoe😂
+
+
+[2025-10-01 19:16:37] (@Abdurahim_Sobirov, 0 likes) Rolls Royce yoki lambo yoki Bugatti
+
+
+[2025-10-01 16:10:59] (@AlisherAmonqulov-u4w, 0 likes) Мерседес Банан
+
+
+[2025-10-08 07:37:46] (@Vuhbiongm, 0 likes) Mixail volinkin bilan bolsin
+
+
+[2025-10-21 19:40:20] (@AbdumutalAbdumajidov-y9p, 0 likes) BMW X7
+
+
+[2025-10-01 13:54:17] (@mohamed_kudratov, 0 likes) Lotipov: niga li9 sotingiz 
+	Mittme: odamlarni nazaridan charchadim shuning uchun BMW cobralit oldim🤦‍♂️
+	What fuck nima buvoti sanga nazardan charchagan bolsang oddiyroq moshina min 🤦‍♂️ nima divotganingdan miyangni hovori bormi 😂
+
+
+[2025-10-01 09:58:05] (@МухаммадшафиМатякубов, 0 likes) L 9 boladi keyingi moshina
+
+
+[2025-11-10 15:37:41] (@bunyodasadov5585, 0 likes) Tahoyam minig yagilik bo'ladi
+
+
+[2025-10-01 18:30:41] (@MaxsudbekAbdugapparov, 0 likes) Гелик деб айтболдию
+
+
+[2025-11-01 12:30:06] (@Vokhidov.A, 0 likes) VAZ 06 bo'ladi shekilii😂
+
+
+[2025-10-01 10:00:58] (@ohunjontoshpolatov7247, 0 likes) mitti.me keyingi moshinasi Aito
+
+
+[2025-10-05 06:45:13] (@NodiraDiniqulova, 0 likes) Gelik boladi
+
+
+[2025-10-01 17:40:24] (@MuntozaAsrolova, 0 likes) Keyingi mowinalari nasb qgani boladi😊
+
+
+[2025-10-04 19:59:34] (@FaxriddinToychiyev-w2j, 0 likes) Nime wunaqa savol berib oxrgacha ewtme bowqa joyga qarab yana bowqa savol berasz ?
+
+
+[2025-10-01 22:38:03] (@elshodraxmatov302, 0 likes) Birtiyn
+
+
+[2025-10-01 14:21:08] (@Qwer-x3f, 0 likes) Mersedes cls 500 ❤
+
+
+[2025-10-01 16:45:36] (@Shuhratovm622, 0 likes) Gelik boladi
+
+
+[2025-10-05 11:29:25] (@AbdulazizKarimov-u8e, 0 likes) BMW M8
+
+
+[2025-10-02 18:50:42] (@JUNIORPUBGM-em6ij, 0 likes) BMW M8
+
+
+[2025-10-29 13:08:05] (@NodirbekTojibayev-e2n, 0 likes) Keyingi mashinasi Gelik boʻladi
+
+
+[2025-10-01 16:53:28] (@gulbahorsultonova9024, 0 likes) Ролс ройс
+
+
+[2025-10-01 14:17:03] (@IbrohimXalil, 0 likes) Mersedes bolsa kerak
+
+
+[2025-10-01 10:05:22] (@biloliddinsayfidinov, 0 likes) Lexsusni qaysidir madeli
+
+
+[2025-10-01 10:25:25] (@oybekbroo, 0 likes) Ulu Farxoddi orzusini amalga oshir onaxonni ziyoratga obor
+
+
+[2025-10-01 11:12:11] (@RashidbekFozilov-m9d, 0 likes) Bonuni bosvorassmi dvordiyu shu joyi minusga ishladi
+
+
+[2025-10-02 16:53:04] (@Abpdwigoo, 0 likes) Propagandani yig'ishtiringlar Mittivine jamoasi yaxshi narsalarni olib chiqinglar iltimos
+
+
+[2025-10-01 09:45:59] (@GuzalDadaxanova-t7m, 0 likes) Bentli bolad  olishd niyat qludila
+
+
+[2025-10-03 07:53:00] (@King777-e6s, 0 likes) X 7
+
+
+[2025-10-01 09:52:58] (@MuhammadsafoTulaboyev, 0 likes) Bundan keyin mersni qaysidur madeli
+
+
+[2025-10-01 11:28:52] (@gayratubaydov7098, 0 likes) Аито кейинги мошина
+
+
+[2025-10-01 09:54:30] (@nematoff9292, 0 likes) Lamborghini urus yoki jiguli 06
+
+
+[2025-10-01 10:31:06] (@augSATTORAKA, 0 likes) Mersedes 223🎉
+
+
+[2025-10-01 19:37:39] (@NorboySattarov-1, 0 likes) maskuvich oladi
+
+
+[2025-10-03 14:48:28] (@JamolbekToshnazarov-w7t, 0 likes) Gelik buladi
+
+
+[2025-10-01 14:07:25] (@nusratjuratov4726, 0 likes) Infiniti QX80 yoki Cadillac Escalade
+
+
+[2025-10-01 09:53:04] (@Госслужащий, 0 likes) Hudo hohlasa Ferari F222Marka
+
+
+[2025-10-04 17:35:43] (@JovohirSolihov, 0 likes) BMW M4 compition
+
+
+[2025-10-01 21:18:15] (@abnjabrail9636, 0 likes) Carvet
+
+
+[2025-10-01 10:49:10] (@Rahmatilla-x7q, 0 likes) 🎉,,🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+
+
+[2025-10-18 17:54:28] (@BegimmurodAbdullayev-un1jr, 0 likes) Uzbekcha gaplashinglar ruscha so'zlarni aralashtirmay o'zimizni tilimiz boru
+
+
+[2025-10-01 13:58:43] (@TM95352, 0 likes) BMW X 5
+
+
+[2025-10-05 13:57:39] (@timurxamidov8069, 0 likes) Men
+
+
+[2025-10-04 18:23:32] (@nuriddinusmonov1869, 0 likes) Осаждения 19:52
+
+
+[2025-10-01 17:17:36] (@amr_pubgm1, 0 likes) Land Rover Range Rover SV😢
+
+
+[2025-10-07 15:57:35] (@DostanUzakbergenov, 0 likes) Keyingi moshina Porsh boladi
+
+
+[2025-10-02 13:18:17] (@ErajMansurzoba, 0 likes) Ilohim Farhod akani joylari jannatda bo'lsin yaxsi inson edilar jamolariga omad tilayman❤
+
+
+[2025-10-01 11:23:13] (@RuzikulovaZilola, 0 likes) Matizzzzzz
+
+
+[2025-10-10 03:03:27] (@davrondoni1986, 0 likes) Митти ни кейинги машинаси ренжровер
+
+
+[2025-10-01 18:42:52] (@ABUPUBGM-ls6wx, 0 likes) BMW M4
+
+
+[2025-10-03 00:34:02] (@mukhiddinovkhojiakbar9229, 0 likes) AUDI CROSSOVER qaysidir varsiyasi
+
+
+[2025-10-05 17:05:13] (@Gavxar_Clinik_Boʻston, 0 likes) Porsche 911 
+	BMW m4 kompitishn
+
+
+[2025-10-01 14:48:15] (@QahramonQahramon-p6i, 0 likes) MITTIVE VA BOSHQA FAXSH ZINO HAROMNI TARG'IB QILAYOTGANLARNI KO'RIB QUVVATLAYOTGANLARGA DO'ZAX ENG ZO'R JAZO BO'LADI. BU XALQGA HAQIQIY TARIXNI VA ISLOM DINI O'RGANMAS EKAN BOTQOQLIK VA FAXSHGA BOTGAN BUZUQ JAMIYATGA AYLANADI.
+
+
+[2025-10-01 17:10:59] (@RaimovAtabec-ve5tl, 0 likes) Qiyomat ketayabdi masharabozchila boyiyabdi
+
+
+[2025-10-09 16:52:47] (@BehzodRus, 0 likes) Keyingi moshina Mercedes Benz boladi
+
+
+[2025-10-03 05:15:24] (@gulzaman_, 0 likes) Matiz 😂😂😂
+
+
+[2025-10-01 11:13:59] (@Shirin_City, 0 likes) Kiyingi moshin Gelik menimcha 100 talik 😅
+
+
+[2025-10-06 08:07:01] (@AzizKamilovich, 0 likes) Denza
+
+
+[2025-10-01 14:56:03] (@mamirzhantashmatov2826, 0 likes) Пакана пайпок йирик пайпок😂
+
+
+[2025-10-04 19:02:42] (@AbrorSafiddinov, 0 likes) manimcha mers 222 bolsa kerak
+
+
+[2025-10-05 21:59:52] (@CARMENTUNING, 0 likes) Cadilac
+
+
+[2025-10-03 19:04:48] (@Fas-f2r, 0 likes) Cadilac
+
+
+[2025-10-01 11:20:20] (@iamnuriddinovich, 0 likes) GELIK bo'sa kere manimcha
+
+
+[2025-10-01 11:26:17] (@ObidShamsiyev-i4r, 0 likes) Гелик
+
+
+[2025-10-01 10:10:42] (@АмморЖалилов, 0 likes) Гелик
+
+
+[2025-10-01 17:55:44] (@MuhammadAliTurgunov-l5o8w, 0 likes) Гелик
+
+
+[2025-10-05 12:41:29] (@QwertyQwerty-xk7hv, 0 likes) BMW x6
+
+
+[2025-10-03 17:57:30] (@abdulboriyrahimov8452, 0 likes) Jenesis oladi 😅
+
+
+[2025-10-08 02:53:42] (@_kadirovv_x_2007, 0 likes) Мерседес
+
+
+[2025-10-01 13:43:01] (@АбдулазизИсроилов-ж1ъ, 0 likes) Бирорта камбагал бн
+
+
+[2025-10-01 17:53:14] (@rtxrog, 0 likes) BMW M4 COMPETITION
+
+
+[2025-10-01 20:05:36] (@izzatilloraximberganov9881, 0 likes) Bmw oladi x oxirgisi x 7 bolsa kerak bmw dan boshqa moshina ketmidi gelik kngi planlari menimcha
+
+
+[2025-10-08 06:18:56] (@abubakirhasanov3065, 0 likes) Bmw  X6
+
+
+[2025-10-01 11:24:18] (@IlyosYT, 0 likes) keyimgi moshinalari BMW m8 boladi hudo hohlasa
+
+
+[2025-10-01 10:19:29] (@AbrorMusurmanov-w7g9s, 0 likes) BMW X7
+
+
+[2025-10-11 01:47:40] (@ShavkatShukurov-e3r, 0 likes) Assalamu Alaykum brat M8 blan almashtring
+
+
+[2025-10-01 18:19:10] (@Xidirov918, 0 likes) Keying mashnasi nexsiya 2 buladi
+
+
+[2025-10-01 10:27:04] (@ShavkatShokirov-x8y, 0 likes) Mersedes benz 223 kotta ehtimol bilan
+
+
+[2025-10-03 17:06:44] (@OsimxonTursunboyev, 0 likes) Mers banan
+
+
+[2025-10-02 11:45:38] (@bekzodeshniyazov4348, 0 likes) Huawei M9
+
+
+[2025-10-04 07:26:52] (@NigoraNarmatova-m9y, 0 likes) BMW
+
+
+[2025-10-02 08:28:33] (@ImronToychiyyev, 0 likes) Bmw X8 X6
+
+
+[2025-10-10 08:07:18] (@MuhammaddavronMamasobirov, 0 likes) Bentli olsa kerak
+
+
+[2025-10-09 17:16:49] (@шоха-м6.08, 0 likes) Манимча Bmw m4 competition
+
+
+[2025-10-06 12:08:08] (@tohirjonnazarov6532, 0 likes) Ким 2026 коряпти
+
+
+[2025-10-01 16:45:10] (@Shuhratovm622, 0 likes) Kengi moshina sportcar boladi
+
+
+[2025-10-03 15:55:21] (@Nurillo_0606, 0 likes) Merskivich😅
+
+
+[2025-10-01 16:35:48] (@Dibala_cotstamare, 0 likes) Astagfirillah. Wunaqa masxaraboz, ilmsiz, qornidan va kayfidan bowqa g'ami yoq xayvon sifatlar odamlarni manqurtlashtirib soqqani topip yuriwibdi. Aslida bu ewwaklar hech Kim
+
+
+[2025-10-01 18:20:30] (@shaxrisabztvkesh7147, 0 likes) Jentra oling  katta bola bulub yurasiz
+
+
+[2025-10-02 04:32:45] (@Jonny_walker, 0 likes) Улугбек роса узидан кеткан одам байкот бери кере бунга, Киргизтонга бориб улани башарасига тупуриб кетган одам бу, яна чехол подарка киган одами чехолини ёкворган
+{
+	[2025-10-04 09:58:03] (@ShoxruhSobirov-kz6yw, 0 likes) Dinaxuy unda sanga
+}
+
+
+[2025-10-01 10:37:38] (@Bobur0120, 0 likes) GElikdan boshqa moshina yoqmi
+
+
+[2025-10-03 14:10:33] (@NodirbekToshpolatov-z9y, 0 likes) Cadillac oladi
+
+
+[2025-10-01 14:56:22] (@MUHAMMADXojaniyozov-y4g, 0 likes) L9 moshuna yoki gellik
+
+
+[2025-10-01 10:49:37] (@asadbekarslonov48, 0 likes) KEYINGI MASHINA  KIA BOʻLSA KERAK QAYSI MODELLIGINI BILMADIM OʻZIGA YOQQANINI OLADI LEKIN KIA BOʻLSA KERAK
+
+
+[2025-10-03 04:26:25] (@dilshodbekataniyazov, 0 likes) BMW XM
+
+
+[2025-10-03 15:32:42] (@uzz.145, 0 likes) 🎉
+
+
+[2025-10-08 15:42:55] (@Севам-ев, 0 likes) Lamborghini Urus
+
+
+[2025-10-02 10:20:54] (@narzullokomiljonov, 0 likes) 🎉
+
+
+[2025-10-01 11:30:41] (@KoreanLife085, 0 likes) Ролс ройс мошина оладилар
+
+
+[2025-10-02 03:53:12] (@афи-ъ3ю, 0 likes) Gelik ob boganlar🎉
+
+
+[2025-10-01 13:41:45] (@Shoxrux-n4z8t, 0 likes) Zeekr 001 kora rangda
+
+
+[2025-10-03 13:43:54] (@АликВалик-б3д, 0 likes) Keyingi moshina lambarjino urus bosa kerak
+
+
+[2025-10-01 18:13:02] (@kfvgeda, 0 likes) bentley
+
+
+[2025-10-01 09:55:41] (@ghvidg, 0 likes) BMW болад
+
+
+[2025-10-05 07:54:37] (@DilmurodQoshimov-ve6ug, 0 likes) BMW M5
+
+
+[2025-10-01 14:42:34] (@IbrohimbekAnarkulov, 1 likes) Gelik 
+	Gelik
+	Gelik💪🏻🤩🔥
+
+
+[2025-10-30 12:36:14] (@Nur-o9h6p, 0 likes) zeekr yoki xiaomi
+
+
+[2025-10-02 10:55:52] (@gulomnazarbaxriyev5003, 0 likes) Indaba nima buldi
+
+
+[2025-10-01 15:56:56] (@diyorubaydullayev5917, 0 likes) qanaqa moshina oladila bilmadim lekn 4 baloni boladi )
+
+
+[2025-10-01 10:44:49] (@XghhffhFghjjg, 0 likes) BMW M5 Qanaqasi boʻlishi qiziqmas CS mi boshqami
+
+
+[2025-10-01 17:50:13] (@BekRahmonov-k3n, 0 likes) Гийбат купайиб кеттида...
+
+
+[2025-10-10 15:40:14] (@BilolxojaAbdusamatov-f1n, 0 likes) MERSADES BENZ gelik kaman da bipan marska ketish учун goooo
+
+
+[2025-10-01 14:01:21] (@MuhammadazizRaximjonov-b8g, 0 likes) BMW M5 boladi
+
+
+[2025-10-03 05:05:21] (@ABBCNewc, 0 likes) BMW x7
+
+
+[2025-10-01 15:45:39] (@soburremix1366, 0 likes) Банк ё бартер борми😅
+
+
+[2025-10-01 17:01:36] (@FeruzaIkromova-q7j, 0 likes) Keragov
+
+
+[2025-10-01 11:47:56] (@vodiyinomarkalari, 0 likes) Aito
+
+
+[2025-10-01 10:48:06] (@red_muhammad, 0 likes) merrsi faralarini olib bmw ga qobqoyiwibtiyu
+
+
+[2025-10-01 13:47:12] (@abdusalomovabdurauf2094, 0 likes) Keyingisi gelik
+
+
+[2025-10-01 10:55:47] (@ИсломМуединов, 0 likes) AMG 63
+
+
+[2025-10-14 02:35:36] (@akhmedoofzzz6629, 0 likes) MERCEDES GLE 360
+
+
+[2025-11-04 17:29:06] (@СардорУсмонов-ю3ъ, 0 likes) Билмадиму 450 км соат юрадиган тойчок олади
+	Еки гелик
+
+
+[2025-10-01 11:07:56] (@UmarjonKurbanov-h1n, 0 likes) Bmw m8
+
+
+[2025-10-02 19:17:23] (@marshall8467, 0 likes) BMW X7 m60
+
+
+[2025-10-02 01:01:37] (@temaabduraimov5205, 0 likes) 2026-yil gelik. Mercedes
+
+
+[2025-10-03 20:56:08] (@BoxodirKarimov-sn1ve, 0 likes) Шогирт оласларми
+
+
+[2025-10-05 18:36:18] (@MirabbosUsmonov, 0 likes) Toyota Land Cruiser
+
+
+[2025-10-03 10:05:13] (@Cobalt_760, 0 likes) Gelik odam qigan ishdi odam qiladi
+
+
+[2025-10-12 15:04:06] (@SevinchS-s2v9n, 0 likes) Mercedes AMG G63
+
+
+[2025-10-01 16:43:32] (@botiralikazakov1378, 0 likes) Chunvosmi... chunvosmi.... chunvosmi.....
+	Kibr
+
+
+[2025-10-01 09:50:41] (@gayratgayrat2207, 0 likes) Cobalt boʻladi 😂
+
+
+[2025-10-02 12:57:32] (@FantasyFootballOzbekiston, 0 likes) Hop stalnoy BMW
+
+
+[2025-10-02 03:46:54] (@ZabihullohNigmatullayev, 0 likes) Li masalasida mani fikrim bir tiyinga qimmat moshina reklamaga ogansanla obkirvotkan odamla qaysidur ma'noda niyyatiga yetti huddi jentra singari. Karochi puli bor odamlani atlas ishtonisanla kim hohlasa kiyib o'ynatvuradi sanlani va sanla shu atlas ishtonligindan or qivossanla qaysidur ma'noda
+
+
+[2025-10-01 12:52:00] (@animeuzbekyt, 0 likes) Bmw i8
+
+
+[2025-10-02 16:29:15] (@EgamberdiNaimjonov-v3d, 0 likes) eshshak arava bosin
+
+
+[2025-10-01 11:49:13] (@husanboyabdurahimov-os5gq, 0 likes) Шу халкни оркасидан танилиб тирикчилик киляпсан. Худога шукур кил.
+
+
+[2025-10-03 15:31:36] (@HolmatHolmatov-f9b, 0 likes) Манданам интирвйу олилар лабо машинам бор.
+
+
+[2025-10-01 16:22:55] (@vayskhodzha, 0 likes) BMW M8
+
+
+[2025-10-01 10:52:51] (@HudayorRajapov, 0 likes) X 7
+
+
+[2025-10-02 15:23:30] (@shaxashaxa612, 0 likes) O'zbek tilida gapirishni o'rganib kelinglar. Birbalolar deb yotipsan ikkovingam
+
+
+[2025-10-02 08:28:49] (@ImronToychiyyev, 0 likes) Lexus
+
+
+[2025-10-01 10:15:35] (@ek5736, 0 likes) BMW X5
+
+
+[2025-10-02 03:57:52] (@DoniDavidov-p8c, 0 likes) Кадиллак осала кере
+
+
+[2025-10-01 15:59:03] (@oobb8201, 0 likes) Ийи танилгим кемаябди деб яна шунака деяпдию рангини бошка килиб ч....
+
+
+[2025-10-01 10:52:18] (@JamoliddinShukurllayev, 0 likes) Cadillac
+
+
+[2025-10-15 09:00:36] (@Asqarumarov-g9s4s, 0 likes) yana bmw
+
+
+[2025-10-04 01:26:29] (@HfigJgjv-cm8wz, 0 likes) Масхарабозлик қилиб топган пулингни мақтанма
+
+
+[2025-10-02 12:02:12] (@Uaayyuby, 0 likes) BMW Xladan 1tasi
+
+
+[2025-10-01 15:21:57] (@Saydumarov, 0 likes) Tayota LC 300
+
+
+[2025-10-21 19:40:05] (@AbdumutalAbdumajidov-y9p, 0 likes) BMW M5 F90
+
+
+[2025-10-01 12:36:22] (@Yulduz4880Muxtorova, 0 likes) Odamlarga befoyda video chiqargani uchun opchiqvossilami yanada odamlani miyyasini zaharlasin db bu bolani.odamlaga foydasi tegvotkan odamlani opchiqselar ko'pchilik mativ olardi
+
+
+[2025-10-06 18:44:32] (@miraloev_shoxjahon, 0 likes) Cadilac bosa kere hudo hohlasa
+
+
+[2025-10-02 02:10:40] (@NasibilloKozimbekov-e7y, 0 likes) Latipov bn bonu mos deganlar 👍
+{
+	[2025-10-03 06:02:15] (@amirxonraximov, 0 likes) Umuman mosmas
+}
+
+
+[2025-10-01 16:15:27] (@Tashmatovasahodata, 0 likes) Bmw yana
+
+
+[2025-10-01 17:18:20] (@MuhammadboburTuropov-n9w, 0 likes) Uchar talenka Olin 😂
+
+
+[2025-10-02 15:14:05] (@SadriddinBemurodov, 0 likes) Mersedis mikro oftobuz shekili shofiyor olib yuradiganidanovvv
+
+
+[2025-10-01 18:38:53] (@sheraldeu, 0 likes) Gle 450 4matic
+
+
+[2025-10-01 15:09:54] (@ulugbekqayumov9056, 0 likes) 1 tiyin ku bular
+
+
+[2025-10-06 02:11:27] (@SuhrobTuraev-k1k, 0 likes) Майнавозчилага пул ким беряпти
+
+
+[2025-10-01 12:12:11] (@МухаммадВаисов-ь4м, 0 likes) Кейнки мошина тахо
+
+
+[2025-10-02 06:15:33] (@ikromjonumarov2665, 0 likes) Мен аник биламан балони торта болади
+
+
+[2025-10-03 08:40:23] (@EsamurodovaNargiza, 0 likes) gelik
+
+
+[2025-10-04 10:37:56] (@karimjanov_motiv, 0 likes) Bentley Bentayga🫱🏻‍🫲🏼
+
+
+[2025-10-05 06:06:37] (@talatjonqosimov190, 0 likes) BMW da hammani ko'ziga tashlangilari kemayapti. Nexia 3 olib tashlanmi yursinla. Keyingi moshina Nexia 3 bo'sin
+
+
+[2025-10-01 14:41:06] (@Давронбек-ч7х, 0 likes) BMW m5 boladi
+
+
+[2025-10-01 16:08:55] (@gulnoraxonturdaliyeva7322, 0 likes) Gelik oladi
+
+
+[2025-10-05 07:20:30] (@DONIYORHAMDAAMOV, 0 likes) Yo bob ketlarin  yaxshi bobti betayinla
+
+
+[2025-10-03 09:26:45] (@muazzamtursunbayeva1748, 0 likes) Lamborgini yarashadi
+
+
+[2025-10-02 11:47:56] (@MirojiddinHujakulov, 0 likes) Мерсидис CLS 63 🍌🍌
+
+
+[2025-10-02 06:58:11] (@SirojYuldashev-s1q, 0 likes) Porsh liba Mers buladi
+
+
+[2025-10-02 06:11:34] (@shuhrategamberdiyev7435, 0 likes) Kia Sorento, Kia K8
+
+
+[2025-10-03 05:53:51] (@aristokrat358, 0 likes) Toyota Prado 300
+
+
+[2025-10-05 13:54:02] (@zikopubgm, 0 likes) genesis
+
+
+[2025-11-04 16:38:39] (@farruhbee_715, 0 likes) Porsche 911
+
+
+[2025-10-04 08:06:42] (@AslbekZokirov-j2i6c, 0 likes) Гелик или урус
+
+
+[2025-10-01 09:45:06] (@HeartsofReciters, 0 likes) Lexus Gx osalar kerak
+
+
+[2025-10-01 18:48:53] (@komol_zolotoy, 0 likes) Мерс
+
+
+[2025-10-05 17:24:58] (@Sultanbilisbaev, 0 likes) Gelik aniq oladi
+
+
+[2025-10-01 18:20:20] (@GOSTAPUBGM, 0 likes) Porshe boʻsa ker keyingi moshinasi
+
+
+[2025-10-03 07:13:32] (@Ferikboy, 0 likes) Kia stinger uxsharkan moshinasi
+
+
+[2025-10-04 07:36:00] (@УметалыДовуталыуулу, 0 likes) Ulukbook kooot
+
+
+[2025-10-04 07:35:15] (@УметалыДовуталыуулу, 0 likes) Ulukbook kooot
+
+
+[2025-10-07 13:12:50] (@AbduvahobAbdugafurov-d2m, 0 likes) M5 yoki Genesis
+
+
+[2025-10-02 16:57:00] (@tamillakudratova, 0 likes) Гелик осала кереее
+
+
+[2025-10-03 22:31:32] (@UlugbekRahmanov, 0 likes) Mersedes s clas
+
+
+[2025-10-01 11:45:00] (@ZMA-1986, 0 likes) Mers maklarn
+
+
+[2025-10-01 13:37:14] (@anvarov____photographer, 0 likes) BMW M5
+
+
+[2025-10-01 09:47:35] (@user-cn3ky9wz9n, 0 likes) BMW M5
+
+
+[2025-10-01 13:00:50] (@ОзодбекМухаммадов-т6й, 0 likes) Toyota Camry
+
+
+[2025-10-01 12:05:48] (@IbrohimSayfullayev-w1w, 0 likes) Gelik oladila
+
+
+[2025-10-01 14:26:33] (@SherzodAzimov-yo3vf, 1 likes) Mini Cuper mittimega mos deganlar olov bervorila jigaar🔥😅🎉
+
+
+[2025-10-03 05:05:57] (@ABBCNewc, 0 likes) BMW i
+
+
+[2025-10-02 14:32:52] (@Jonkipriklyucheniya, 0 likes) BMW X6 либо седан от bmw или же гелик
+
+
+[2025-10-02 18:12:14] (@BaxtiyorKarimov-sd1vm, 0 likes) Kengısnı vangadan soraymız
+
+
+[2025-10-13 17:54:53] (@KamronbekAbduraxmonov-x9b, 0 likes) BMW M 5 competition
+
+
+[2025-10-26 16:14:42] (@ALONEBOY-n9z4u, 0 likes) Joxon yomonam yalaqisande😂😂😂
+
+
+[2025-10-08 07:49:10] (@SanjarAbduqahhorov, 0 likes) Инша олло гелик олади
+
+
+[2025-10-08 12:31:59] (@ummukulsum9398, 0 likes) Keyingi mowinasi Gelik boʻladi
+
+
+[2025-10-05 12:30:25] (@AtabekIsmailov-gb9bu, 0 likes) Авто салонлар реклама килиб мин клиент чикса сотворасан деса керекда
+
+
+[2025-10-01 18:12:29] (@kfvgeda, 0 likes) range rover
+
+
+[2025-10-01 13:40:13] (@ZubayrRustamov-e8n, 0 likes) range rover
+
+
+[2025-10-01 13:19:49] (@MihsinMuhammadiyev, 0 likes) bentli
+
+
+[2025-10-01 16:44:58] (@s.diyorbek_XZM, 0 likes) Koʻngli boʻsh qizaloq xa ey sizlar oʻzlaringiz olayotgan Vidlaringiz ini koʻring  minutlik haqida gapirmang ....
+
+
+[2025-10-07 09:32:06] (@abduvoris_king, 0 likes) Bently bentayga
+
+
+[2025-10-01 14:54:52] (@zuxriddinrozmatov3228, 0 likes) manda nexia 3 bor BMW ga alishtirsez alishtiroraman faqat ustidan 5000 $ beras shunda kelishalamiz
+
+
+[2025-10-01 12:18:06] (@MirzarahimIsoqjonov-n2k, 0 likes) Range Rover
+
+
+[2025-10-01 11:47:21] (@Азамат-м8м, 0 likes) Range Rover
+
+
+[2025-10-04 08:13:47] (@nodirbekjumaniyozov4274, 0 likes) Audi ili Lexus
+
+
+[2025-10-01 10:33:30] (@the-dreambeats, 0 likes) gelik
+
+
+[2025-10-02 04:31:51] (@Muhammadshokir-d2n, 0 likes) Иккивинг хам факат пулдан гапиряпсан махтаниш кибр аёллар куйлагини махтанишадию худди шу иш булибди.
+
+
+[2025-10-01 15:39:07] (@justincumberbatch6410, 0 likes) Lamborjini ili Bugatti
+
+
+[2025-10-04 00:22:56] (@ErgashovSardorESN7, 0 likes) В интервбюю Через чур много перебеваеш,не даёш договорить как тебя там латипов,эт очень не красиво вышло, сорянь уважуха. Миттими респект 👍🏻
+
+
+[2025-10-28 09:28:21] (@Contacts_lico, 0 likes) https://youtube.com/shorts/fIgaQXkzJV0?si=inZBr1-rTzI6ycPX😂
+
+
+[2025-10-13 07:37:06] (@ars_bakh2025, 0 likes) шу митти вобщем
+
+
+[2025-10-01 11:45:28] (@dostonkhikmatullaev-d6z, 0 likes) bmw X7 or m5
+
+
+[2025-10-02 10:46:04] (@Jovico181, 0 likes) Caddilac escalade
+
+
+[2025-10-04 05:38:28] (@UlugbekMamadiyarov-z8x, 0 likes) Zeekr 07
+
+
+[2025-10-01 18:45:38] (@shahzodabdullaev5067, 0 likes) Mercedes GLE
+
+
+[2025-10-02 07:46:21] (@javohirxasanov3832, 0 likes) Keyingi moshina Gelik boladi. Ujinga kop narsa yemiman)
+
+
+[2025-10-04 11:22:53] (@ravshanmuradov, 0 likes) Turqinga sani
+
+
+[2025-10-02 17:56:50] (@Umar1k, 0 likes) Jentra osa kere mitti
+
+
+[2025-10-01 13:09:22] (@muhammadjonmurodjon1637, 0 likes) Bmw x7
+
+
+[2025-10-07 16:46:11] (@MunavvarSamutova, 0 likes) Tahoe
+
+
+[2025-10-02 08:35:10] (@ibrohimturdiboyev6677, 0 likes) Aito m9 bo'sa kere manimcha ?
+
+
+[2025-10-01 14:56:46] (@MUHAMMADXojaniyozov-y4g, 0 likes) bentliy
+
+
+[2025-10-01 10:34:02] (@sanatsabirov6787, 0 likes) Bwx7 boʻladi keyingi mashina
+
+
+[2025-10-05 21:10:36] (@nuralishukurov5469, 0 likes) Tahoe
+
+
+[2025-10-05 09:43:19] (@Damir_97, 0 likes) Tahoe
+
+
+[2025-10-03 19:05:02] (@Fas-f2r, 0 likes) Tahoe
+
+
+[2025-10-02 18:37:46] (@ziyodullakocharov4855, 0 likes) Tahoe
+
+
+[2025-10-05 04:54:05] (@Samandar-m7t, 0 likes) Zeekr
+
+
+[2025-10-06 21:46:03] (@alibekeshboltayev1, 0 likes) Urus
+
+
+[2025-10-02 08:17:58] (@OtamurodAnarbaev, 0 likes) Keyingi moshi asi bmw
+
+
+[2025-10-01 13:13:53] (@БоситЯкуббаев, 0 likes) Митти тико
+
+
+[2025-10-01 10:58:28] (@Umid_1985, 0 likes) Кийналган одам тикилиб етибди ердам киселарчи шоу килормасдан..
+	Факат  олиб 10 минг 20 минг зиенига сотасан 
+	Билганини кил вопшим ....
+
+
+[2025-10-15 14:47:48] (@AzizjonHakimov-hu6wo, 0 likes) Zeekr
+
+
+[2025-10-04 11:25:49] (@ShohjaxonJoʻrayev-o3n, 0 likes) Keyingi moshina mustang
+
+
+[2025-10-01 10:05:24] (@ElorAsameddinov, 0 likes) Ruscha aralashmay gapiringlar
+
+
+[2025-10-04 11:26:00] (@ShohjaxonJoʻrayev-o3n, 0 likes) Mustang
+
+
+[2025-10-01 15:13:36] (@DiyorMahmudjonov-dk4fn, 0 likes) Porsche 911
+
+
+[2025-10-01 19:42:59] (@AvazUrinov07648, 0 likes) Ferari
+
+
+[2025-10-04 07:44:24] (@qurbonXoja_1608, 0 likes) Keyingi mowinalari lambarjini urus
+
+
+[2025-10-07 10:55:42] (@IzzatbekMamarajabov-z1w5w, 0 likes) Mersedes benz g63
+
+
+[2025-10-01 21:17:27] (@Solijony, 1 likes) Нассиб кейингиси геликка харакат кламиз дедиз. Значит гелик оласиз или семейный GLE , GLS. Ответ кутаман✊
+
+
+[2025-10-01 10:12:14] (@shohruh_uz, 0 likes) Zekr oladi
+
+
+[2025-10-01 10:21:34] (@ravshanaliyev3578, 0 likes) Тилинга эхтйот бол
+
+
+[2025-10-01 11:56:04] (@Москва-с4г, 0 likes) Шу болани четда ушлаб олай кутига бармогимни тикаман
+
+
+[2025-10-01 10:26:06] (@IlyosRustamov-e3r, 0 likes) Taxo olsa kerak
+
+
+[2025-10-01 10:33:29] (@augSATTORAKA, 0 likes) Jugli 0.6 oladila
+
+
+[2025-10-01 12:39:24] (@farruxzakirov-xx2ke, 0 likes) keyngi mowina manmcha Mers bosa kere nu qays modeli blmiman
+
+
+[2025-10-01 09:47:23] (@jalilovsanjarbek1708, 0 likes) Катта асбобни.хам обчик
+
+
+[2025-10-01 13:50:42] (@Sardor.2016, 0 likes) MERS GLS
+
+
+[2025-10-01 14:46:11] (@abu_pubgm838, 0 likes) Bmw m 5
+
+
+[2025-10-03 10:40:53] (@Usmon2017, 0 likes) Redmi car
+
+
+[2025-10-01 09:46:01] (@Raxmatjon-h5l, 0 likes) Банан
+
+
+[2025-10-08 06:17:35] (@Tillo-y4f, 1 likes) X6m yoki x5m osala kere
+{
+	[2025-10-23 15:39:33] (@Joker_edits762, 1 likes) yog'e omasala kere...
+}
+
+
+[2025-10-02 09:14:40] (@IbrohimAzimjonov-z2m6f, 0 likes) Мерседес амг или брабус боса кере бмв дан кейин
+
+
+[2025-10-02 16:19:06] (@AsilbekAbduganiyev-w5e, 0 likes) Mercedes GLS 650
+
+
+[2025-10-02 16:03:27] (@MirazizBoysoatov, 0 likes) Bmw xm
+
+
+[2025-10-01 09:47:58] (@XUSHNUD-o7v3s, 0 likes) Bosvorasmi 😂😂😂
+
+
+[2025-10-02 05:25:48] (@BayirHorseRiding, 0 likes) MERS
+
+
+[2025-10-02 12:13:36] (@rokko954, 0 likes) barter nma u ?
+
+
+[2025-10-01 15:52:24] (@IELTS_SECRETS911, 0 likes) Land Cruiser
+
+
+[2025-10-03 13:54:33] (@timurbaxtiyarov2147, 0 likes) Да да
+
+
+[2025-10-01 16:21:21] (@zaripov_e, 0 likes) Tahoe
+
+
+[2025-10-01 21:31:09] (@АйтинбекУсенов-н2я, 0 likes) Liliput maskarapoz
+
+
+[2025-10-01 19:36:28] (@jayhunazimov4427, 0 likes) Ruscha qoshimchala kop ishlatishga sabab ozbechadan kora ruschani yaxshiro gapirishidami? Toliq ruscha gapirtirib korish kerekan bu bolani))
+
+
+[2025-10-03 18:35:45] (@shoazizakromov6, 0 likes) mercedes benz amg g63
+
+
+[2025-10-02 06:44:02] (@SherzodAyitbayev33, 0 likes) Aito M9 aniq
+
+
+[2025-10-01 16:15:13] (@HabibullaGaybullaev, 0 likes) MERS
+
+
+[2025-10-05 17:26:42] (@playgame67-o, 0 likes) cadilac
+
+
+[2025-10-02 08:29:11] (@ImronToychiyyev, 0 likes) Mercedes GT
+
+
+[2025-10-01 23:39:40] (@MuhammadfayzGopporjonov-h5d5o, 0 likes) Bently
+
+
+[2025-10-01 22:22:59] (@diyorbekobidjanov4474, 0 likes) Lamborghini nissan
+
+
+[2025-10-03 11:18:22] (@MargubaTursunova-l4x, 0 likes) Kardilak
+
+
+[2025-10-01 22:23:45] (@BMW_1_, 0 likes) bmw m5
+
+
+[2025-10-01 11:11:58] (@aliyorbekmengliyev3241, 0 likes) Mercedes Benz
+
+
+[2025-10-03 23:05:46] (@ilhomjonvalijonov6992, 0 likes) Porche cayyan 😉
+
+
+[2025-10-01 17:22:14] (@gurlan092, 0 likes) Porsche
+
+
+[2025-10-01 14:05:38] (@MirolimMirhamidov-j9f, 0 likes) Genesius nmadr 90
+
+
+[2025-10-02 16:55:46] (@anvar3271, 0 likes) Cadilak
+
+
+[2025-10-02 07:10:54] (@SUNNATXONERGASHXOJAYEV, 0 likes) Bentley
+
+
+[2025-10-01 11:43:30] (@athamjonabdullayev9917, 0 likes) Bentley
+
+
+[2025-10-16 19:19:34] (@zxonson, 0 likes) Birovni pulini xisoblab yuradigan, saviyasiz blogger
+
+
+[2025-10-01 19:51:45] (@ИльхамАкбаралийев, 0 likes) Х 7 BMW
+
+
+[2025-10-02 17:52:03] (@EDDY_soft, 0 likes) Cadilac eskalide
+
+
+[2025-10-01 22:22:44] (@BMW_1_, 0 likes) bmw i5
+
+
+[2025-10-01 09:40:39] (@Karmp_pubg, 0 likes) Dodge ili camaro
+
+
+[2025-10-18 18:16:07] (@ElChapo_710, 0 likes) AITO M9
+
+
+[2025-10-02 18:30:30] (@ZulayhoNamozova, 0 likes) Bu.utoplinik.mosina.bundan.niksiea.3 eahsi.uzeam.5.kraska.buganga.uhsaeapti
+
+
+[2025-10-01 20:01:43] (@XushnudRustamov-x5t, 0 likes) Kengs ginesis
+
+
+[2025-10-08 23:49:09] (@КуштарбекЖигитов-я7в, 0 likes) Бул бала Кыргызстанга келип жамандап кеткен Аллах жазанды берсин шакал
+
+
+[2025-10-01 16:44:40] (@РустамЗокиров-у5у, 0 likes) Такой какой
+
+
+[2025-10-01 18:32:01] (@otabek0109, 0 likes) bmw dan kegin boshaqa mowina kayp bermidi yana bmw oladila boshqa markali
+
+
+[2025-10-02 10:18:20] (@Sharipov035, 0 likes) M5 cs boladi
+
+
+[2025-10-03 06:43:28] (@UtkirbekJurakulov, 0 likes) Yasama kibr hayotlaring hamani joniga tegdi sanlarni
+
+
+[2025-10-02 12:57:22] (@BekzodToshpulatov-b3b, 0 likes) Bemvi  x7
+
+
+[2025-10-01 20:24:07] (@abduvaliumarxanov6698, 0 likes) Aito
+
+
+[2025-10-01 19:53:02] (@XushnudRustamov-x5t, 0 likes) Qz otkanda bo nu 😂bopket ku
+
+
+[2025-10-06 18:38:55] (@AlisherAxmedjonov, 0 likes) Бу.бола.ким
+
+
+[2025-10-01 14:52:49] (@ravshanbekgofurav8228, 0 likes) Recrover
+
+
+[2025-10-01 22:23:33] (@BMW_1_, 0 likes) bmw xm
+
+
+[2025-10-01 10:58:58] (@AlimAlimjan, 0 likes) Gelik 1 ting qimat iPhone 17 pro singari👎
+
+
+[2025-10-01 18:12:04] (@kfvgeda, 0 likes) porsche cayenne
+
+
+[2025-10-05 13:53:55] (@zikopubgm, 0 likes) kia
+
+
+[2025-10-14 10:29:47] (@Nazorov703, 0 likes) tahoe
+
+
+[2025-10-01 21:12:36] (@abubakrkhabibullayev345, 0 likes) Genesis g90
+
+
+[2025-10-02 08:28:31] (@ozodbekkomilov9743, 0 likes) Kibrali kayfni oboldm dyabdi bla
+
+
+[2025-10-01 16:33:51] (@alisharopov5233, 0 likes) Шуни турки нимагадур йокмейдиде
+
+
+[2025-10-01 09:45:47] (@ramziddinnasridinov, 0 likes) Avito
+
+
+[2025-10-01 18:13:12] (@kfvgeda, 0 likes) genessius
+
+
+[2025-10-09 10:37:17] (@faroxiddinabdumominov4073, 0 likes) Tiko 😂
+
+
+[2025-10-01 13:11:14] (@ustozlardarsliklari.8145, 0 likes) Aito M9
+
+
+[2025-10-02 04:55:35] (@jav_okhir0079, 0 likes) leap motor
+
+
+[2025-10-05 08:22:44] (@АнаарМуминов, 0 likes) Мактанишдан бошка нарса эмас
+
+
+[2025-10-11 19:09:37] (@zavqiddinbahronov6607, 0 likes) Mers endi aniq
+
+
+[2025-10-06 20:51:38] (@KamoliddinGaffarov, 0 likes) porsche 911
+
+
+[2025-10-01 15:58:28] (@IskoGaniev, 0 likes) Машинада озунодо бир метр бойунада котогум Мити
+
+
+[2025-10-07 10:07:07] (@Zokhirovvvvvv, 0 likes) Kia
+
+
+[2025-10-01 18:13:23] (@kfvgeda, 0 likes) ferreri
+
+
+[2025-10-03 08:52:02] (@ArsenZoirov-m6x2i, 0 likes) Kia
+
+
+[2025-10-01 13:39:32] (@azizaabubakirova8026, 0 likes) Mercedes velid vagen
+
+
+[2025-10-12 09:31:54] (@БунёдбекМахмудов-я1е, 0 likes) Акиллилар
+
+
+[2025-10-01 20:02:01] (@javlonbekrahimov7784, 0 likes) yoqmadi manga intervyu
+
+
+[2025-10-02 14:49:59] (@AzizbekIbadullayev-i3i, 0 likes) Tiko
+
+
+[2025-10-01 12:19:09] (@ANASUZUSMANOV, 0 likes) Maybix
+
+
+[2025-10-01 14:17:17] (@JonyJony777, 0 likes) Gavnavoz maqtanchoq ass hole
+
+
+[2025-10-02 02:52:39] (@muhammadmahdiymaqsudov9403, 0 likes) bmw m5 cs
+
+
+[2025-10-07 16:33:39] (@UMIDHAMROEV-o7g, 0 likes) gilik
+
+
+[2025-10-02 23:01:25] (@wizard9541, 0 likes) Range
+
+
+[2025-10-01 12:24:59] (@НаврузКабилов-з3м, 0 likes) Да да да икки сум топсаларинг узбек тилида гапиргиларинг келмай колади
+
+
+[2025-10-01 14:12:28] (@Мебел_Анжан, 0 likes) Kia k9
+
+
+[2025-10-02 11:34:41] (@dostupna, 0 likes) MERS GT 43
+
+
+[2025-10-02 06:50:39] (@DavronovIbrohim, 0 likes) Gelk
+
+
+[2025-10-01 14:04:41] (@AbdurahmonCryptoTop1edits, 0 likes) Propagandachilar😡
+
+
+[2025-10-01 10:08:33] (@javohirmuzaffarov3321, 0 likes) Тико об хайдаб корин митти.ме
+
+
+[2025-10-01 12:16:27] (@SardorRahmatov-b5c, 1 likes) Ит бу ит
+
+
+[2025-10-03 15:45:34] (@АбдихошимТуракулов, 0 likes) Ауди
+
+
+[2025-10-01 16:01:08] (@oobb8201, 0 likes) Сани мошинини олгандан малибу  олган яхши
+
+
+[2025-10-01 15:06:38] (@SobirAka-j4x, 0 likes) Мунча да да кайтарасан пулинг купайдими сен хам кишлоки
+
+
+[2025-10-04 16:54:51] (@muminoff023, 0 likes) Kia k9
+
+
+[2025-10-01 10:30:18] (@AsadbekErgashboyev-je6nt, 0 likes) Audi s8
+
+
+[2025-10-01 15:08:56] (@Азамат-в9ш9д, 0 likes) Мошинега котогим
+
+
+[2025-10-04 16:54:34] (@muminoff023, 0 likes) Genesis
+
+
+[2025-10-02 18:21:40] (@abbos6883, 0 likes) Genesis
+
+
+[2025-10-05 16:22:27] (@DilshodIskandarov-lz7qe, 0 likes) Kim uzi bu
+
+
+[2025-10-01 10:00:40] (@Badal-b4w, 0 likes) COBALT😂 OLALLA
+
+
+[2025-10-06 12:03:28] (@shaxbozqobilov-vt8eq, 0 likes) Poche
+
+
+[2025-10-02 10:16:47] (@mrabbos__, 0 likes) Genesis
+
+
+[2025-10-02 04:02:40] (@hamidulloabdusalomov_17, 0 likes) Labargini urus nasb
+
+
+[2025-10-01 15:27:07] (@muhammadyusufnabijonov5893, 0 likes) camaro
+
+
+[2025-10-02 03:43:53] (@ZabihullohNigmatullayev, 0 likes) Odamlaga nimani bersen o'shani olasan nima qilish kere boshqa "IJOD" dib nomlavoldilarin bo'lar bo'mas kontentlani raz sanla uchun "IJOD" mi bu unaqada sanladanam kotta ijodkorla bor haliyam o'shaladan so'ralarin hayotiy saboq ollarin azgina
+
+
+[2025-10-07 20:03:54] (@ЭлтинАбдуллаев, 0 likes) 2 сигаям 🍌
+
+
+[2025-10-02 13:00:21] (@Жеңишбек-777, 0 likes) Митти Ми или что ещё 👎👎👎👎
+
+
+[2025-10-02 17:59:35] (@Гузяля-й1ю, 0 likes) Бир тиинга кимматсан хезим
+
+
+[2025-10-01 21:22:20] (@dostonbloger4266, 0 likes) Xiaomi
+
+
+[2025-10-04 22:01:29] (@ShukurovJamshid-t7z, 0 likes) Labargini urus
+
+
+[2025-10-09 11:49:12] (@umidjonegamberdiyev8360, 0 likes) lambarghini urus
+
+
+[2025-10-02 15:55:13] (@MaqsudJurakulov, 0 likes) Мерс🫡
+
+
+[2025-10-02 08:28:08] (@ImronToychiyyev, 0 likes) Lambarghini
+
+
+[2025-10-02 07:22:40] (@ZiyodullohSaydaliyev, 0 likes) Zeekr 007 gt
+
+
+[2025-10-03 10:29:46] (@JaloliddinJoraqulov-rl8om, 0 likes) porsh
+
+
+[2025-10-01 18:12:16] (@kfvgeda, 0 likes) porsche
+
+
+[2025-10-01 13:00:04] (@PlaywithOzodbek-b9l, 0 likes) porsche
+
+
+[2025-10-01 11:24:18] (@Leonbooms, 0 likes) porsche
+
+
+[2025-10-05 19:51:10] (@AbdumutalibUmarov-k8r, 0 likes) BMX. X8 boʼladi
+
+
+[2025-10-01 16:42:29] (@BahromSalimoxunov, 0 likes) Умуман йокмеди бу калта пой
+
+
+[2025-10-01 19:07:28] (@GjjjhHyi, 0 likes) Silarding boshqa ishlaring yoʻqmi
+
+
+[2025-10-04 16:07:28] (@timurabidov2050, 0 likes) Улугбек сиз ва сизнинг командингиз купчиликдан бир кадам олдиндасизлар, шунинг учун негативларга энергия сарфлаб вакт кетказиб асабингизни бузманг. Ким НИМА деб гапирсаям энг асосийси сиз тугри йулдаги эканлигингизни билсангиз булди Бошка майда чуйда гапларга эътибор каратманг
+
+
+[2025-10-01 17:32:32] (@sirojiddinkhabibfoydali1473, 0 likes) Mitti xezalak
+
+
+[2025-10-01 12:19:04] (@RashidDavlatgeldiyev, 0 likes) Кейнки машина Гелик  Ман хам худо Халса Гелик ният килганман 🤲
+
+
+[2025-10-02 07:37:00] (@ali-so6wj, 0 likes) Босвориш керее
+
+
+[2025-10-13 17:54:49] (@ЖамшидРустамович-щ9ф, 0 likes) Сан пул уриб уласан бир кун жасадинг вообще екмайди сани.. екковингдиям айникса блоггер сани .
+
+
+[2025-10-01 15:02:21] (@ShOHZODBEK., 0 likes) Da.da. mi yohi 
+	
+	Ha .ha mi
+
+
+[2025-10-05 13:53:28] (@zikopubgm, 0 likes) voyah
+
+
+[2025-10-01 11:47:49] (@sardorsuyunov6111, 0 likes) Cadekak eskalet
+
+
+[2025-10-01 13:35:25] (@Dilyori, 0 likes) voyah
+
+
+[2025-10-04 04:36:57] (@islomkarimov2955, 0 likes) Zaybalee blya sanlani nma mowina olib necpul topiwing kimga qizigi bor 👎👎👎👎👎
+
+
+[2025-10-05 13:53:46] (@zikopubgm, 0 likes) porsch
+
+
+[2025-10-01 15:52:29] (@tam-ram1, 0 likes) акмокчилик
+
+
+[2025-10-04 10:55:55] (@KamronIskandarov-l7u, 0 likes) Porshe
+
+
+[2025-10-05 04:55:19] (@BunyodTurdiboyev-x3c, 0 likes) Rols roys
+
+
+[2025-10-02 16:26:29] (@onkyrgyzstan, 0 likes) Bu kotku
+
+
+[2025-10-01 20:13:08] (@Iliyaz-h1g, 0 likes) Митими кот
+
+
+[2025-10-01 16:23:27] (@Бексултан-б2з, 0 likes) Кот бала
+
+
+[2025-10-01 16:45:57] (@Roma-l9x, 0 likes) Узбекистонда Яхши  яшаш яхши Пул топиш учун ёки Масхарабоз ёки Мажддох булиш керак.
+
+
+[2025-10-02 03:42:31] (@FaryhAhmedov, 0 likes) Котогди ебсан базу Яа бнв
+
+
+[2025-10-01 16:14:36] (@Бек-в4о, 0 likes) Митти бошына Котогум
+
+
+[2025-10-14 07:23:39] (@doniibragimov5300, 0 likes) Огзига Скай шу миттини
+
+
+
+
+=== VIDEO PERESKAZKA (TIMESTAMPS) ===
+
+1. 00:00 - Trailer
+2. 01:08 - Mitti me yangi mashinasi obzori
+3. 02:20 - Avtomobil narxi
+4. 04:37 - Ulug‘bek mashinani qanchaga sotadi?
+5. 05:22 - Gelik vadasi qachon bajariladi?
+6. 06:26 - Kelajak rejalar
+7. 07:20 - Negativlarga munosabat
+8. 09:28 - Farhod Mannopovning onasini holati
+9. 11:38 - Chexol yoqib yuborgan bola
+10. 12:05 - Xavfli sovg‘a
+11. 13:22 - Bonu Ikramova turmushga chiqyaptimi?
+12. 14:57 - Aziz Tolaganoff safimizga qo‘shildi
+13. 15:50 - Farhod Mannopovning rejalari
+14. 17:26 - YouTubedan necha pul daromad keladi?
+15. 18:22 - Pullik Telegram kanal va shogirdlar
+16. 19:32 - 2026-yilga tayyorlangan rejalar
+17. 20:22 - Mittivine akkountining kelajagi
+18. 21:01 - Farhodni shifokorlariga Sud hukmi e'lon qilindi
+19. 22:00 - Milliy terma jamoani JCHga kim olib borishi kerak?
+20. 23:01 - Mitti me ning oylik daromadi
+21. 23:34 - O‘tgan tanlov g‘olibi aniqlandi
+22. 26:00 - YANGI KONKURS
+23. 26:23 - Kechki shahar bo‘ylab sayr

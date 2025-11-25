@@ -8,24 +8,25 @@ from database.models import SampleReport
 class SampleReportsService:
     
     @staticmethod
-    async def get_random_sample_report():
+    async def get_random_sample_report(video_type: str = 'regular'):
         async with async_session() as session:
             result = await session.execute(
                 select(SampleReport)
                 .where(SampleReport.is_active == True)
+                .where(SampleReport.video_type == video_type)  # 🆕 YANGI
             )
             reports = result.scalars().all()
             
             if not reports:
                 return None
             
-            # Tasodifiy tanlash
             selected_report = random.choice(reports)
             
             return {
                 'id': selected_report.id,
                 'report_name': selected_report.report_name,
                 'video_url': selected_report.video_url,
+                'video_type': selected_report.video_type,  # 🆕 YANGI
                 'analysis_data': json.loads(selected_report.analysis_data),
                 'is_active': selected_report.is_active,
                 'created_at': selected_report.created_at
@@ -75,11 +76,12 @@ class SampleReportsService:
             }
     
     @staticmethod
-    async def add_sample_report(report_name: str, video_url: str, analysis_data: dict):
+    async def add_sample_report(report_name: str, video_url: str, analysis_data: dict, video_type: str = 'regular'):
         async with async_session() as session:
             stmt = insert(SampleReport).values(
                 report_name=report_name,
                 video_url=video_url,
+                video_type=video_type,  # 🆕 YANGI
                 analysis_data=json.dumps(analysis_data, ensure_ascii=False),
                 is_active=True
             )

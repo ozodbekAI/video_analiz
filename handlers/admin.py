@@ -3,6 +3,8 @@ import json
 from aiogram import Bot, Router, F
 from aiogram.types import Message, CallbackQuery, Document, FSInputFile
 from aiogram.fsm.context import FSMContext
+from aiogram.types import InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from callbacks.admin import AdminCallback
 from services.sample_report_service import SampleReportsService
 from services.youtube_service import extract_video_id
@@ -398,57 +400,64 @@ async def process_add_type(query: CallbackQuery, callback_data: AdminCallback, s
 async def process_add_subtype(query: CallbackQuery, callback_data: AdminCallback, state: FSMContext):
     subtype = callback_data.subtype
     await state.update_data(subtype=subtype, analysis_type="advanced" if subtype == "advanced" else "synthesis")
-    await query.message.edit_text(ENTER_PROMPT_NAME)
-    await state.set_state(AdminFSM.waiting_for_prompt_name)
-
-
-@router.message(AdminFSM.waiting_for_prompt_name)
-async def process_prompt_name(message: Message, state: FSMContext):
-    if message.text:
-        await state.update_data(prompt_name=message.text.strip())
-        await message.answer("Введите текст промпта (или отправьте .txt файл):")
-        await state.set_state(AdminFSM.waiting_for_prompt_text)
-    else:
-        await message.answer("Пожалуйста, введите имя промпта текстом.")
-
-
-@router.message(AdminFSM.waiting_for_prompt_text)
-async def process_prompt_text(message: Message, state: FSMContext, bot: Bot):
-    prompt_text = None
     
-    if message.text:
-        prompt_text = message.text.strip()
-    elif message.document:
-        if message.document.mime_type != 'text/plain':
-            await message.answer("Пожалуйста, отправьте только .txt файл (text/plain).")
-            return
-        
-        file_io = io.BytesIO()
-        try:
-            await bot.download(message.document, destination=file_io)
-            file_io.seek(0)
-            prompt_text = file_io.read().decode('utf-8').strip()
-        except Exception as e:
-            await message.answer(f"Ошибка чтения файла: {str(e)}")
-            return
-        finally:
-            file_io.close()
-    else:
-        await message.answer("Пожалуйста, отправьте текст или .txt файл.")
+    await query.message.edit_text(
+        "📄 <b>ЗАГРУЗКА ПРОМПТА</b>\n\n"
+        "Отправьте .txt файл с промптом.\n\n"
+        "ℹ️ Название будет взято из имени файла.\n"
+        "Например: <code>simple_analysis.txt</code> → \"Simple Analysis\"",
+        parse_mode="HTML"
+    )
+    await state.set_state(AdminFSM.waiting_for_prompt_file)
+
+
+@router.message(AdminFSM.waiting_for_prompt_file)
+async def process_prompt_file(message: Message, state: FSMContext, bot: Bot):
+
+    if not message.document:
+        await message.answer("❌ Пожалуйста, отправьте .txt файл")
         return
     
+    if message.document.mime_type != 'text/plain':
+        await message.answer("❌ Только .txt файл (text/plain)")
+        return
+    
+    file_name = message.document.file_name
+    prompt_name = file_name.replace('.txt', '').replace('_', ' ').title()
+
+    file_io = io.BytesIO()
+    try:
+        await bot.download(message.document, destination=file_io)
+        file_io.seek(0)
+        prompt_text = file_io.read().decode('utf-8').strip()
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {str(e)}")
+        return
+    finally:
+        file_io.close()
+    
     if not prompt_text:
-        await message.answer("Текст промпта пустой. Попробуйте снова.")
+        await message.answer("❌ Текст пустой")
         return
     
     data = await state.get_data()
     analysis_type = data.get('analysis_type', 'simple')
     category = data.get('category', 'my')
-    prompt_name = data.get('prompt_name', 'Unnamed')
-    
+
     await create_prompt(prompt_name, prompt_text, analysis_type, category)
-    await message.answer(PROMPT_ADDED, reply_markup=get_admin_menu_keyboard())
+    
+    await message.answer(
+        f"✅ <b>ПРОМПТ ДОБАВЛЕН</b>\n\n"
+        f"📄 Название: <b>{prompt_name}</b>\n"
+        f"📁 Файл: <code>{file_name}</code>\n"
+        f"🎯 Тип: {analysis_type}\n"
+        f"📂 Категория: {category}\n"
+        f"📏 Длина: {len(prompt_text)} символов",
+        reply_markup=get_admin_menu_keyboard(),
+        parse_mode="HTML"
+    )
     await state.clear()
+
 
 
 @router.callback_query(AdminCallback.filter(F.action == "update_prompt"))
@@ -522,14 +531,19 @@ async def manage_samples_handler(query: CallbackQuery):
             )
             return
         
+        regular_count = sum(1 for r in reports if r.get('video_type') == 'regular' and r['is_active'])
+        shorts_count = sum(1 for r in reports if r.get('video_type') == 'shorts' and r['is_active'])
+        
         text = "📄 <b>ДЕМО ОТЧЕТЫ</b>\n\n"
-        active_count = sum(1 for r in reports if r['is_active'])
-        text += f"📊 Всего: <code>{len(reports)}</code> | Активных: <code>{active_count}</code>\n\n"
+        text += f"📊 Всего: <code>{len(reports)}</code>\n"
+        text += f"🎬 Обычные: <code>{regular_count}</code>\n"
+        text += f"⚡ Shorts: <code>{shorts_count}</code>\n\n"
         
         for idx, report in enumerate(reports[:10], 1):
             status = "✅" if report['is_active'] else "❌"
+            video_type_emoji = "⚡" if report.get('video_type') == 'shorts' else "🎬"
             name_short = report['report_name'][:25]
-            text += f"{idx}. {status} <b>{name_short}</b> (ID: {report['id']})\n"
+            text += f"{idx}. {status} {video_type_emoji} <b>{name_short}</b>\n"
         
         if len(reports) > 10:
             text += f"\n... и еще {len(reports) - 10} отчетов"
@@ -546,44 +560,8 @@ async def manage_samples_handler(query: CallbackQuery):
             reply_markup=get_back_keyboard()
         )
 
-
-@router.callback_query(AdminCallback.filter(F.action == "add_sample"))
-async def add_sample_handler(query: CallbackQuery, state: FSMContext):
-    await query.message.edit_text(
-        "📝 <b>ДОБАВЛЕНИЕ ДЕМО ОТЧЕТА</b>\n\n"
-        "Шаг 1/3: Введите название отчета\n"
-        "Например: <code>Tech Review Demo</code>",
-        parse_mode="HTML"
-    )
-    await state.set_state(AdminFSM.waiting_for_sample_name)
-
-
-@router.message(AdminFSM.waiting_for_sample_name)
-async def process_sample_name(message: Message, state: FSMContext):
-    if not message.text:
-        await message.answer("❌ Пожалуйста, введите текст названия.")
-        return
-    
-    sample_name = message.text.strip()
-    
-    if len(sample_name) < 3:
-        await message.answer("❌ Название слишком короткое (минимум 3 символа)")
-        return
-    
-    await state.update_data(sample_name=sample_name)
-    
-    await message.answer(
-        f"✅ Название: <b>{sample_name}</b>\n\n"
-        f"Шаг 2/3: Введите URL видео\n"
-        f"Например: <code>https://youtube.com/watch?v=demo1</code>",
-        parse_mode="HTML"
-    )
-    await state.set_state(AdminFSM.waiting_for_sample_url)
-
-
 @router.message(AdminFSM.waiting_for_sample_url)
 async def process_sample_url(message: Message, state: FSMContext):
-    """Demo report URL ni qabul qilish"""
     if not message.text:
         await message.answer("❌ Пожалуйста, введите URL.")
         return
@@ -809,6 +787,7 @@ async def select_evolution_handler(query: CallbackQuery, callback_data: AdminCal
     )
 
 
+
 @router.callback_query(AdminCallback.filter(F.action == "add_select_evolution"))
 async def process_add_evolution(query: CallbackQuery, callback_data: AdminCallback, state: FSMContext):
     subtype = callback_data.subtype
@@ -818,7 +797,120 @@ async def process_add_evolution(query: CallbackQuery, callback_data: AdminCallba
     
     await query.message.edit_text(
         f"📊 <b>ЭВОЛЮЦИЯ - {step_name}</b>\n\n"
-        f"Введите имя промпта:"
+        f"Отправьте .txt файл с промптом.\n\n"
+        f"ℹ️ Название будет взято из имени файла.\n"
+        f"Например: <code>evolution_step1.txt</code> → \"Evolution Step1\"",
+        parse_mode="HTML"
     )
-    await state.set_state(AdminFSM.waiting_for_prompt_name)
+    await state.set_state(AdminFSM.waiting_for_prompt_file)
 
+
+@router.callback_query(AdminCallback.filter(F.action == "manage_shorts_prompts"))
+async def manage_shorts_prompts(query: CallbackQuery):
+    """Shorts promptlarini boshqarish"""
+    text = """
+🎬 <b>ПРОМПТЫ ДЛЯ SHORTS</b>
+
+Shorts имеет 3 масштаба:
+- 🟢 Малый (&lt;300)
+- 🟡 Средний (300-1000)
+- 🔴 Большой (1000+)
+
+Каждый масштаб имеет 5 уровней (501-505)
+"""
+    
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🟢 Малый масштаб", callback_data="shorts_prompts:small")
+    builder.button(text="🟡 Средний масштаб", callback_data="shorts_prompts:medium")
+    builder.button(text="🔴 Большой масштаб", callback_data="shorts_prompts:large")
+    builder.button(text="⬅️ Назад", callback_data=AdminCallback(action="back").pack())
+    builder.adjust(1)
+    
+    await query.message.edit_text(text, reply_markup=builder.as_markup(), parse_mode="HTML")
+
+@router.callback_query(F.data.startswith("shorts_prompts:"))
+async def shorts_prompts_scale(query: CallbackQuery, state: FSMContext):
+    scale = query.data.split(":")[-1]
+    
+    scale_names = {
+        'small': '🟢 Малый (&lt;300)',
+        'medium': '🟡 Средний (300-1000)',
+        'large': '🔴 Большой (1000+)'
+    }
+    
+    text = f"""
+{scale_names[scale]}
+
+<b>Выберите уровень:</b>
+
+501: Базовый анализ
+502: Стратегическая оптимизация
+503: Анализ хуков
+504: Виральный потенциал
+505: Контент-план
+"""
+    
+    builder = InlineKeyboardBuilder()
+    for level in range(501, 506):
+        builder.button(
+            text=f"📄 Уровень {level}",
+            callback_data=f"upload_shorts:{scale}:{level}"
+        )
+    builder.button(text="⬅️ Назад", callback_data=AdminCallback(action="manage_shorts_prompts").pack())
+    builder.adjust(1)
+    
+    await query.message.edit_text(text, reply_markup=builder.as_markup(), parse_mode="HTML")
+
+@router.callback_query(F.data.startswith("upload_shorts:"))
+async def upload_shorts_prompt(query: CallbackQuery, state: FSMContext):
+    parts = query.data.split(":")
+    scale = parts[1]
+    level = parts[2]  
+    
+    await state.update_data(shorts_scale=scale, shorts_level=level)
+    
+    await query.message.edit_text(
+        f"📤 <b>ЗАГРУЗКА ПРОМПТА</b>\n\n"
+        f"Масштаб: {scale}\n"
+        f"Уровень: {level}\n\n"
+        f"Отправьте .txt файл:",
+        parse_mode="HTML"
+    )
+    await state.set_state(AdminFSM.waiting_for_shorts_prompt)
+
+
+@router.message(AdminFSM.waiting_for_shorts_prompt)
+async def process_shorts_prompt(message: Message, state: FSMContext, bot: Bot):
+    if not message.document or message.document.mime_type != 'text/plain':
+        await message.answer("❌ Отправьте .txt файл")
+        return
+    
+    data = await state.get_data()
+    scale = data['shorts_scale']
+    level = data['shorts_level']
+    
+    file_io = io.BytesIO()
+    try:
+        await bot.download(message.document, destination=file_io)
+        file_io.seek(0)
+        prompt_text = file_io.read().decode('utf-8').strip()
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {str(e)}")
+        return
+    finally:
+        file_io.close()
+
+    prompt_name = f"Shorts {scale} - Level {level}"
+    analysis_type = f"shorts_{scale}_{level}"
+    
+    await create_prompt(prompt_name, prompt_text, analysis_type, "shorts")
+    
+    await message.answer(
+        f"✅ <b>ПРОМПТ ЗАГРУЖЕН</b>\n\n"
+        f"📊 Масштаб: {scale}\n"
+        f"🎯 Уровень: {level}\n"
+        f"📏 Длина: {len(prompt_text)} символов",
+        reply_markup=get_admin_menu_keyboard(),
+        parse_mode="HTML"
+    )
+    await state.clear()

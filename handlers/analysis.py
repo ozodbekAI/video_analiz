@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from callbacks.menu import MenuCallback
 from callbacks.analysis import AnalysisCallback
+from services.advanced_analysis_handler import run_advanced_analysis_with_validation
 from states.analysis import AnalysisFSM
 from keyboards.client import (
     get_analysis_type_keyboard, 
@@ -20,9 +21,10 @@ from services.youtube_service import (
     get_video_timestamps, 
     save_comments_to_file, 
     get_comments_file_path,
-    get_video_channel_info
+    get_video_channel_info,
+    get_video_comments_with_metrics
 )
-from services.ai_service import analyze_comments_with_prompt
+from services.ai_service import analyze_comments_with_prompt, save_ai_interaction
 from services.pdf_generator import generate_pdf
 from services.verifiaction_service import VerificationService
 from services.sample_report_service import SampleReportsService
@@ -39,10 +41,8 @@ from config import config
 router = Router()
 
 user_analysis_locks = {}
-
 pending_verification_channels = {}
-
-ADMIN_IDS = config.ADMIN_IDS  
+ADMIN_IDS = config.ADMIN_IDS
 
 
 def get_owner_check_keyboard():
@@ -81,7 +81,6 @@ async def analysis_competitor_handler(query: CallbackQuery, state: FSMContext):
 async def choose_simple_analysis(query: CallbackQuery, callback_data: AnalysisCallback, state: FSMContext):
     user = await get_user(query.from_user.id)
     
-    # Проверка лимита (не для админов)
     if user.analyses_used >= user.analyses_limit and query.from_user.id not in ADMIN_IDS:
         await query.answer("❌ Достигнут лимит анализов.", show_alert=True)
         return
@@ -132,76 +131,68 @@ async def update_progress_message(message: Message, text: str, emoji: str = "⏳
         await message.answer(f"{emoji} {text}")
 
 
-async def send_sample_report_and_ask(message: Message, user_id: int):
+async def send_sample_report_and_ask(message: Message, user_id: int, video_type: str = 'regular'):
     try:
-        sample_report = await SampleReportsService.get_random_sample_report()
+        sample_report = await SampleReportsService.get_random_sample_report(video_type)
         
         if not sample_report:
             await message.answer(
-                "❌ Демо отчеты недоступны. Пожалуйста, попробуйте позже.",
+                f"❌ Демо отчеты ({video_type}) недоступны.\n\n"
+                f"Администратор пока не загрузил примеры.",
                 reply_markup=get_main_menu_keyboard()
             )
             return
 
+        video_type_ru = "Shorts" if video_type == 'shorts' else "обычного видео"
+        
         await message.answer(
             f"📊 <b>ДЕМО АНАЛИЗ</b>\n\n"
-            f"На бесплатном тарифе мы показываем вам демо-версию анализа, "
-            f"чтобы продемонстрировать возможности YT Pulse AI.\n\n"
-            f"<i>Это не анализ вашего видео, а образец отчета.</i>\n\n"
-            f"Чтобы получить реальный и точный анализ, необходимо подтвердить владение каналом.",
+            f"На бесплатном тарифе мы показываем демо-версию анализа {video_type_ru}.\n\n"
+            f"<i>Это образец отчета для ознакомления.</i>\n\n"
+            f"Чтобы получить реальный анализ, подтвердите владение каналом.",
             parse_mode="HTML"
         )
         
         analysis_data = sample_report['analysis_data'] 
         pdf_path = analysis_data.get('pdf_path')
-        video_url = sample_report['video_url']
-        video_id = extract_video_id(video_url)
         
         if not pdf_path or not os.path.exists(pdf_path):
             await message.answer(
-                "❌ PDF файл демо отчета не найден. Пожалуйста, обратитесь к администратору.",
+                "❌ PDF файл не найден в системе.",
                 reply_markup=get_main_menu_keyboard()
             )
             return
         
-        progress_msg = await message.answer("📄 Загрузка PDF отчета...")
+        progress_msg = await message.answer("📄 Загрузка демо-отчета...")
+        
+        video_type_emoji = "⚡" if video_type == 'shorts' else "🎬"
         
         await message.answer_document(
             FSInputFile(pdf_path),
             caption=f"📊 <b>ДЕМО Анализ готов!</b>\n\n"
-                    f"📹 Видео: <code>{video_id}</code>\n"
-                    f"🎯 Тип: Демонстрационный отчет\n\n"
-                    f"<i>Это образец анализа для ознакомления с возможностями бота.</i>",
+                    f"{video_type_emoji} Тип: <b>{video_type_ru.capitalize()}</b>\n"
+                    f"📝 Название: <i>{sample_report['report_name']}</i>\n\n"
+                    f"<i>Это образец анализа для ознакомления.</i>",
             parse_mode="HTML"
         )
         
         await progress_msg.delete()
-        
+
         await message.answer(
-            "❓ <b>Вы владелец этого или другого канала?</b>\n\n"
-            "Если да, подтвердите свой канал и получите доступ к реальным анализам!",
+            "❓ <b>Вы владелец канала?</b>\n\n"
+            "Подтвердите канал для получения реальных анализов!",
             reply_markup=get_owner_check_keyboard(),
             parse_mode="HTML"
         )
         
-    except json.JSONDecodeError:
-        await message.answer(
-            "❌ Ошибка при обработке демо отчета. Попробуйте позже.",
-            reply_markup=get_main_menu_keyboard()
-        )
     except Exception as e:
         await message.answer(
-            f"❌ Произошла ошибка: {str(e)}\n\nВернуться в меню:",
+            f"❌ Ошибка загрузки демо: {str(e)}",
             reply_markup=get_main_menu_keyboard()
         )
 
 
 async def check_video_ownership(user_id: int, video_url: str, is_admin: bool = False) -> tuple[bool, str, Optional[str]]:
-    """
-    Video ownership tekshirish
-    Admin uchun - avtomatik verified
-    User uchun - verification kerak
-    """
     try:
         from services.youtube_service import get_video_channel_info
         
@@ -214,13 +205,9 @@ async def check_video_ownership(user_id: int, video_url: str, is_admin: bool = F
         video_channel_id = channel_info['channel_id']
         video_channel_title = channel_info['channel_title']
         
-        # ============ ADMIN UCHUN ============
         if is_admin:
-            # Admin uchun har doim verified qaytaramiz
-            # Lekin databasega qo'shish logikasi run_analysis_task da bo'ladi
             return True, f"👑 Админ доступ: {video_channel_title}", None
-        
-        # ============ USER UCHUN ============
+    
         verification_status = await VerificationService.get_user_verification_status(user_id)
         
         if not verification_status['is_verified']:
@@ -240,38 +227,48 @@ async def check_video_ownership(user_id: int, video_url: str, is_admin: bool = F
 async def run_analysis_task(user_id: int, message: Message, url: str, category: str, analysis_type: str):
     progress_msg = None
     try:
+        
         user = await get_user(user_id)
+        
+        if user is None:
+            # Если get_user возвращает None, создаём пользователя
+            from database.crud import ensure_user_exists
+            user = await ensure_user_exists(user_id)
         is_admin = user_id in ADMIN_IDS
         
-        # Ownership check with admin flag
+        from services.youtube_service import is_shorts_video
+        is_shorts = await is_shorts_video(url)
+        video_type = 'shorts' if is_shorts else 'regular'
+        
         is_owner, ownership_msg, channel_url_to_verify = await check_video_ownership(user_id, url, is_admin=is_admin)
         
-        # ============ ADMIN BO'LMAGAN USER UCHUN VERIFICATION ============
         if not is_admin:
             if not is_owner:
-                from aiogram.utils.keyboard import InlineKeyboardBuilder
-                
-                pending_verification_channels[user_id] = channel_url_to_verify
-                
-                builder = InlineKeyboardBuilder()
-                builder.button(
-                    text="✅ Подтвердить канал", 
-                    callback_data="verify:start_from_analysis"
-                )
-                builder.button(text="🚫 Отмена", callback_data="menu:main_menu")
-                builder.adjust(1)
-                
-                await message.answer(
-                    f"🔒 <b>ТРЕБУЕТСЯ ПОДТВЕРЖДЕНИЕ</b>\n\n"
-                    f"{ownership_msg}\n\n"
-                    f"Подтвердите владение каналом для анализа.\n\n"
-                    f"<i>После подтверждения анализ продолжится автоматически.</i>",
-                    reply_markup=builder.as_markup(),
-                    parse_mode="HTML"
-                )
+                await send_sample_report_and_ask(message, user_id, video_type)
                 return
+            
+            from aiogram.utils.keyboard import InlineKeyboardBuilder
+            
+            pending_verification_channels[user_id] = channel_url_to_verify
+            
+            builder = InlineKeyboardBuilder()
+            builder.button(
+                text="✅ Подтвердить канал", 
+                callback_data="verify:start_from_analysis"
+            )
+            builder.button(text="🚫 Отмена", callback_data="menu:main_menu")
+            builder.adjust(1)
+            
+            await message.answer(
+                f"🔒 <b>ТРЕБУЕТСЯ ПОДТВЕРЖДЕНИЕ</b>\n\n"
+                f"{ownership_msg}\n\n"
+                f"Подтвердите владение каналом для анализа.\n\n"
+                f"<i>После подтверждения анализ продолжится автоматически.</i>",
+                reply_markup=builder.as_markup(),
+                parse_mode="HTML"
+            )
+            return
         
-        # ============ LIMIT CHECK (faqat user uchun) ============
         if not is_admin:
             if user.analyses_used >= user.analyses_limit:
                 await message.answer(
@@ -284,15 +281,22 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         progress_msg = await message.answer("⏳ Загрузка комментариев...")
         
         video_id = extract_video_id(url)
-        comments_data = get_video_comments(video_id)
+        from services.youtube_service import get_video_comments_with_metrics
+        
+        comments_result = get_video_comments_with_metrics(video_id)
+        comments_data = comments_result['comments']
+        engagement_metrics = comments_result['metrics']
+        engagement_phases = comments_result['engagement_phases']
+        top_authors = comments_result['top_authors']
+        video_meta_full = comments_result['metadata']
+        
         comments_file = get_comments_file_path(video_id)
-        comments_len = get_video_comments_count(url)
+        comments_len = len(comments_data)
 
         if comments_len >= 2000 and analysis_type == "advanced":
             if user.tariff_plan not in ['pro', 'business', 'enterprise'] and not is_admin:
                 raise ValueError("❌ Превышен лимит в 2000 комментариев для анализа.")
 
-        # Timestamps
         await update_progress_message(
             progress_msg, 
             f"✅ Загружено {comments_len} комментариев\n🔄 Получение timestamps..."
@@ -301,7 +305,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         timestamps_info = await get_video_timestamps(url)
         timestamps_text = format_timestamps_for_analysis(timestamps_info['timestamps'])
         
-        # Save comments + timestamps
         save_comments_to_file(comments_data, comments_file)
         
         if timestamps_info['has_timestamps']:
@@ -313,14 +316,12 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             f"✅ Загружено {comments_len} комментариев\n✅ Timestamps: {timestamps_info['timestamps_count']}\n🔄 Сохранение в базу данных..."
         )
         
-        # ============ DATABASE'GA SAQLASH ============
         db_video_id = await create_video(
             user.id, 
             url, 
             f"Comments: {comments_file}"
         )
         
-        # ============ KANAL ID NI OLISH VA SAQLASH ============
         try:
             channel_info = await get_video_channel_info(url)
             channel_id = channel_info.get('channel_id') if channel_info else None
@@ -329,14 +330,11 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             channel_id = None
             channel_title = None
 
-        # Video'ga channel_id ni qo'shamiz
         from database.crud import update_video_channel_id
         if channel_id:
             await update_video_channel_id(db_video_id, channel_id)
         
-        # ============ ADMIN UCHUN AVTOMATIK VERIFICATION ============
         if is_admin and channel_id:
-            # Admin uchun bu kanalni "admin_verified" sifatida database'ga qo'shamiz
             from database.crud import create_admin_verified_channel
             await create_admin_verified_channel(
                 user_id=user.id,
@@ -344,7 +342,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
                 channel_title=channel_title or channel_id[:30]
             )
         
-        # ============ AI ANALYSIS ============
         with open(comments_file, "r", encoding="utf-8") as f:
             full_context = f.read()
         
@@ -359,7 +356,17 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
                 raise ValueError("Нет промпта для простого анализа")
             
             prompt_text = simple_prompts[0].prompt_text
+            request_context = full_context
+            
             ai_response = await analyze_comments_with_prompt(full_context, prompt_text)
+
+            ai_logs = save_ai_interaction(
+                user_id=user.user_id,
+                video_id=video_id,
+                stage="simple",
+                request_text=request_context,
+                response_text=ai_response
+            )
             
             await create_ai_response(
                 user.id, 
@@ -370,83 +377,135 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             )
             
             final_ai_response = ai_response
+
+            try:
+                await message.answer(
+                    f"📊 <b>AI ЛОГИ - ПРОСТОЙ АНАЛИЗ</b>\n\n"
+                    f"📹 Video ID: <code>{video_id}</code>\n"
+                    f"📥 Request: <code>{ai_logs['request_size']} KB</code>\n"
+                    f"📤 Response: <code>{ai_logs['response_size']} KB</code>\n"
+                    f"🕐 {datetime.now().strftime('%H:%M:%S')}\n\n"
+                    f"<i>Отправка файлов...</i>",
+                    parse_mode="HTML"
+                )
+
+                await message.answer_document(
+                    FSInputFile(ai_logs['request_path']),
+                    caption=f"📥 <b>AI REQUEST</b>\n\n"
+                            f"🎯 Simple Analysis\n"
+                            f"📏 {ai_logs['request_size']} KB",
+                    parse_mode="HTML"
+                )
+                
+                await message.answer_document(
+                    FSInputFile(ai_logs['response_path']),
+                    caption=f"📤 <b>AI RESPONSE</b>\n\n"
+                            f"🎯 Simple Analysis\n"
+                            f"📏 {ai_logs['response_size']} KB",
+                    parse_mode="HTML"
+                )
+                
+            except Exception as e:
+                print(f"❌ AI logs yuborishda xatolik: {e}")
         
         elif analysis_type == "advanced":
             advanced_prompts = await get_prompts(category=category, analysis_type="advanced")
-            if not advanced_prompts:
-                raise ValueError("Нет advanced промптов в базе")
-            
-            total_steps = len(advanced_prompts) + 1
-            
-            await update_progress_message(
-                progress_msg,
-                f"🤖 Углубленный анализ ({total_steps} этапов)...\n⏱ Это может занять 2-3 минуты"
+            final_ai_response, all_partial_logs = await run_advanced_analysis_with_validation(
+                user_id=user.user_id,
+                video_id=video_id,
+                db_video_id=db_video_id,
+                full_context=full_context,
+                category=category,
+                progress_msg=progress_msg,
+                message=message,
+                update_progress_message=update_progress_message
             )
             
-            partial_responses = []
+            # ===== MACHINE DATA NI AJRATIB OLISH =====
+            machine_data_json = None
+            ai_logs_only = []
             
-            tasks = []
-            for idx, prompt in enumerate(advanced_prompts):
-                task = analyze_comments_with_prompt(full_context, prompt.prompt_text)
-                tasks.append((idx, task))
+            for log_item in all_partial_logs:
+                if isinstance(log_item, dict) and "machine_data" in log_item:
+                    # Bu machine data
+                    machine_data_json = log_item["machine_data"]
+                    print(f"✅ Machine data topildi: {len(machine_data_json)} bytes")
+                else:
+                    # Bu AI log fayli
+                    ai_logs_only.append(log_item)
             
-            results = await asyncio.gather(*[t[1] for t in tasks])
-            
-            for idx, partial_response in enumerate(results):
-                partial_responses.append(partial_response)
-                await create_ai_response(
-                    user.id, 
-                    db_video_id, 
-                    idx + 1,
-                    "advanced_partial", 
-                    partial_response
+            # ===== AI LOGLARNI YUBORISH =====
+            try:
+                await message.answer(
+                    f"📊 <b>AI ЛОГИ - УГЛУБЛЕННЫЙ АНАЛИЗ</b>\n\n"
+                    f"📹 Video ID: <code>{video_id}</code>\n"
+                    f"🔢 Этапов: {len(ai_logs_only)}\n"
+                    f"🕐 {datetime.now().strftime('%H:%M:%S')}\n\n"
+                    f"<i>Отправка всех файлов...</i>",
+                    parse_mode="HTML"
                 )
                 
-                completed = idx + 1
-                percentage = int((completed / total_steps) * 100)
-                progress_bar = "▓" * (percentage // 10) + "░" * (10 - percentage // 10)
+                # Faqat AI loglarni yuborish
+                for idx, log in enumerate(ai_logs_only):
+                    stage_name = "СИНТЕЗ" if idx == len(ai_logs_only) - 1 else f"ЭТАП {idx+1}"
+                    
+                    await message.answer_document(
+                        FSInputFile(log['request_path']),
+                        caption=f"📥 <b>{stage_name} - REQUEST</b>\n\n"
+                                f"📏 {log['request_size']} KB",
+                        parse_mode="HTML"
+                    )
+                    
+                    await message.answer_document(
+                        FSInputFile(log['response_path']),
+                        caption=f"📤 <b>{stage_name} - RESPONSE</b>\n\n"
+                                f"📏 {log['response_size']} KB",
+                        parse_mode="HTML"
+                    )
                 
-                await update_progress_message(
-                    progress_msg,
-                    f"🔍 Этап {completed}/{total_steps}\n{progress_bar} {percentage}%"
-                )
+            except Exception as e:
+                print(f"❌ Ошибка отправки логов: {e}")
             
-            await update_progress_message(
-                progress_msg,
-                f"🔄 Финальный синтез...\n{progress_bar} 90%"
-            )
-            
-            synthesis_prompts = await get_prompts(category=category, analysis_type="synthesis")
-            if not synthesis_prompts:
-                raise ValueError("Должен быть ровно один synthesis промпт")
-            
-            synthesis_prompt_text = synthesis_prompts[0].prompt_text
-            combined_partials = "\n\n".join(
-                [f"ЧАСТИЧНЫЙ ОТВЕТ {i+1}:\n{resp}" for i, resp in enumerate(partial_responses)]
-            )
-            
-            final_ai_response = await analyze_comments_with_prompt(
-                combined_partials,
-                synthesis_prompt_text
-            )
-            
-            await create_ai_response(
-                user.id, 
-                db_video_id, 
-                0,
-                "advanced", 
-                final_ai_response
-            )
-        
+            # ===== MACHINE DATA NI SAQLASH =====
+            if machine_data_json:
+                try:
+                    reports_dir = Path(f"reports/{user.user_id}")
+                    reports_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    machine_json_path = reports_dir / f"{video_id}_machine.json"
+                    with open(machine_json_path, "w", encoding="utf-8") as f:
+                        f.write(machine_data_json)
+                    
+                    print(f"✅ Machine data saqlandi: {machine_json_path}")
+                    
+                    # Ma'lumotlar bazasiga saqlash
+                    import json
+                    from database.crud import create_advanced_analysis_response
+                    
+                    await create_advanced_analysis_response(
+                        user_id=user.id,
+                        video_id=db_video_id,
+                        human_report=final_ai_response,
+                        machine_data=machine_data_json
+                    )
+                    
+                    print(f"✅ Machine data ma'lumotlar bazasiga saqlandi")
+                    
+                except Exception as e:
+                    print(f"⚠️ Machine data saqlashda xato: {e}")
+                    import traceback
+                    traceback.print_exc()
+            else:
+                print(f"⚠️ Machine data topilmadi")
+
         else:
             raise ValueError("Неизвестный тип анализа")
-        
-        # ============ PDF GENERATION ============
+
         await update_progress_message(
             progress_msg,
             "📄 Генерация PDF отчета..."
         )
-        
+
         pdf_file = generate_pdf(final_ai_response, url, video_id)
         
         reports_dir = Path(f"reports/{user.user_id}")
@@ -455,7 +514,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         os.rename(pdf_file, str(saved_pdf_path))
         pdf_file = str(saved_pdf_path)
 
-        # ============ TXT FILE SAQLASH ============
         txt_file_path = reports_dir / f"{video_id}_{analysis_type}.txt"
         with open(txt_file_path, "w", encoding="utf-8") as txt_file:
             txt_file.write(f"=== ANALIZ NATIJALARI ===\n\n")
@@ -467,19 +525,49 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             txt_file.write(f"Kommentlar soni: {comments_len}\n")
             txt_file.write(f"Timestamps soni: {timestamps_info['timestamps_count']}\n")
             txt_file.write(f"Sana: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}\n")
+            
+            # 🆕 ENGAGEMENT METRICS
+            txt_file.write(f"\n=== ENGAGEMENT METRICS ===\n")
+            txt_file.write(f"Total Comments: {engagement_metrics['total_comments']}\n")
+            txt_file.write(f"Total Replies: {engagement_metrics['total_replies']}\n")
+            txt_file.write(f"Engagement Rate: {engagement_metrics['engagement_rate']}%\n")
+            txt_file.write(f"Like Ratio: {engagement_metrics['like_ratio']}%\n")
+            txt_file.write(f"Comment Velocity: {engagement_metrics['comment_velocity']} comments/hour\n")
+            
+            # 🆕 TIME DISTRIBUTION
+            txt_file.write(f"\n=== TIME DISTRIBUTION ===\n")
+            for period, count in engagement_metrics['time_distribution'].items():
+                txt_file.write(f"{period}: {count} comments\n")
+            
+            # 🆕 ENGAGEMENT PHASES
+            txt_file.write(f"\n=== ENGAGEMENT PHASES ===\n")
+            for phase, stats in engagement_phases.items():
+                txt_file.write(f"{phase}: {stats['comments']} comments, {stats['replies']} replies\n")
+            
+            # 🆕 TOP AUTHORS
+            txt_file.write(f"\n=== TOP 10 AUTHORS ===\n")
+            for idx, author in enumerate(top_authors[:10], 1):
+                txt_file.write(
+                    f"{idx}. {author['author']}: "
+                    f"{author['comments']} comments, "
+                    f"{author['replies']} replies, "
+                    f"{author['total_likes']} likes\n"
+                )
+            
             if is_admin:
-                txt_file.write(f"Admin tomonidan tahlil qilindi\n")
+                txt_file.write(f"\nAdmin tomonidan tahlil qilindi\n")
+            
             txt_file.write(f"\n{'='*50}\n\n")
             txt_file.write(final_ai_response)
-        
+
+
         from database.crud import update_ai_response_txt_path
         await update_ai_response_txt_path(user.id, db_video_id, str(txt_file_path))
-        
-        # ============ SEND PDF ============
+
         if progress_msg:
             await progress_msg.delete()
             progress_msg = None
-        
+
         await message.answer_document(
             FSInputFile(pdf_file),
             caption=f"📊 <b>Анализ готов!</b>\n\n"
@@ -492,7 +580,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             parse_mode="HTML",
         )
 
-        # ============ STATISTICS MESSAGE ============
         if not is_admin:
             remaining = user.analyses_limit - (user.analyses_used + 1)
             await message.answer(
@@ -509,8 +596,6 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
                 f"Выберите действие:",
                 reply_markup=get_after_analysis_keyboard()
             )
-        
-        # ============ UPDATE ANALYSES COUNT ============
         if not is_admin:
             await update_user_analyses(user.id, user.analyses_used + 1)
         
@@ -543,6 +628,7 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             reply_markup=get_main_menu_keyboard()
         )
         
+
 @router.message(AnalysisFSM.waiting_for_url)
 async def process_video_url(message: Message, state: FSMContext):
     url = message.text.strip()
@@ -565,7 +651,6 @@ async def process_video_url(message: Message, state: FSMContext):
         pending_analysis_category=category,
         pending_analysis_type=analysis_type
     )
-    
     
     task = asyncio.create_task(
         run_analysis_task(user_id, message, url, category, analysis_type)

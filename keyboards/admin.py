@@ -7,9 +7,10 @@ def get_admin_menu_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(text="📊 Статистика", callback_data=AdminCallback(action="view_stats"))
     builder.button(text="📋 Промпты", callback_data=AdminCallback(action="view_prompts"))
+    builder.button(text="🎬 Промпты Shorts", callback_data=AdminCallback(action="manage_shorts_prompts"))  # 🆕 YANGI
     builder.button(text="➕ Добавить промпт", callback_data=AdminCallback(action="add_prompt"))
-    builder.button(text="👥 Управление пользователями", callback_data=AdminCallback(action="manage_users"))
-    builder.button(text="📄 Демо отчеты", callback_data=AdminCallback(action="manage_samples")) 
+    builder.button(text="👥 Пользователи", callback_data=AdminCallback(action="manage_users"))
+    builder.button(text="📄 Демо отчеты", callback_data=AdminCallback(action="manage_samples"))
     builder.adjust(1)
     return builder.as_markup()
 

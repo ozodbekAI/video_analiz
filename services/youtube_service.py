@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, List
+from collections import Counter
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from config import Config
@@ -12,6 +13,7 @@ youtube = build("youtube", "v3", developerKey=config.YOUTUBE_API_KEY)
 
 
 def extract_video_id(url):
+    """Video ID ni URL dan ajratib olish"""
     patterns = [
         r"(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([^&?\n]+)",
         r"(?:www\.)?youtube\.com\/watch\?.*v=([^&?\n]+)",
@@ -36,79 +38,323 @@ def extract_video_id(url):
     raise ValueError("Invalid YouTube URL")
 
 
-def get_video_comments(video_id):
+def get_video_metadata(video_id: str) -> Optional[Dict]:
+    """Video metadata ni olish"""
+    try:
+        request = youtube.videos().list(
+            part="snippet,statistics,contentDetails",
+            id=video_id
+        )
+        response = request.execute()
+        
+        if not response.get('items'):
+            return None
+        
+        item = response['items'][0]
+        snippet = item['snippet']
+        statistics = item.get('statistics', {})
+        content_details = item.get('contentDetails', {})
+        
+        # Duration ni aniqlash
+        duration_str = content_details.get('duration', 'PT0S')
+        import isodate
+        duration_seconds = int(isodate.parse_duration(duration_str).total_seconds())
+        is_shorts = duration_seconds <= 60
+        
+        return {
+            'id': video_id,
+            'title': snippet.get('title', ''),
+            'published_at': snippet.get('publishedAt', ''),
+            'channel_id': snippet.get('channelId', ''),
+            'channel_title': snippet.get('channelTitle', ''),
+            'views': int(statistics.get('viewCount', 0)),
+            'likes': int(statistics.get('likeCount', 0)),
+            'comments': int(statistics.get('commentCount', 0)),
+            'duration_seconds': duration_seconds,
+            'is_shorts': is_shorts
+        }
+    except Exception as e:
+        print(f"❌ Metadata olishda xato: {e}")
+        return None
 
+
+def get_video_comments_with_metrics(video_id: str, video_metadata: Dict = None) -> Dict:
+    """
+    YANGI: Kommentarlarni + barcha metrikalarni olish
+    """
     comments_data = []
     next_page_token = None
     
-    while True:
-        request = youtube.commentThreads().list(
-            part="snippet,replies",
-            videoId=video_id,
-            maxResults=100,
-            pageToken=next_page_token,
-            order="relevance",
-            textFormat="plainText"
-        )
-        
-        response = request.execute()
-        
-        for item in response["items"]:
-            top_comment = item["snippet"]["topLevelComment"]["snippet"]
-            
-            time_comm = top_comment["publishedAt"].replace("T", " ").replace("Z", "")
-            text_comm = top_comment["textDisplay"].replace("\n", "\n\t")
-            author = top_comment["authorDisplayName"]
-            likes = top_comment["likeCount"]
-            
-            main_comment = {
-                "time": time_comm,
-                "author": author,
-                "likes": likes,
-                "text": text_comm,
-                "replies": []
+    # Agar metadata berilmagan bo'lsa, olish
+    if not video_metadata:
+        video_metadata = get_video_metadata(video_id)
+        if not video_metadata:
+            return {
+                'comments': [],
+                'metadata': {},
+                'metrics': {},
+                'engagement_phases': {},
+                'top_authors': []
             }
-            
-            if "replies" in item:
-                for reply in item["replies"]["comments"]:
-                    reply_snippet = reply["snippet"]
-                    time_reply_comm = reply_snippet["publishedAt"].replace("T", " ").replace("Z", "")
-                    text_reply_comm = reply_snippet["textDisplay"].replace("\n", "\n\t\t").replace("@@", "@")
-                    author_reply = reply_snippet["authorDisplayName"]
-                    likes_reply = reply_snippet["likeCount"]
-                    
-                    main_comment["replies"].append({
-                        "time": time_reply_comm,
-                        "author": author_reply,
-                        "likes": likes_reply,
-                        "text": text_reply_comm
-                    })
-            
-            comments_data.append(main_comment)
-        
-        next_page_token = response.get("nextPageToken")
-        if not next_page_token:
-            break
-        
-        time.sleep(0.1)
     
-    return comments_data
+    # Video publish vaqti
+    try:
+        video_publish_time = datetime.fromisoformat(
+            video_metadata['published_at'].replace('Z', '+00:00')
+        ).replace(tzinfo=None)
+    except Exception:
+        video_publish_time = datetime.now()
+    
+    # Kommentarlarni to'plash
+    while True:
+        try:
+            request = youtube.commentThreads().list(
+                part="snippet,replies",
+                videoId=video_id,
+                maxResults=100,
+                pageToken=next_page_token,
+                order="relevance",
+                textFormat="plainText"
+            )
+            
+            response = request.execute()
+            
+            for item in response["items"]:
+                top_comment = item["snippet"]["topLevelComment"]["snippet"]
+                
+                # Vaqt hisoblash (video chiqish vaqtidan keyin necha soat)
+                try:
+                    comment_time = datetime.fromisoformat(
+                        top_comment["publishedAt"].replace('Z', '+00:00')
+                    ).replace(tzinfo=None)
+                    hours_after = (comment_time - video_publish_time).total_seconds() / 3600
+                except Exception:
+                    hours_after = 0
+                
+                main_comment = {
+                    "time": top_comment["publishedAt"].replace("T", " ").replace("Z", ""),
+                    "hours_after_video": round(hours_after, 2),
+                    "author": top_comment["authorDisplayName"],
+                    "likes": top_comment["likeCount"],
+                    "text": top_comment["textDisplay"].replace("\n", " "),
+                    "replies": []
+                }
+                
+                # Javoblarni qo'shish
+                if "replies" in item:
+                    for reply in item["replies"]["comments"]:
+                        reply_snippet = reply["snippet"]
+                        
+                        try:
+                            reply_time = datetime.fromisoformat(
+                                reply_snippet["publishedAt"].replace('Z', '+00:00')
+                            ).replace(tzinfo=None)
+                            reply_hours = (reply_time - video_publish_time).total_seconds() / 3600
+                        except Exception:
+                            reply_hours = 0
+                        
+                        main_comment["replies"].append({
+                            "time": reply_snippet["publishedAt"].replace("T", " ").replace("Z", ""),
+                            "hours_after_video": round(reply_hours, 2),
+                            "author": reply_snippet["authorDisplayName"],
+                            "likes": reply_snippet["likeCount"],
+                            "text": reply_snippet["textDisplay"].replace("\n", " ").replace("@@", "@")
+                        })
+                
+                comments_data.append(main_comment)
+            
+            next_page_token = response.get("nextPageToken")
+            if not next_page_token:
+                break
+            
+            time.sleep(0.1)
+            
+        except HttpError as e:
+            if "commentsDisabled" in str(e):
+                print(f"⚠️ Kommentarlar o'chirilgan: {video_id}")
+                break
+            else:
+                print(f"❌ YouTube API xatosi: {e}")
+                break
+        except Exception as e:
+            print(f"❌ Kommentarlarni olishda xato: {e}")
+            break
+    
+    # METRIKALARNI HISOBLASH
+    metrics = calculate_engagement_metrics(comments_data, video_metadata)
+    engagement_phases = calculate_engagement_phases(comments_data)
+    top_authors = calculate_top_authors(comments_data, top_n=10)
+    
+    return {
+        'comments': comments_data,
+        'metadata': video_metadata,
+        'metrics': metrics,
+        'engagement_phases': engagement_phases,
+        'top_authors': top_authors
+    }
 
+
+def calculate_engagement_metrics(comments_data: List[Dict], video_metadata: Dict) -> Dict:
+    """Engagement metrikalarni hisoblash"""
+    total_comments = len(comments_data)
+    total_replies = sum(len(c.get('replies', [])) for c in comments_data)
+    total_engagement = total_comments + total_replies
+    
+    # Engagement rate
+    views = video_metadata.get('views', 1)
+    likes = video_metadata.get('likes', 0)
+    engagement_rate = ((likes + total_engagement) / max(1, views)) * 100
+    
+    # Like ratio
+    like_ratio = (likes / max(1, views)) * 100
+    
+    # Comment velocity (kommentlar/soat)
+    if comments_data:
+        max_hours = max(c.get('hours_after_video', 0) for c in comments_data)
+        comment_velocity = total_comments / max(1, max_hours)
+    else:
+        comment_velocity = 0
+    
+    # Vaqt taqsimoti
+    time_distribution = {
+        '0-1h': 0,
+        '1-6h': 0,
+        '6-24h': 0,
+        '24h+': 0
+    }
+    
+    for comment in comments_data:
+        hours = comment.get('hours_after_video', 0)
+        if hours <= 1:
+            time_distribution['0-1h'] += 1
+        elif hours <= 6:
+            time_distribution['1-6h'] += 1
+        elif hours <= 24:
+            time_distribution['6-24h'] += 1
+        else:
+            time_distribution['24h+'] += 1
+    
+    return {
+        'total_comments': total_comments,
+        'total_replies': total_replies,
+        'total_engagement': total_engagement,
+        'engagement_rate': round(engagement_rate, 2),
+        'like_ratio': round(like_ratio, 2),
+        'comment_velocity': round(comment_velocity, 2),
+        'time_distribution': time_distribution
+    }
+
+
+def calculate_engagement_phases(comments_data: List[Dict]) -> Dict:
+    """Vaqt fazalarini aniqlash"""
+    phases = {
+        'first_hour': (0, 1),
+        'first_6h': (1, 6),
+        'first_24h': (6, 24),
+        'first_week': (24, 168),
+        'long_tail': (168, float('inf'))
+    }
+    
+    phase_stats = {}
+    for phase_name, (start, end) in phases.items():
+        phase_comments = [
+            c for c in comments_data 
+            if start <= c.get('hours_after_video', 0) < end
+        ]
+        phase_replies = sum(len(c.get('replies', [])) for c in phase_comments)
+        
+        phase_stats[phase_name] = {
+            'comments': len(phase_comments),
+            'replies': phase_replies,
+            'total_engagement': len(phase_comments) + phase_replies
+        }
+    
+    return phase_stats
+
+
+def calculate_top_authors(comments_data: List[Dict], top_n: int = 10) -> List[Dict]:
+    """Top authorlarni aniqlash"""
+    authors = {}
+    
+    for comment in comments_data:
+        author = comment.get('author', 'Unknown')
+        if author not in authors:
+            authors[author] = {
+                'author': author,
+                'comments': 0,
+                'replies': 0,
+                'total_likes': 0,
+                'total_posts': 0
+            }
+        
+        authors[author]['comments'] += 1
+        authors[author]['total_likes'] += comment.get('likes', 0)
+        authors[author]['total_posts'] += 1
+        
+        # Javoblarni sanash
+        for reply in comment.get('replies', []):
+            reply_author = reply.get('author', 'Unknown')
+            if reply_author not in authors:
+                authors[reply_author] = {
+                    'author': reply_author,
+                    'comments': 0,
+                    'replies': 0,
+                    'total_likes': 0,
+                    'total_posts': 0
+                }
+            
+            authors[reply_author]['replies'] += 1
+            authors[reply_author]['total_likes'] += reply.get('likes', 0)
+            authors[reply_author]['total_posts'] += 1
+    
+    # Sortlash va top N ni qaytarish
+    sorted_authors = sorted(
+        authors.values(),
+        key=lambda x: x['total_posts'],
+        reverse=True
+    )
+    
+    return sorted_authors[:top_n]
+
+
+# ESKI FUNKSIYALARNI SAQLASH (backward compatibility)
+def get_video_comments(video_id):
+    """
+    ESKI: Oddiy kommentarlar ro'yxatini qaytaradi
+    Backward compatibility uchun saqlanadi
+    """
+    result = get_video_comments_with_metrics(video_id)
+    return result['comments']
+
+
+# ===== BARCHA QOLGAN FUNKSIYALAR (ESKI) =====
 
 def save_comments_to_file(comments_data, file_path):
-
+    """Kommentarlarni faylga saqlash"""
     with open(file_path, "w", encoding="utf-8") as f:
         for comment in comments_data:
-            f.write(f"[{comment['time']}] ({comment['author']}, {comment['likes']} likes) {comment['text']}\n")
-            if comment["replies"]:
+            # Yangi va eski formatni qo'llab-quvvatlash
+            time_key = comment.get('time') or comment.get('time', '')
+            author_key = comment.get('author') or comment.get('author', 'Unknown')
+            likes_key = comment.get('likes', 0)
+            text_key = comment.get('text') or comment.get('text', '')
+            
+            f.write(f"[{time_key}] ({author_key}, {likes_key} likes) {text_key}\n")
+            
+            if comment.get("replies"):
                 f.write("{\n")
                 for reply in comment["replies"]:
-                    f.write(f"\t[{reply['time']}] ({reply['author']}, {reply['likes']} likes) {reply['text']}\n")
+                    reply_time = reply.get('time', '')
+                    reply_author = reply.get('author', 'Unknown')
+                    reply_likes = reply.get('likes', 0)
+                    reply_text = reply.get('text', '')
+                    f.write(f"\t[{reply_time}] ({reply_author}, {reply_likes} likes) {reply_text}\n")
                 f.write("}\n")
             f.write("\n\n")
 
 
 def get_comments_file_path(video_id):
+    """Kommentarlar fayl yo'lini olish"""
     results_dir = Path("results")
     results_dir.mkdir(exist_ok=True)
     timestamp = datetime.now().strftime('%d.%m.%Y-%H.%M.%S')
@@ -117,28 +363,18 @@ def get_comments_file_path(video_id):
 
 
 def get_video_comments_count(video_url: str) -> int:
-
+    """Kommentarlar sonini olish"""
     try:
         video_id = extract_video_id(video_url)
-    except ValueError:
-        raise ValueError("❌ Noto'g'ri video URL")
-
-    response = youtube.videos().list(
-        part="statistics",
-        id=video_id
-    ).execute()
-
-    if not response["items"]:
-        raise ValueError("❌ Video topilmadi")
-
-    stats = response["items"][0]["statistics"]
-    comment_count = int(stats.get("commentCount", 0))
-
-    return comment_count
+        metadata = get_video_metadata(video_id)
+        return metadata.get('comments', 0) if metadata else 0
+    except Exception as e:
+        print(f"❌ Kommentarlar sonini olishda xato: {e}")
+        return 0
 
 
 def parse_timestamps(description: str) -> List[Dict[str, str]]:
-
+    """Timestamps ni description dan ajratib olish"""
     timestamps = []
     
     patterns = [
@@ -158,7 +394,7 @@ def parse_timestamps(description: str) -> List[Dict[str, str]]:
                     "time": time_code,
                     "title": title
                 })
-
+    
     def time_to_seconds(time_str: str) -> int:
         parts = time_str.split(':')
         if len(parts) == 2:
@@ -181,7 +417,7 @@ def parse_timestamps(description: str) -> List[Dict[str, str]]:
 
 
 async def get_video_description(video_url: str) -> str:
-
+    """Video description ni olish"""
     try:
         video_id = extract_video_id(video_url)
         
@@ -206,7 +442,7 @@ async def get_video_description(video_url: str) -> str:
 
 
 async def get_video_timestamps(video_url: str) -> Dict:
-
+    """Video timestamps ni olish"""
     try:
         video_id = extract_video_id(video_url)
         
@@ -248,7 +484,7 @@ async def get_video_timestamps(video_url: str) -> Dict:
 
 
 def format_timestamps_for_analysis(timestamps: List[Dict[str, str]]) -> str:
-
+    """Timestamps ni analiz uchun formatlash"""
     if not timestamps:
         return ""
     
@@ -260,7 +496,7 @@ def format_timestamps_for_analysis(timestamps: List[Dict[str, str]]) -> str:
 
 
 def extract_channel_id_from_url(channel_url: str) -> Optional[str]:
-
+    """Kanal URL dan kanal ID ni ajratib olish"""
     patterns = [
         (r'youtube\.com/@([^/?]+)', 'handle'),
         (r'youtube\.com/channel/([^/?]+)', 'id'),
@@ -278,7 +514,7 @@ def extract_channel_id_from_url(channel_url: str) -> Optional[str]:
 
 
 async def get_channel_id_by_handle(handle: str) -> Optional[str]:
-
+    """Handle orqali kanal ID ni topish"""
     try:
         youtube_client = build('youtube', 'v3', developerKey=config.YOUTUBE_API_KEY, cache_discovery=False)
         
@@ -335,7 +571,7 @@ async def get_channel_id_by_handle(handle: str) -> Optional[str]:
 
 
 async def get_channel_description(channel_url: str) -> str:
-
+    """Kanal description ni olish"""
     try:
         identifier, url_type = extract_channel_id_from_url(channel_url)
         
@@ -414,7 +650,7 @@ async def get_channel_description(channel_url: str) -> str:
 
 
 async def get_video_channel_info(video_url: str) -> Optional[Dict[str, str]]:
-
+    """Video kanalining ma'lumotlarini olish"""
     try:
         video_id = extract_video_id(video_url)
         
@@ -445,7 +681,7 @@ async def get_video_channel_info(video_url: str) -> Optional[Dict[str, str]]:
 
 
 async def get_channel_info_by_id(channel_id: str) -> dict:
-
+    """Kanal ID orqali to'liq ma'lumotlarni olish"""
     try:
         youtube_client = build('youtube', 'v3', developerKey=config.YOUTUBE_API_KEY, cache_discovery=False)
         
@@ -486,3 +722,120 @@ async def get_channel_info_by_id(channel_id: str) -> dict:
             'subscriber_count': 0,
             'video_count': 0
         }
+
+
+def is_shorts_url(url: str) -> bool:
+    """URL Shorts ekanligini tekshirish"""
+    return "/shorts/" in url.lower()
+
+
+async def is_shorts_video(url: str) -> bool:
+    """Video Shorts ekanligini aniqlash"""
+    try:
+        if is_shorts_url(url):
+            return True
+        
+        video_id = extract_video_id(url)
+        metadata = get_video_metadata(video_id)
+        
+        return metadata.get('is_shorts', False) if metadata else False
+        
+    except Exception as e:
+        print(f"Shorts aniqlashda xatolik: {e}")
+        return is_shorts_url(url)
+
+
+def get_video_comments_shorts_safe(video_id: str, max_results: int = 1000):
+    """Shorts uchun xavfsiz kommentarlar olish"""
+    import time
+    
+    comments_data = []
+    next_page_token = None
+    total_fetched = 0
+    max_retries = 3
+    retry_count = 0
+    
+    while total_fetched < max_results:
+        try:
+            request = youtube.commentThreads().list(
+                part="snippet,replies",
+                videoId=video_id,
+                maxResults=min(100, max_results - total_fetched),
+                pageToken=next_page_token,
+                order="relevance",
+                textFormat="plainText"
+            )
+            
+            response = request.execute()
+            
+            for item in response["items"]:
+                top_comment = item["snippet"]["topLevelComment"]["snippet"]
+                
+                time_comm = top_comment["publishedAt"].replace("T", " ").replace("Z", "")
+                text_comm = top_comment["textDisplay"].replace("\n", "\n\t")
+                author = top_comment["authorDisplayName"]
+                likes = top_comment["likeCount"]
+                
+                main_comment = {
+                    "time": time_comm,
+                    "author": author,
+                    "likes": likes,
+                    "text": text_comm,
+                    "replies": []
+                }
+                
+                if "replies" in item:
+                    for reply in item["replies"]["comments"]:
+                        reply_snippet = reply["snippet"]
+                        time_reply_comm = reply_snippet["publishedAt"].replace("T", " ").replace("Z", "")
+                        text_reply_comm = reply_snippet["textDisplay"].replace("\n", "\n\t\t").replace("@@", "@")
+                        author_reply = reply_snippet["authorDisplayName"]
+                        likes_reply = reply_snippet["likeCount"]
+                        
+                        main_comment["replies"].append({
+                            "time": time_reply_comm,
+                            "author": author_reply,
+                            "likes": likes_reply,
+                            "text": text_reply_comm
+                        })
+                
+                comments_data.append(main_comment)
+                total_fetched += 1
+                
+                if total_fetched >= max_results:
+                    break
+            
+            next_page_token = response.get("nextPageToken")
+            if not next_page_token:
+                break
+            
+            time.sleep(0.2)
+            retry_count = 0
+            
+        except Exception as e:
+            error_msg = str(e)
+            print(f"⚠️ YouTube API error: {error_msg}")
+            
+            if "400" in error_msg or "processingFailure" in error_msg:
+                retry_count += 1
+                if retry_count < max_retries:
+                    wait_time = retry_count * 2
+                    print(f"🔄 Retry {retry_count}/{max_retries} in {wait_time}s...")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    print(f"❌ Max retries reached. Returning {len(comments_data)} comments.")
+                    break
+            else:
+                print(f"❌ Fatal error: {error_msg}")
+                break
+    
+    return comments_data
+
+
+def get_video_comments_adaptive(video_id: str, url: str):
+    """URL ga qarab Shorts yoki oddiy video kommentarlarini olish"""
+    if is_shorts_url(url):
+        return get_video_comments_shorts_safe(video_id, max_results=1000)
+    else:
+        return get_video_comments(video_id)

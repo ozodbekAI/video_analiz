@@ -1,6 +1,6 @@
 from sqlalchemy import select, insert, update, delete, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-from .models import User, Video, Comment, Prompt, AIResponse, VerificationAttempt
+from .models import EvolutionAnalysis, User, Video, Comment, Prompt, AIResponse, VerificationAttempt
 from .engine import async_session
 from datetime import datetime, timezone
 
@@ -147,19 +147,37 @@ async def get_comments(video_id: int):
         return result.scalars().all()
 
 
-async def create_ai_response(user_id: int, video_id: int, chunk_id: int, analysis_type: str, response_text: str):
+async def create_ai_response(user_id: int, video_id: int, chunk_id: int, analysis_type: str, response_text: str, machine_data: str = None):
     async with async_session() as session:
+        # 1️⃣ Avval User ni topamiz
+        user_result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = user_result.scalar_one_or_none()
+        
+        if not user:
+            user = User(
+                user_id=user_id,
+                username=f"user_{user_id}",
+                tariff_plan="free",
+                analyses_limit=5,
+                analyses_used=0
+            )
+            session.add(user)
+            await session.flush()  # ID olish uchun
+        
+        # 2️⃣ Endi to'g'ri internal ID bilan saqlaymiz
         stmt = insert(AIResponse).values(
-            user_id=user_id,
+            user_id=user.id,  # ✅ Bu internal database ID
             video_id=video_id,
             chunk_id=chunk_id,
             analysis_type=analysis_type,
             response_text=response_text,
+            machine_data=machine_data,
             created_at=datetime.now(tz=timezone.utc)
         )
         await session.execute(stmt)
         await session.commit()
-
 
 
 async def get_total_users():
@@ -320,14 +338,11 @@ async def get_ai_response_by_video(video_id: int, analysis_type: str = None):
 
 
 async def get_user_by_id(user_id: int):
-    """User ID orqali foydalanuvchi ma'lumotlarini olish"""
     async with async_session() as session:
         result = await session.execute(
             select(User).where(User.user_id == user_id)
         )
         return result.scalar_one_or_none()
-    
-
 
 
 async def get_user_with_verification(user_id: int):
@@ -349,7 +364,6 @@ async def update_user_verification(
     method: str,
     status: str = 'verified'
 ):
-    
     async with async_session() as session:
         stmt = update(User).where(User.user_id == user_id).values(
             youtube_channel_id=channel_id,
@@ -501,7 +515,8 @@ async def get_user_verification_stats(user_id: int) -> dict:
             'channel_id': user.youtube_channel_id,
             'verification_date': user.verification_date
         }
-    
+
+
 async def update_ai_response_txt_path(user_id: int, video_id: int, txt_path: str):
     async with async_session() as session:
         stmt = update(AIResponse).where(
@@ -522,6 +537,7 @@ async def update_video_channel_id(video_id: int, channel_id: str):
 
 
 async def get_user_verified_channels_with_names(user_id: int):
+
     async with async_session() as session:
         result = await session.execute(
             select(User).where(User.user_id == user_id)
@@ -538,44 +554,70 @@ async def get_user_verified_channels_with_names(user_id: int):
         
         result = await session.execute(stmt)
         channels = result.all()
+        
+        verified_attempts = await session.execute(
+            select(VerificationAttempt.channel_url).where(
+                VerificationAttempt.user_id == user.id,
+                VerificationAttempt.status == 'verified'
+            )
+        )
+        
+        import re
+        verified_channel_ids = set()
+        for (channel_url,) in verified_attempts.all():
+            match = re.search(r'channel/([^/?]+)', channel_url)
+            if match:
+                verified_channel_ids.add(match.group(1))
+            match = re.search(r'@([^/?]+)', channel_url)
+            if match:
+                verified_channel_ids.add(match.group(1))
         
         channels_with_names = []
+        processed_ids = set()
         
         for channel_id, video_count in channels:
-            try:
-                from services.youtube_service import get_channel_info_by_id
-                channel_info = await get_channel_info_by_id(channel_id)
-                channel_title = channel_info.get('title', channel_id[:20])
-            except Exception:
-                channel_title = channel_id[:20] + "..."
-            
-            channels_with_names.append({
-                'channel_id': channel_id,
-                'channel_title': channel_title,
-                'video_count': video_count
-            })
+            if channel_id not in processed_ids:
+                processed_ids.add(channel_id)
+                
+                try:
+                    from services.youtube_service import get_channel_info_by_id
+                    channel_info = await get_channel_info_by_id(channel_id)
+                    channel_title = channel_info.get('title', channel_id[:20])
+                except Exception:
+                    channel_title = channel_id[:20] + "..."
+                
+                channels_with_names.append({
+                    'channel_id': channel_id,
+                    'channel_title': channel_title,
+                    'video_count': video_count
+                })
+        
+        for channel_id in verified_channel_ids:
+            if channel_id not in processed_ids:
+                processed_ids.add(channel_id)
+                
+                count_result = await session.execute(
+                    select(func.count(Video.id)).where(
+                        Video.user_id == user.id,
+                        Video.channel_id == channel_id
+                    )
+                )
+                video_count = count_result.scalar() or 0
+                
+                try:
+                    from services.youtube_service import get_channel_info_by_id
+                    channel_info = await get_channel_info_by_id(channel_id)
+                    channel_title = channel_info.get('title', channel_id[:20])
+                except Exception:
+                    channel_title = channel_id[:20] + "..."
+                
+                channels_with_names.append({
+                    'channel_id': channel_id,
+                    'channel_title': channel_title,
+                    'video_count': video_count
+                })
         
         return channels_with_names
-
-async def get_user_verified_channels(user_id: int):
-    async with async_session() as session:
-        result = await session.execute(
-            select(User).where(User.user_id == user_id)
-        )
-        user = result.scalar_one_or_none()
-        
-        if not user:
-            return []
-        
-        stmt = select(Video.channel_id, func.count(Video.id).label('video_count')).where(
-            Video.user_id == user.id,
-            Video.channel_id.isnot(None)
-        ).group_by(Video.channel_id)
-        
-        result = await session.execute(stmt)
-        channels = result.all()
-        
-        return [{'channel_id': ch[0], 'video_count': ch[1]} for ch in channels]
 
 
 async def get_channel_analysis_history(user_id: int, channel_id: str, limit: int = 10):
@@ -594,7 +636,7 @@ async def get_channel_analysis_history(user_id: int, channel_id: str, limit: int
             Video.user_id == user.id,
             Video.channel_id == channel_id,
             AIResponse.txt_file_path.isnot(None),
-            AIResponse.analysis_type.in_(['simple', 'advanced'])
+            AIResponse.analysis_type == 'advanced'
         ).order_by(Video.processed_at.desc()).limit(limit)
         
         result = await session.execute(stmt)
@@ -625,14 +667,10 @@ async def get_evolution_prompts():
             'step1': next((p for p in prompts if p.analysis_type == 'evolution_step1'), None),
             'step2': next((p for p in prompts if p.analysis_type == 'evolution_step2'), None)
         }
-    
+
+
 async def create_admin_verified_channel(user_id: int, channel_id: str, channel_title: str):
-    """
-    Admin tomonidan tahlil qilingan kanalni 'admin_verified' sifatida saqlash
-    Bu kanal evolution uchun ishlatilishi mumkin
-    """
     async with async_session() as session:
-        # Avval bu kanal allaqachon mavjudligini tekshiramiz
         existing_attempt = await session.execute(
             select(VerificationAttempt).where(
                 VerificationAttempt.user_id == user_id,
@@ -642,15 +680,13 @@ async def create_admin_verified_channel(user_id: int, channel_id: str, channel_t
         )
         
         if existing_attempt.scalar_one_or_none():
-            # Agar kanal allaqachon verified bo'lsa, yangi qo'shmaymiz
             return
         
-        # Yangi verification attempt yaratamiz (admin verified)
         attempt = VerificationAttempt(
             user_id=user_id,
             channel_url=f"https://www.youtube.com/channel/{channel_id}",
             verification_code="ADMIN_VERIFIED",
-            verification_method='code',  # yoki 'admin' deb yangi enum qo'shish mumkin
+            verification_method='code',
             status='verified',
             verified_at=datetime.now(tz=timezone.utc),
             created_at=datetime.now(tz=timezone.utc)
@@ -660,104 +696,80 @@ async def create_admin_verified_channel(user_id: int, channel_id: str, channel_t
         await session.commit()
 
 
-async def get_user_verified_channels_with_names(user_id: int):
-    """
-    User yoki admin tomonidan verified qilingan barcha kanallarni olish
-    Evolution uchun ishlatiladi
-    """
+
+async def create_evolution_analysis(
+    user_id: int,
+    channel_id: str,
+    channel_title: str = None,
+    videos_analyzed: int = 0,
+    video_ids_used: list = None
+):
     async with async_session() as session:
-        result = await session.execute(
+        user_result = await session.execute(
             select(User).where(User.user_id == user_id)
         )
-        user = result.scalar_one_or_none()
+        user = user_result.scalar_one_or_none()
         
         if not user:
-            return []
+            raise ValueError("Foydalanuvchi topilmadi")
         
-        # Video'lardan channel_id olish
-        stmt = select(Video.channel_id, func.count(Video.id).label('video_count')).where(
-            Video.user_id == user.id,
-            Video.channel_id.isnot(None)
-        ).group_by(Video.channel_id)
-        
-        result = await session.execute(stmt)
-        channels = result.all()
-        
-        # Verification attempt'lardan ham olish (admin verified kanallar uchun)
-        verified_attempts = await session.execute(
-            select(VerificationAttempt.channel_url).where(
-                VerificationAttempt.user_id == user.id,
-                VerificationAttempt.status == 'verified'
-            )
+        evolution = EvolutionAnalysis(
+            user_id=user.id,
+            channel_id=channel_id,
+            channel_title=channel_title,
+            videos_analyzed=videos_analyzed,
+            video_ids_used=video_ids_used or [],
+            status='processing',
+            created_at=datetime.now(tz=timezone.utc)
         )
         
-        # Channel ID'larni extract qilamiz
-        verified_channel_ids = set()
-        for (channel_url,) in verified_attempts.all():
-            # URL'dan channel ID'ni ajratib olamiz
-            import re
-            match = re.search(r'channel/([^/?]+)', channel_url)
-            if match:
-                verified_channel_ids.add(match.group(1))
-            # Handle @username format
-            match = re.search(r'@([^/?]+)', channel_url)
-            if match:
-                verified_channel_ids.add(match.group(1))
+        session.add(evolution)
+        await session.commit()
+        await session.refresh(evolution)
         
-        channels_with_names = []
-        processed_ids = set()
-        
-        # Video'lardan kelgan kanallar
-        for channel_id, video_count in channels:
-            if channel_id not in processed_ids:
-                processed_ids.add(channel_id)
-                
-                try:
-                    from services.youtube_service import get_channel_info_by_id
-                    channel_info = await get_channel_info_by_id(channel_id)
-                    channel_title = channel_info.get('title', channel_id[:20])
-                except Exception:
-                    channel_title = channel_id[:20] + "..."
-                
-                channels_with_names.append({
-                    'channel_id': channel_id,
-                    'channel_title': channel_title,
-                    'video_count': video_count
-                })
-        
-        for channel_id in verified_channel_ids:
-            if channel_id not in processed_ids:
-                processed_ids.add(channel_id)
-                
-                # Bu kanaldagi video'lar sonini sanash
-                count_result = await session.execute(
-                    select(func.count(Video.id)).where(
-                        Video.user_id == user.id,
-                        Video.channel_id == channel_id
-                    )
-                )
-                video_count = count_result.scalar() or 0
-                
-                try:
-                    from services.youtube_service import get_channel_info_by_id
-                    channel_info = await get_channel_info_by_id(channel_id)
-                    channel_title = channel_info.get('title', channel_id[:20])
-                except Exception:
-                    channel_title = channel_id[:20] + "..."
-                
-                channels_with_names.append({
-                    'channel_id': channel_id,
-                    'channel_title': channel_title,
-                    'video_count': video_count
-                })
-        
-        return channels_with_names
+        return evolution
 
 
-async def get_channel_analysis_history(user_id: int, channel_id: str, limit: int = 10):
-    """
-    Kanal uchun barcha tahlillarni olish (evolution uchun)
-    """
+async def update_evolution_step1(evolution_id: int, response_text: str):
+    async with async_session() as session:
+        stmt = update(EvolutionAnalysis).where(
+            EvolutionAnalysis.id == evolution_id
+        ).values(step1_response=response_text)
+        
+        await session.execute(stmt)
+        await session.commit()
+
+
+async def update_evolution_step2(
+    evolution_id: int,
+    response_text: str,
+    pdf_path: str = None,
+    txt_path: str = None,
+    analysis_period: str = None
+):
+    async with async_session() as session:
+        values = {
+            'step2_response': response_text,
+            'status': 'completed',
+            'completed_at': datetime.now(tz=timezone.utc)
+        }
+        
+        if pdf_path:
+            values['pdf_path'] = pdf_path
+        if txt_path:
+            values['txt_path'] = txt_path
+        if analysis_period:
+            values['analysis_period'] = analysis_period
+        
+        stmt = update(EvolutionAnalysis).where(
+            EvolutionAnalysis.id == evolution_id
+        ).values(**values)
+        
+        await session.execute(stmt)
+        await session.commit()
+
+
+async def get_user_evolution_history(user_id: int, limit: int = 10):
     async with async_session() as session:
         user_result = await session.execute(
             select(User).where(User.user_id == user_id)
@@ -767,26 +779,207 @@ async def get_channel_analysis_history(user_id: int, channel_id: str, limit: int
         if not user:
             return []
         
-        # Channel ID bo'yicha video'larni topish
-        stmt = select(Video, AIResponse).join(
+        stmt = select(EvolutionAnalysis).where(
+            EvolutionAnalysis.user_id == user.id,
+            EvolutionAnalysis.status == 'completed'
+        ).order_by(EvolutionAnalysis.completed_at.desc()).limit(limit)
+        
+        result = await session.execute(stmt)
+        return result.scalars().all()
+
+
+async def get_channel_latest_evolution(user_id: int, channel_id: str):
+    async with async_session() as session:
+        user_result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = user_result.scalar_one_or_none()
+        
+        if not user:
+            return None
+        
+        stmt = select(EvolutionAnalysis).where(
+            EvolutionAnalysis.user_id == user.id,
+            EvolutionAnalysis.channel_id == channel_id,
+            EvolutionAnalysis.status == 'completed'
+        ).order_by(EvolutionAnalysis.completed_at.desc()).limit(1)
+        
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
+    
+
+async def get_balanced_evolution_analyses(
+    user_id: int, 
+    channel_id: str, 
+    min_advanced: int = 5, 
+    total_limit: int = 10
+):
+
+    async with async_session() as session:
+
+        user_result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = user_result.scalar_one_or_none()
+        
+        if not user:
+            return []
+        
+        advanced_stmt = select(Video, AIResponse).join(
             AIResponse, Video.id == AIResponse.video_id
         ).where(
             Video.user_id == user.id,
             Video.channel_id == channel_id,
             AIResponse.txt_file_path.isnot(None),
-            AIResponse.analysis_type.in_(['simple', 'advanced'])
-        ).order_by(Video.processed_at.desc()).limit(limit)
+            AIResponse.analysis_type == 'advanced',
+            Video.processed_at.isnot(None)  
+        ).order_by(Video.processed_at.asc())
+
+        advanced_result = await session.execute(advanced_stmt)
+        advanced_analyses = advanced_result.all()
         
-        result = await session.execute(stmt)
-        history = result.all()
+        if len(advanced_analyses) < min_advanced:
+            return []
         
-        return [
-            {
-                'video_id': video.id,
-                'video_url': video.video_url,
-                'processed_at': video.processed_at,
-                'txt_path': ai_response.txt_file_path,
-                'analysis_type': ai_response.analysis_type
-            }
-            for video, ai_response in history
-        ]
+        if len(advanced_analyses) >= total_limit:
+            return list(advanced_analyses[:total_limit])
+
+        simple_limit = total_limit - len(advanced_analyses)
+        
+        advanced_video_ids = [video.id for video, _ in advanced_analyses]
+        
+        simple_stmt = select(Video, AIResponse).join(
+            AIResponse, Video.id == AIResponse.video_id
+        ).where(
+            Video.user_id == user.id,
+            Video.channel_id == channel_id,
+            AIResponse.txt_file_path.isnot(None),
+            AIResponse.analysis_type == 'simple',
+            ~Video.id.in_(advanced_video_ids),  
+            Video.processed_at.isnot(None)
+        ).order_by(Video.processed_at.asc()).limit(simple_limit)
+        
+        simple_result = await session.execute(simple_stmt)
+        simple_analyses = simple_result.all()
+        
+
+        all_analyses = list(advanced_analyses) + list(simple_analyses)
+
+        all_analyses.sort(key=lambda x: x[0].processed_at)
+
+        return all_analyses
+
+
+async def get_channel_analysis_stats(user_id: int, channel_id: str) -> dict:
+
+    async with async_session() as session:
+        user_result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = user_result.scalar_one_or_none()
+        
+        if not user:
+            return {'total': 0, 'advanced': 0, 'simple': 0}
+        
+        advanced_stmt = select(func.count(Video.id)).join(
+            AIResponse, Video.id == AIResponse.video_id
+        ).where(
+            Video.user_id == user.id,
+            Video.channel_id == channel_id,
+            AIResponse.analysis_type == 'advanced',
+            AIResponse.txt_file_path.isnot(None)
+        )
+        advanced_result = await session.execute(advanced_stmt)
+        advanced = advanced_result.scalar() or 0
+
+        simple_stmt = select(func.count(Video.id)).join(
+            AIResponse, Video.id == AIResponse.video_id
+        ).where(
+            Video.user_id == user.id,
+            Video.channel_id == channel_id,
+            AIResponse.analysis_type == 'simple',
+            AIResponse.txt_file_path.isnot(None)
+        )
+        simple_result = await session.execute(simple_stmt)
+        simple = simple_result.scalar() or 0
+        
+        total = advanced + simple
+        
+        return {
+            'total': total,
+            'advanced': advanced,
+            'simple': simple
+        }
+
+
+async def get_channel_analysis_history(user_id: int, channel_id: str, limit: int = 10):
+
+    balanced_analyses = await get_balanced_evolution_analyses(
+        user_id=user_id,
+        channel_id=channel_id,
+        min_advanced=5,
+        total_limit=limit
+    )
+
+    history = []
+    for video, ai_response in balanced_analyses:
+        history.append({
+            'video_id': video.id,
+            'video_url': video.video_url,
+            'processed_at': video.processed_at,
+            'first_comment_date': video.first_comment_date,
+            'txt_path': ai_response.txt_file_path,
+            'analysis_type': ai_response.analysis_type
+        })
+    
+    return history
+
+
+async def ensure_user_exists(user_id: int) -> User:
+
+    async with async_session() as session:
+        # Foydalanuvchini qidirish
+        result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = result.scalar_one_or_none()
+        if user is None:
+            print(f"🔧 Foydalanuvchi {user_id} yaratilmoqda...")
+            
+            new_user = User(
+                user_id=user_id,
+                username=f"user_{user_id}",
+                tariff_plan="free",
+                analyses_limit=5,
+                analyses_used=0
+            )
+            
+            session.add(new_user)
+            await session.commit()
+            await session.refresh(new_user)
+            
+            print(f"✅ Foydalanuvchi {user_id} yaratildi")
+            return new_user
+        
+        return user
+    
+
+async def create_advanced_analysis_response(
+    user_id: int, 
+    video_id: int, 
+    human_report: str,
+    machine_data: str
+):
+    """Создает запись расширенного анализа с двумя типами данных"""
+    async with async_session() as session:
+        stmt = insert(AIResponse).values(
+            user_id=user_id,
+            video_id=video_id,
+            chunk_id=0,
+            analysis_type="advanced",
+            response_text=human_report,
+            machine_data=machine_data,  # 🆕 Сохраняем машиночитаемый отчет
+            created_at=datetime.now(tz=timezone.utc)
+        )
+        await session.execute(stmt)
+        await session.commit()

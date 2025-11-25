@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Enum
+from sqlalchemy import JSON, BigInteger, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from .engine import Base
 from datetime import datetime, timezone
@@ -37,7 +37,7 @@ class VerificationAttempt(Base):
     __tablename__ = "verification_attempts"
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
     channel_url = Column(String(500), nullable=False)
     verification_code = Column(String(100), nullable=False)
     verification_method = Column(
@@ -61,6 +61,7 @@ class SampleReport(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     report_name = Column(String(255), nullable=False)
     video_url = Column(String(500), nullable=False)
+    video_type = Column(String(20), default='regular') 
     analysis_data = Column(Text, nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz=timezone.utc))
@@ -70,7 +71,7 @@ class Video(Base):
     __tablename__ = "videos"
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
     video_url = Column(Text, nullable=False)
     video_title = Column(Text, nullable=True)
     channel_id = Column(String(100), nullable=True) 
@@ -107,12 +108,44 @@ class AIResponse(Base):
     __tablename__ = "ai_responses"
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
     video_id = Column(Integer, ForeignKey("videos.id"), nullable=False)
     chunk_id = Column(Integer, default=0)
     analysis_type = Column(String(50), nullable=True)
     response_text = Column(Text, nullable=False)
-    txt_file_path = Column(String(500), nullable=True) 
+    machine_data = Column(JSON, nullable=True)  
+    txt_file_path = Column(String(500), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz=timezone.utc))
     
     video = relationship("Video", back_populates="ai_responses")
+
+
+
+class EvolutionAnalysis(Base):
+
+    __tablename__ = "evolution_analyses"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
+    channel_id = Column(String(100), nullable=False)  
+    channel_title = Column(String(255), nullable=True)  
+
+    step1_response = Column(Text, nullable=True)  
+    step2_response = Column(Text, nullable=True)  
+
+    videos_analyzed = Column(Integer, default=0)  
+    analysis_period = Column(String(100), nullable=True)  
+    video_ids_used = Column(JSON, nullable=True)  
+
+    pdf_path = Column(String(500), nullable=True)
+    txt_path = Column(String(500), nullable=True)
+
+    status = Column(
+        Enum('pending', 'processing', 'completed', 'failed', name='evolution_status_enum'),
+        default='pending'
+    )
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz=timezone.utc))
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    
+    user = relationship("User", backref="evolution_analyses")

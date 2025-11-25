@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-11-23T22:35:30.889873",
+  "video_id": "QzOnKeysBGU",
+  "module_id": "10-1",
+  "attempt": 1,
+  "is_valid": true,
+  "quality_score": 91.0,
+  "errors": [],
+  "warnings": [],
+  "metrics": {
+    "entities_count": 2
+  },
+  "retry_needed": false,
+  "retry_instructions": null
+}
