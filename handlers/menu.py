@@ -20,15 +20,47 @@ async def strategic_hub_handler(query: CallbackQuery):
     )
 
 
-@router.callback_query(MenuCallback.filter(F.action.in_({
-    "audience_map", 
-    "risk_monitoring", 
-    "strengths", 
-    "growth_plan", 
-    "anomaly_detector"
-})))
-async def in_development_handler(query: CallbackQuery):
-    await query.answer(FEATURE_IN_DEVELOPMENT, show_alert=True)
+# 🆕 Убираем ВСЕ заглушки - теперь все функции рабочие
+@router.callback_query(MenuCallback.filter(F.action == "audience_map"))
+async def audience_map_handler(query: CallbackQuery, state: FSMContext):
+    await state.clear()
+    from handlers.evolution import universal_analysis_handler
+    await universal_analysis_handler(query, state, analysis_type="audience_map")
+
+
+@router.callback_query(MenuCallback.filter(F.action == "content_prediction"))
+async def content_prediction_handler(query: CallbackQuery, state: FSMContext):
+    await state.clear()
+    from handlers.evolution import universal_analysis_handler
+    await universal_analysis_handler(query, state, analysis_type="content_prediction")
+
+
+@router.callback_query(MenuCallback.filter(F.action == "channel_diagnostics"))
+async def channel_diagnostics_handler(query: CallbackQuery, state: FSMContext):
+    await state.clear()
+    from handlers.evolution import universal_analysis_handler
+    await universal_analysis_handler(query, state, analysis_type="channel_diagnostics")
+
+
+@router.callback_query(MenuCallback.filter(F.action == "content_ideas"))
+async def content_ideas_handler(query: CallbackQuery, state: FSMContext):
+    await state.clear()
+    from handlers.evolution import universal_analysis_handler
+    await universal_analysis_handler(query, state, analysis_type="content_ideas")
+
+
+@router.callback_query(MenuCallback.filter(F.action == "viral_potential"))
+async def viral_potential_handler(query: CallbackQuery, state: FSMContext):
+    await state.clear()
+    from handlers.evolution import universal_analysis_handler
+    await universal_analysis_handler(query, state, analysis_type="viral_potential")
+
+
+@router.callback_query(MenuCallback.filter(F.action == "iterative_ideas"))
+async def iterative_ideas_handler(query: CallbackQuery, state: FSMContext):
+    await state.clear()
+    from handlers.evolution import universal_analysis_handler
+    await universal_analysis_handler(query, state, analysis_type="iterative_ideas")
 
 
 @router.callback_query(MenuCallback.filter(F.action == "main_menu"))

@@ -22,7 +22,8 @@ import os
 import json
 from pathlib import Path
 from datetime import datetime
-from utils.helpers import clean_html_for_telegram
+from utils.helpers import clean_html_for_telegram, safe_edit_text
+from utils.texts import FEATURE_IN_DEVELOPMENT
 
 router = Router()
 
@@ -428,3 +429,26 @@ async def select_channel_handler(query: CallbackQuery, state: FSMContext):
             reply_markup=get_main_menu_keyboard()
         )
         await state.clear()
+
+async def universal_analysis_handler(
+    query: CallbackQuery,
+    state: FSMContext,
+    analysis_type: str
+):
+    """
+    Universal handler:
+    audience_map
+    content_prediction
+    channel_diagnostics
+    content_ideas
+    viral_potential
+    iterative_ideas
+    """
+    await state.clear()
+
+    await safe_edit_text(
+        query,
+        FEATURE_IN_DEVELOPMENT,
+        reply_markup=get_main_menu_keyboard(),
+        parse_mode="HTML"
+    )

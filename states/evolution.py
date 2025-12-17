@@ -1,6 +1,6 @@
-from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.state import StatesGroup, State
 
 
 class EvolutionFSM(StatesGroup):
     selecting_channel = State()
-    processing_evolution = State()
+    processing = State()

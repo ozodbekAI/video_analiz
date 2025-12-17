@@ -654,19 +654,36 @@ async def get_channel_analysis_history(user_id: int, channel_id: str, limit: int
         ]
 
 
-async def get_evolution_prompts():
-    async with async_session() as session:
-        stmt = select(Prompt).where(
-            Prompt.analysis_type.in_(['evolution_step1', 'evolution_step2'])
-        ).order_by(Prompt.analysis_type)
-        
-        result = await session.execute(stmt)
-        prompts = result.scalars().all()
-        
-        return {
-            'step1': next((p for p in prompts if p.analysis_type == 'evolution_step1'), None),
-            'step2': next((p for p in prompts if p.analysis_type == 'evolution_step2'), None)
-        }
+async def get_evolution_prompts(analysis_type: str = "evolution"):
+    """Получение промптов для всех типов анализа"""
+    prompt_config = {
+        "audience_map": {"category": "audience_map", "step1": "step1", "step2": "step2"},
+        "content_prediction": {"category": "content_prediction", "step1": "step1", "step2": "step2"},
+        "channel_diagnostics": {"category": "channel_diagnostics", "step1": "step1", "step2": "step2"},
+        "content_ideas": {"category": "content_ideas", "step1": "step1", "step2": "step2"},
+        "viral_potential": {"category": "viral_potential", "step1": "step1", "step2": "step2"},
+        "iterative_ideas": {
+            "category": "iterative_ideas", 
+            "step1": "step1",
+            "evaluator_creative": "evaluator_creative",
+            "evaluator_analytical": "evaluator_analytical", 
+            "evaluator_practical": "evaluator_practical",
+            "improver": "improver",
+            "final_scenario": "final_scenario"
+        },
+        "evolution": {"category": "evolution", "step1": "step1", "step2": "step2"}
+    }
+    
+    config = prompt_config.get(analysis_type, prompt_config["evolution"])
+    
+    prompts = {}
+    for key, analysis_type_value in config.items():
+        if key == "category":
+            continue
+        prompt_list = await get_prompts(category=config["category"], analysis_type=analysis_type_value)
+        prompts[key] = prompt_list[0] if prompt_list else None
+    
+    return prompts
 
 
 async def create_admin_verified_channel(user_id: int, channel_id: str, channel_title: str):
