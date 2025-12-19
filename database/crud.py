@@ -1,6 +1,6 @@
 from sqlalchemy import select, insert, update, delete, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-from .models import EvolutionAnalysis, User, Video, Comment, Prompt, AIResponse, VerificationAttempt
+from .models import EvolutionAnalysis, User, Video, Comment, Prompt, AIResponse, VerificationAttempt, VideoAnalysis
 from .engine import async_session
 from datetime import datetime, timezone
 
@@ -79,15 +79,19 @@ async def reset_user_analyses(user_id: int):
         await session.commit()
 
 
-async def get_prompts(category: str = None, analysis_type: str = None):
-    async with async_session() as session:
-        query = select(Prompt)
-        if category:
-            query = query.where(Prompt.category == category)
-        if analysis_type:
-            query = query.where(Prompt.analysis_type == analysis_type)
-        result = await session.execute(query)
-        return result.scalars().all()
+async def get_prompts(
+    db: AsyncSession,
+    category: str | None = None,
+    analysis_type: str | None = None,
+):
+    query = select(Prompt)
+    if category:
+        query = query.where(Prompt.category == category)
+    if analysis_type:
+        query = query.where(Prompt.analysis_type == analysis_type)
+
+    res = await db.execute(query.order_by(Prompt.order))
+    return res.scalars().all()
 
 
 async def create_prompt(name: str, prompt_text: str, analysis_type: str = None, category: str = None):
@@ -1000,3 +1004,144 @@ async def create_advanced_analysis_response(
         )
         await session.execute(stmt)
         await session.commit()
+
+async def get_user_analysis_history(user_id: int) -> list[str]:
+    async with async_session() as session:
+        q = await session.execute(
+            select(VideoAnalysis.text_report)
+            .where(VideoAnalysis.user_id == user_id)
+            .order_by(VideoAnalysis.created_at.desc())
+            .limit(10)
+        )
+        return [r[0] for r in q.all()]
+    
+
+async def get_evolution_prompts(analysis_type: str = "evolution"):
+    """
+    Получение промптов для всех типов анализа стратегического хаба
+    
+    ВАЖНО: Для каждого типа нужно создать промпты в базе данных:
+    - category = название функции (например, "audience_map")
+    - analysis_type = "step1" или "step2"
+    """
+    prompt_config = {
+        "audience_map": {
+            "category": "audience_map",
+            "step1": "step1",
+            "step2": "step2"
+        },
+        "content_prediction": {
+            "category": "content_prediction",
+            "step1": "step1",
+            "step2": "step2"
+        },
+        "channel_diagnostics": {
+            "category": "channel_diagnostics",
+            "step1": "step1",
+            "step2": "step2"
+        },
+        "content_ideas": {
+            "category": "content_ideas",
+            "step1": "step1",
+            "step2": "step2"
+        },
+        "viral_potential": {
+            "category": "viral_potential",
+            "step1": "step1",
+            "step2": "step2"
+        },
+        "iterative_ideas": {
+            "category": "iterative_ideas",
+            "evaluator_creative": "evaluator_creative",
+            "evaluator_analytical": "evaluator_analytical",
+            "evaluator_practical": "evaluator_practical",
+            "improver": "improver",
+            "final_scenario": "final_scenario"
+        },
+        "evolution": {
+            "category": "evolution",
+            "step1": "step1",
+            "step2": "step2"
+        }
+    }
+    
+    # Получаем конфигурацию для запрошенного типа
+    config = prompt_config.get(analysis_type, prompt_config["evolution"])
+    
+    prompts = {}
+    
+    # Для каждого ключа в конфигурации получаем промпт из БД
+    for key, analysis_type_value in config.items():
+        if key == "category":
+            continue
+        
+        # Получаем промпт: category = config["category"], analysis_type = analysis_type_value
+        prompt_list = await get_prompts(
+            category=config["category"],
+            analysis_type=analysis_type_value
+        )
+        
+        prompts[key] = prompt_list[0] if prompt_list else None
+    
+    return prompts
+
+
+# Добавьте эту вспомогательную функцию для проверки наличия промптов
+async def check_prompts_exist(analysis_type: str) -> dict:
+    """
+    Проверяет наличие всех необходимых промптов для типа анализа
+    
+    Returns:
+        dict: {
+            "exists": bool,
+            "missing": list,
+            "found": list
+        }
+    """
+    prompts = await get_evolution_prompts(analysis_type)
+    
+    missing = []
+    found = []
+    
+    for key, prompt in prompts.items():
+        if prompt is None:
+            missing.append(key)
+        else:
+            found.append(key)
+    
+    return {
+        "exists": len(missing) == 0,
+        "missing": missing,
+        "found": found
+    }
+
+async def get_advanced_with_synthesis(category: str, db: AsyncSession):
+    advanced = (
+        await db.execute(
+            select(Prompt)
+            .where(
+                Prompt.category == category,
+                Prompt.analysis_type == "advanced"
+            )
+            .order_by(Prompt.order)
+        )
+    ).scalars().all()
+
+    synthesis = (
+        await db.execute(
+            select(Prompt)
+            .where(
+                Prompt.category == category,
+                Prompt.analysis_type == "synthesis"
+            )
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+    if not synthesis:
+        raise ValueError("Synthesis prompt topilmadi")
+
+    return {
+        "advanced": advanced,
+        "synthesis": synthesis
+    }

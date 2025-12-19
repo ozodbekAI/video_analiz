@@ -8,6 +8,7 @@ from config import Config
 from database.engine import create_db
 from handlers import start_router, menu_router, analysis_router, cabinet_router, admin_router, verification_router, evolution_router, shorts_router
 from middlewares.admin_check import AdminMiddleware
+from handlers.strategic_hub import router as strategic_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -33,6 +34,7 @@ async def main():
     dp.include_router(verification_router)
     dp.include_router(evolution_router)
     dp.include_router(shorts_router)
+    dp.include_router(strategic_router)
 
     await create_db()
     

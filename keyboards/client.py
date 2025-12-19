@@ -26,16 +26,17 @@ def get_main_menu_keyboard():
 
 
 def get_strategic_hub_keyboard():
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🗺️ Карта аудитории", callback_data=MenuCallback(action="audience_map"))
-    builder.button(text="🔮 Предсказание контента", callback_data=MenuCallback(action="content_prediction"))
-    builder.button(text="📊 Диагностика канала", callback_data=MenuCallback(action="channel_diagnostics"))
-    builder.button(text="💡 Генератор идей", callback_data=MenuCallback(action="content_ideas"))
-    builder.button(text="⚡ Виральный потенциал", callback_data=MenuCallback(action="viral_potential"))
-    builder.button(text="🧠 Итеративный генератор", callback_data=MenuCallback(action="iterative_ideas"))
-    builder.button(text="⬅️ Главное меню", callback_data=MenuCallback(action="main_menu"))
-    builder.adjust(1)
-    return builder.as_markup()
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🗺️ Карта аудитории", callback_data="audience_map")],
+        [InlineKeyboardButton(text="🔮 Предсказание контента", callback_data="content_prediction")],
+        [InlineKeyboardButton(text="📊 Диагностика канала", callback_data="channel_diagnostics")],
+        [InlineKeyboardButton(text="💡 Генератор идей", callback_data="content_ideas")],
+        [InlineKeyboardButton(text="⚡ Виральный потенциал", callback_data="viral_potential")],
+        [InlineKeyboardButton(text="🧠 Итеративный генератор", callback_data="iterative_ideas")],
+        [InlineKeyboardButton(text="🏠 Главное меню", callback_data="menu:main_menu")],
+    ])
 
 
 def get_analysis_type_keyboard(category: str):

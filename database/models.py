@@ -103,6 +103,12 @@ class Prompt(Base):
     analysis_type = Column(String(50), nullable=True)
     category = Column(String(50), default="my")
 
+    # For advanced analyses the bot works with module-based prompts (e.g. 10-1, 10-2, ...).
+    # Admin UI expects this field.
+    module_id = Column(String(50), nullable=True)
+
+    order = Column(Integer, default=0) 
+
 
 class AIResponse(Base):
     __tablename__ = "ai_responses"
@@ -149,3 +155,12 @@ class EvolutionAnalysis(Base):
     completed_at = Column(DateTime(timezone=True), nullable=True)
     
     user = relationship("User", backref="evolution_analyses")
+
+
+class VideoAnalysis(Base):
+    __tablename__ = "video_analysis"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger, index=True)
+    text_report = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
