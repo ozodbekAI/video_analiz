@@ -80,18 +80,18 @@ async def reset_user_analyses(user_id: int):
 
 
 async def get_prompts(
-    db: AsyncSession,
     category: str | None = None,
     analysis_type: str | None = None,
 ):
-    query = select(Prompt)
-    if category:
-        query = query.where(Prompt.category == category)
-    if analysis_type:
-        query = query.where(Prompt.analysis_type == analysis_type)
+    async with async_session() as db:
+        query = select(Prompt)
+        if category:
+            query = query.where(Prompt.category == category)
+        if analysis_type:
+            query = query.where(Prompt.analysis_type == analysis_type)
 
-    res = await db.execute(query.order_by(Prompt.order))
-    return res.scalars().all()
+        res = await db.execute(query.order_by(Prompt.order))
+        return res.scalars().all()
 
 
 async def create_prompt(name: str, prompt_text: str, analysis_type: str = None, category: str = None):

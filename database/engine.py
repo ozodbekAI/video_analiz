@@ -37,7 +37,7 @@ async def create_db():
     
     print("✅ Database tables created successfully")
 
-@asynccontextmanager
+
 async def get_session() -> AsyncSession:
     """Session olish uchun context manager"""
     async with async_session() as session:
