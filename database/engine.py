@@ -2,6 +2,7 @@ import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import text
+from contextlib import asynccontextmanager
 from config import Config
 
 Base = declarative_base()
@@ -18,6 +19,7 @@ engine = create_async_engine(
 )
 
 # Session maker
+
 async_session = async_sessionmaker(
     engine, 
     class_=AsyncSession, 
@@ -35,7 +37,7 @@ async def create_db():
     
     print("✅ Database tables created successfully")
 
-
+@asynccontextmanager
 async def get_session() -> AsyncSession:
     """Session olish uchun context manager"""
     async with async_session() as session:
