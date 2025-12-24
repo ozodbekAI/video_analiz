@@ -10,6 +10,8 @@ import {
   defaultAnalysisTypeForCategory,
   analysisTypeOptionsForCategory,
   isInteractiveCategory,
+  requiresSteps,
+  isIterativeIdeas,
 } from "../constants/promptOptions";
 
 const inputCls =
@@ -20,19 +22,25 @@ export default function PromptForm({ data, onChange }) {
   const isShorts = category === "shorts";
   const isInteractive = isInteractiveCategory(category);
 
+  const currentAnalysisType =
+    data.analysis_type || defaultAnalysisTypeForCategory(category);
+
   const shortsParsed =
-    parseShortsAnalysisType(data.analysis_type) || {
+    parseShortsAnalysisType(currentAnalysisType) || {
       scale: data.shorts_scale || "small",
       level: data.shorts_level || "501",
     };
 
+  // ✅ endi bu funksiya Interactive kategoriyalar uchun ham option qaytaradi:
+  // - audience_map/content_prediction/... => step1/step2
+  // - iterative_ideas => evaluator_*/improver/final_scenario
   const analysisTypeOptions = analysisTypeOptionsForCategory(category);
 
   function setCategory(nextCategory) {
-    const nextAnalysisType = defaultAnalysisTypeForCategory(nextCategory);
+    const nextDefault = defaultAnalysisTypeForCategory(nextCategory);
 
     onChange("category", nextCategory);
-    onChange("analysis_type", nextAnalysisType);
+    onChange("analysis_type", nextDefault);
 
     // Reset dependent fields
     onChange("module_id", null);
@@ -83,7 +91,9 @@ export default function PromptForm({ data, onChange }) {
 
         {/* Category */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Категория</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Категория
+          </label>
           <select
             className={inputCls}
             value={category}
@@ -107,13 +117,15 @@ export default function PromptForm({ data, onChange }) {
           </select>
         </div>
 
-        {/* Analysis Type (NOT shorts, NOT interactive) */}
-        {!isShorts && !isInteractive && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Тип анализа</label>
+        {/* Analysis Type (NOT shorts) */}
+        {!isShorts && analysisTypeOptions.length > 0 && (
+          <div className={isInteractive ? "md:col-span-2" : ""}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {isInteractive ? "Шаг / роль промпта" : "Тип анализа"}
+            </label>
             <select
               className={inputCls}
-              value={data.analysis_type || defaultAnalysisTypeForCategory(category)}
+              value={currentAnalysisType}
               onChange={(e) => setAnalysisType(e.target.value)}
             >
               {analysisTypeOptions.map((t) => (
@@ -122,14 +134,24 @@ export default function PromptForm({ data, onChange }) {
                 </option>
               ))}
             </select>
+
+            {isInteractive && (
+              <div className="mt-2 text-xs text-gray-500">
+                В БД/боте:{" "}
+                <span className="font-mono">{category}</span> +{" "}
+                <span className="font-mono">{currentAnalysisType}</span>
+              </div>
+            )}
           </div>
         )}
 
         {/* Shorts selectors */}
-        {isShorts && !isInteractive && (
+        {isShorts && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Масштаб Shorts</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Масштаб Shorts
+              </label>
               <select
                 className={inputCls}
                 value={shortsParsed.scale}
@@ -144,7 +166,9 @@ export default function PromptForm({ data, onChange }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Уровень</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Уровень
+              </label>
               <select
                 className={inputCls}
                 value={shortsParsed.level}
@@ -159,13 +183,14 @@ export default function PromptForm({ data, onChange }) {
             </div>
 
             <div className="md:col-span-2 text-xs text-gray-500">
-              analysis_type: <span className="font-mono">{data.analysis_type || ""}</span>
+              analysis_type:{" "}
+              <span className="font-mono">{currentAnalysisType}</span>
             </div>
           </>
         )}
 
         {/* Module for advanced (NOT interactive) */}
-        {!isInteractive && data.analysis_type === "advanced" && (
+        {!isInteractive && currentAnalysisType === "advanced" && (
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Модуль (только Advanced)
@@ -188,9 +213,31 @@ export default function PromptForm({ data, onChange }) {
         {/* Interactive info */}
         {isInteractive && (
           <div className="md:col-span-2">
-            <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-sm text-indigo-700">
-              Interactive режим: для этой категории используется <b>только один промпт</b>.
-              Тип анализа фиксирован: <span className="font-mono">main</span>.
+            <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-sm text-indigo-700 space-y-1">
+              {requiresSteps(category) && (
+                <div>
+                  Для работы бота нужно создать <b>два промпта</b>:{" "}
+                  <span className="font-mono">step1</span> и{" "}
+                  <span className="font-mono">step2</span> (каждый как отдельная
+                  запись в БД).
+                </div>
+              )}
+
+              {isIterativeIdeas(category) && (
+                <div>
+                  Для <span className="font-mono">iterative_ideas</span> обычно
+                  создают набор промптов по ролям:{" "}
+                  <span className="font-mono">evaluator_*</span>,{" "}
+                  <span className="font-mono">improver</span>,{" "}
+                  <span className="font-mono">final_scenario</span>.
+                </div>
+              )}
+
+              <div className="text-xs text-indigo-600">
+                Сохранение идёт в формате:{" "}
+                <span className="font-mono">category</span> +{" "}
+                <span className="font-mono">analysis_type</span>.
+              </div>
             </div>
           </div>
         )}

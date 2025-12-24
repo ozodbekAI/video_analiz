@@ -4,18 +4,29 @@ from keyboards.client import get_main_menu_keyboard
 
 router = Router()
 
+def build_step2_prompt(step1_prompt: str, step2_prompt: str) -> str:
+    """
+    Step2 prompt ichiga Step1 promptni kontekst sifatida qo‘shib beradi.
+    Step2 doimo asosiy instruktsiya bo‘lib qoladi.
+    """
+    return (
+        "ВАЖНО: Ниже приведены инструкции Шага 1 (для контекста), "
+        "затем инструкции Шага 2 (основные). Следуй Шагу 2.\n\n"
+        "=== ШАГ 1: ИСХОДНЫЙ ПРОМПТ (КОНТЕКСТ) ===\n"
+        f"{step1_prompt}\n\n"
+        "=== ШАГ 2: ОСНОВНОЙ ПРОМПТ ===\n"
+        f"{step2_prompt}"
+    )
+
 
 @router.callback_query(F.data == "iterative_ideas")
 async def iterative_ideas_handler(cb: CallbackQuery):
-    """🧠 Итеративный генератор идей"""
     await cb.message.answer("🧠 Запуск итеративного генератора идей...")
 
     try:
-        # Импорт сервиса
         from services.iterative_ideas_service import optimizer
         from database.crud import get_user_analysis_history
         
-        # Получаем историю анализов
         history = await get_user_analysis_history(cb.from_user.id)
         
         if len(history) < 5:
@@ -28,7 +39,6 @@ async def iterative_ideas_handler(cb: CallbackQuery):
             )
             return
         
-        # Получаем промпты для итеративной генерации
         from database.crud import get_evolution_prompts
         prompts = await get_evolution_prompts("iterative_ideas")
         
@@ -45,8 +55,8 @@ async def iterative_ideas_handler(cb: CallbackQuery):
             )
             return
         
-        # Запускаем оптимизатор
-        initial_ideas = history[:10]  # Берем последние 10 анализов как базу
+
+        initial_ideas = history[:10]  
         
         optimized_ideas = await optimizer.run_optimization_pipeline(
             initial_ideas=initial_ideas,
@@ -54,7 +64,6 @@ async def iterative_ideas_handler(cb: CallbackQuery):
             max_iterations=3
         )
         
-        # Формируем отчет
         report = optimizer.generate_optimization_report(optimized_ideas)
         
         await cb.message.answer(report, parse_mode="HTML")
@@ -75,7 +84,6 @@ async def iterative_ideas_handler(cb: CallbackQuery):
 
 @router.callback_query(F.data == "audience_map")
 async def audience_map_handler(cb: CallbackQuery):
-    """🗺️ Карта аудитории"""
     await cb.message.answer("🗺️ Анализ аудитории...")
 
     try:
@@ -102,7 +110,6 @@ async def audience_map_handler(cb: CallbackQuery):
             )
             return
         
-        # Этап 1: Объединение данных
         combined_data = "\n\n=== РАЗДЕЛИТЕЛЬ ===\n\n".join(history)
         
         step1_result = await analyze_comments_with_prompt(
@@ -110,12 +117,17 @@ async def audience_map_handler(cb: CallbackQuery):
             prompts['step1'].prompt_text
         )
         
-        # Этап 2: Финальный синтез
-        final_result = await analyze_comments_with_prompt(
-            step1_result,
+
+        step2_prompt = build_step2_prompt(
+            prompts['step1'].prompt_text,
             prompts['step2'].prompt_text
         )
-        
+
+        final_result = await analyze_comments_with_prompt(
+            step1_result,
+            step2_prompt
+        )
+            
         await cb.message.answer(final_result, parse_mode="HTML")
         
     except Exception as e:
@@ -129,7 +141,6 @@ async def audience_map_handler(cb: CallbackQuery):
 
 @router.callback_query(F.data == "content_prediction")
 async def content_prediction_handler(cb: CallbackQuery):
-    """🔮 Предсказание контента"""
     await cb.message.answer("🔮 Прогнозируем лучший контент...")
 
     try:
@@ -163,9 +174,14 @@ async def content_prediction_handler(cb: CallbackQuery):
             prompts['step1'].prompt_text
         )
         
+        step2_prompt = build_step2_prompt(
+            prompts['step1'].prompt_text,
+            prompts['step2'].prompt_text
+        )
+
         final_result = await analyze_comments_with_prompt(
             step1_result,
-            prompts['step2'].prompt_text
+            step2_prompt
         )
         
         await cb.message.answer(final_result, parse_mode="HTML")
@@ -181,7 +197,6 @@ async def content_prediction_handler(cb: CallbackQuery):
 
 @router.callback_query(F.data == "channel_diagnostics")
 async def channel_diagnostics_handler(cb: CallbackQuery):
-    """📊 Диагностика канала"""
     await cb.message.answer("📊 Диагностика канала...")
 
     try:
@@ -215,9 +230,14 @@ async def channel_diagnostics_handler(cb: CallbackQuery):
             prompts['step1'].prompt_text
         )
         
+        step2_prompt = build_step2_prompt(
+            prompts['step1'].prompt_text,
+            prompts['step2'].prompt_text
+        )
+
         final_result = await analyze_comments_with_prompt(
             step1_result,
-            prompts['step2'].prompt_text
+            step2_prompt
         )
         
         await cb.message.answer(final_result, parse_mode="HTML")
@@ -233,7 +253,6 @@ async def channel_diagnostics_handler(cb: CallbackQuery):
 
 @router.callback_query(F.data == "content_ideas")
 async def content_ideas_handler(cb: CallbackQuery):
-    """💡 Генератор идей"""
     await cb.message.answer("💡 Генерируем идеи...")
 
     try:
@@ -267,9 +286,14 @@ async def content_ideas_handler(cb: CallbackQuery):
             prompts['step1'].prompt_text
         )
         
+        step2_prompt = build_step2_prompt(
+            prompts['step1'].prompt_text,
+            prompts['step2'].prompt_text
+        )
+
         final_result = await analyze_comments_with_prompt(
             step1_result,
-            prompts['step2'].prompt_text
+            step2_prompt
         )
         
         await cb.message.answer(final_result, parse_mode="HTML")
@@ -285,7 +309,6 @@ async def content_ideas_handler(cb: CallbackQuery):
 
 @router.callback_query(F.data == "viral_potential")
 async def viral_potential_handler(cb: CallbackQuery):
-    """⚡ Виральный потенциал"""
     await cb.message.answer("⚡ Анализ виральности...")
 
     try:
@@ -319,9 +342,14 @@ async def viral_potential_handler(cb: CallbackQuery):
             prompts['step1'].prompt_text
         )
         
+        step2_prompt = build_step2_prompt(
+            prompts['step1'].prompt_text,
+            prompts['step2'].prompt_text
+        )
+
         final_result = await analyze_comments_with_prompt(
             step1_result,
-            prompts['step2'].prompt_text
+            step2_prompt
         )
         
         await cb.message.answer(final_result, parse_mode="HTML")

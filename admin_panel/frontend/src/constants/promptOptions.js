@@ -8,7 +8,7 @@ export const CATEGORIES = [
   { value: "evolution", label: "📊 Эволюция" },
 ];
 
-// ✅ NEW: Interactive / Strategic Hub categories (bot callback_data bilan 1:1)
+// ✅ Interactive / Strategic Hub categories (bot callback_data bilan 1:1)
 export const INTERACTIVE_CATEGORIES = [
   { value: "audience_map", label: "🗺️ Карта аудитории" },
   { value: "content_prediction", label: "🔮 Предсказание контента" },
@@ -18,9 +18,61 @@ export const INTERACTIVE_CATEGORIES = [
   { value: "iterative_ideas", label: "🧠 Итеративный генератор" },
 ];
 
+
+export const INTERACTIVE_ANALYSIS_TYPES = {
+  audience_map: [
+    { value: "step1", label: "Step 1" },
+    { value: "step2", label: "Step 2" },
+  ],
+  content_prediction: [
+    { value: "step1", label: "Step 1" },
+    { value: "step2", label: "Step 2" },
+  ],
+  channel_diagnostics: [
+    { value: "step1", label: "Step 1" },
+    { value: "step2", label: "Step 2" },
+  ],
+  content_ideas: [
+    { value: "step1", label: "Step 1" },
+    { value: "step2", label: "Step 2" },
+  ],
+  viral_potential: [
+    { value: "step1", label: "Step 1" },
+    { value: "step2", label: "Step 2" },
+  ],
+  iterative_ideas: [
+    { value: "evaluator_creative", label: "Evaluator: Creative" },
+    { value: "evaluator_analytical", label: "Evaluator: Analytical" },
+    { value: "evaluator_practical", label: "Evaluator: Practical" },
+    { value: "improver", label: "Improver" },
+    { value: "final_scenario", label: "Final Scenario" },
+  ],
+};
+
+// ✅ Interactive category uchun default analysis_type
+export function defaultInteractiveAnalysisType(category) {
+  const opts = INTERACTIVE_ANALYSIS_TYPES[category] || [];
+  return opts[0]?.value || "step1";
+}
+
 export function isInteractiveCategory(category) {
   return INTERACTIVE_CATEGORIES.some((c) => c.value === category);
 }
+
+// ✅ Strategic Hub uchun step tiplar
+export const STRATEGIC_HUB_STEPS = [
+  { value: "step1", label: "📝 Step 1 (Сбор данных)" },
+  { value: "step2", label: "🔄 Step 2 (Финальный синтез)" },
+];
+
+// Iterative Ideas uchun evaluator va improver tiplar
+export const ITERATIVE_IDEAS_TYPES = [
+  { value: "evaluator_creative", label: "🎨 Evaluator Creative" },
+  { value: "evaluator_analytical", label: "📊 Evaluator Analytical" },
+  { value: "evaluator_practical", label: "⚙️ Evaluator Practical" },
+  { value: "improver", label: "🔧 Improver" },
+  { value: "final_scenario", label: "🎯 Final Scenario" },
+];
 
 // For MY / COMPETITOR
 export const BASE_ANALYSIS_TYPES = [
@@ -73,8 +125,12 @@ export function parseShortsAnalysisType(analysis_type) {
 }
 
 export function defaultAnalysisTypeForCategory(category) {
-  // ✅ Interactive: doim bitta prompt (type = "main")
-  if (isInteractiveCategory(category)) return "main";
+  // ✅ Interactive: step1 bilan boshlanadi
+  if (isInteractiveCategory(category)) {
+    // Iterative Ideas uchun alohida
+    if (category === "iterative_ideas") return "evaluator_creative";
+    return "step1";
+  }
   if (category === "shorts") return buildShortsAnalysisType("small", "501");
   if (category === "evolution") return "evolution_step1";
   return "simple";
@@ -83,6 +139,25 @@ export function defaultAnalysisTypeForCategory(category) {
 export function analysisTypeOptionsForCategory(category) {
   if (category === "evolution") return EVOLUTION_ANALYSIS_TYPES;
   if (category === "my" || category === "competitor") return BASE_ANALYSIS_TYPES;
-  // shorts va interactive uchun UI alohida boshqaradi
+  
+  // ✅ Strategic Hub kategoriyalari uchun
+  if (isInteractiveCategory(category)) {
+    if (category === "iterative_ideas") {
+      return ITERATIVE_IDEAS_TYPES;
+    }
+    return STRATEGIC_HUB_STEPS;
+  }
+  
+  // shorts uchun UI alohida boshqaradi
   return [];
+}
+
+// ✅ Strategic Hub kategoriyasi ekanligini tekshirish
+export function requiresSteps(category) {
+  return isInteractiveCategory(category) && category !== "iterative_ideas";
+}
+
+// ✅ Iterative Ideas ekanligini tekshirish
+export function isIterativeIdeas(category) {
+  return category === "iterative_ideas";
 }

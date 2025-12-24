@@ -35,7 +35,7 @@ def get_strategic_hub_keyboard():
         [InlineKeyboardButton(text="💡 Генератор идей", callback_data="content_ideas")],
         [InlineKeyboardButton(text="⚡ Виральный потенциал", callback_data="viral_potential")],
         [InlineKeyboardButton(text="🧠 Итеративный генератор", callback_data="iterative_ideas")],
-        [InlineKeyboardButton(text="🏠 Главное меню", callback_data="menu:main_menu")],
+        [InlineKeyboardButton(text="🏠 Главное меню", callback_data=MenuCallback(action="main_menu"))],
     ])
 
 

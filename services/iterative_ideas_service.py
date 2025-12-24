@@ -86,13 +86,11 @@ class AdvancedIterativeIdeasOptimizer:
 
         return round(total / weight_sum, 2)
 
-    # ---------- AI CALL ----------
     async def evaluate(self, idea: str, prompt: str, ai_type: str) -> IdeaEvaluation:
         text = await analyze_comments_with_prompt(idea, prompt)
         scores = self.parse_scores(text)
         return IdeaEvaluation(idea, scores, text, ai_type)
 
-    # ---------- ITERATION ----------
     async def optimize_iteration(self, idea: str, iteration: int, prompts: Dict):
         tasks = [
             self.evaluate(idea, prompts["evaluator_creative"], "creative_ai"),

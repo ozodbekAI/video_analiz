@@ -34,29 +34,28 @@ const PromptsPage = () => {
 
   // Keep analysisType consistent with category
   useEffect(() => {
-    if (isInteractive) {
-      setAnalysisType("main");
-      return;
-    }
     if (isShorts) {
       setAnalysisType(buildShortsAnalysisType(shortsScale, shortsLevel));
       return;
     }
+
     setAnalysisType((prev) => {
       const opts = analysisTypeOptionsForCategory(category);
       const exists = opts.some((o) => o.value === prev);
       return exists ? prev : defaultAnalysisTypeForCategory(category);
     });
-  }, [category]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category]);
 
   useEffect(() => {
-    if (!isShorts || isInteractive) return;
+    if (!isShorts) return;
     setAnalysisType(buildShortsAnalysisType(shortsScale, shortsLevel));
-  }, [isShorts, shortsScale, shortsLevel, isInteractive]);
+  }, [isShorts, shortsScale, shortsLevel]);
 
   useEffect(() => {
     loadPrompts();
-  }, [category, analysisType]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, analysisType]);
 
   const loadPrompts = async () => {
     setLoading(true);
@@ -64,8 +63,7 @@ const PromptsPage = () => {
     try {
       const data = await AdminAPI.getPrompts({
         category,
-        // ✅ interactive’da filter shart emas, lekin "main" bo'lsa ham ok
-        analysis_type: isInteractive ? null : analysisType,
+        analysis_type: analysisType,
       });
       setPrompts(Array.isArray(data) ? data : []);
     } catch (e) {
@@ -86,23 +84,17 @@ const PromptsPage = () => {
     }
   };
 
-  // ✅ interactive’da faqat 1 ta prompt ko'rsatiladi
   const visiblePrompts = useMemo(() => {
-    const base = isInteractive ? prompts.slice(0, 1) : prompts;
     const s = searchTerm.trim().toLowerCase();
-    if (!s) return base;
-    return base.filter((p) => (p.name || "").toLowerCase().includes(s));
-  }, [prompts, searchTerm, isInteractive]);
+    if (!s) return prompts;
+    return prompts.filter((p) => (p.name || "").toLowerCase().includes(s));
+  }, [prompts, searchTerm]);
 
-  const analysisOptions = useMemo(() => analysisTypeOptionsForCategory(category), [category]);
+  const analysisOptions = useMemo(() => {
+    return analysisTypeOptionsForCategory(category);
+  }, [category]);
 
-  function openAddOrEdit() {
-    // ✅ interactive: agar mavjud bo'lsa edit, bo'lmasa add
-    if (isInteractive) {
-      if (prompts[0]) setEditingPrompt(prompts[0]);
-      else setShowAddModal(true);
-      return;
-    }
+  function openAdd() {
     setShowAddModal(true);
   }
 
@@ -112,15 +104,17 @@ const PromptsPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Промпты</h1>
-          <p className="text-gray-600 mt-1">Управление AI промптами (совместимо с ботом)</p>
+          <p className="text-gray-600 mt-1">
+            Управление AI промптами (совместимо с ботом)
+          </p>
         </div>
 
         <button
-          onClick={openAddOrEdit}
+          onClick={openAdd}
           className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-3 rounded-xl flex items-center gap-2 hover:shadow-lg transition"
         >
           <Plus className="w-5 h-5" />
-          {isInteractive ? (prompts[0] ? "Редактировать промпт" : "Добавить промпт") : "Добавить промпт"}
+          Добавить промпт
         </button>
       </div>
 
@@ -139,7 +133,7 @@ const PromptsPage = () => {
             />
           </div>
 
-          {/* Category chips (asosiy) */}
+          {/* Category chips (base) */}
           <div className="flex gap-2 flex-wrap">
             {CATEGORIES.map((c) => (
               <button
@@ -171,17 +165,12 @@ const PromptsPage = () => {
 
           {/* Analysis type selector */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Interactive: no selector */}
-            {isInteractive ? (
-              <div className="md:col-span-2">
-                <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-sm text-indigo-700">
-                  Interactive режим: <b>один промпт на категорию</b>. Тип анализа фиксирован:{" "}
-                  <span className="font-mono">main</span>
-                </div>
-              </div>
-            ) : !isShorts ? (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Тип анализа</label>
+            {!isShorts ? (
+              <div className={isInteractive ? "md:col-span-2" : ""}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {isInteractive ? "Шаг / роль промпта" : "Тип анализа"}
+                </label>
+
                 <select
                   value={analysisType}
                   onChange={(e) => setAnalysisType(e.target.value)}
@@ -193,11 +182,20 @@ const PromptsPage = () => {
                     </option>
                   ))}
                 </select>
+
+                {isInteractive && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    В БД/боте: <span className="font-mono">{category}</span> +{" "}
+                    <span className="font-mono">{analysisType}</span>
+                  </div>
+                )}
               </div>
             ) : (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Масштаб Shorts</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Масштаб Shorts
+                  </label>
                   <select
                     value={shortsScale}
                     onChange={(e) => setShortsScale(e.target.value)}
@@ -210,8 +208,11 @@ const PromptsPage = () => {
                     ))}
                   </select>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Уровень</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Уровень
+                  </label>
                   <select
                     value={shortsLevel}
                     onChange={(e) => setShortsLevel(e.target.value)}
@@ -224,8 +225,10 @@ const PromptsPage = () => {
                     ))}
                   </select>
                 </div>
+
                 <div className="md:col-span-2 text-xs text-gray-500">
-                  analysis_type (как в БД/боте): <span className="font-mono">{analysisType}</span>
+                  analysis_type (как в БД/боте):{" "}
+                  <span className="font-mono">{analysisType}</span>
                 </div>
               </>
             )}
@@ -239,10 +242,12 @@ const PromptsPage = () => {
               <div className="text-sm text-gray-600">
                 Всего:{" "}
                 <span className="font-semibold text-gray-800">
-                  {isInteractive ? Math.min(prompts.length, 1) : prompts.length}
+                  {prompts.length}
                 </span>{" "}
                 · Найдено:{" "}
-                <span className="font-semibold text-gray-800">{visiblePrompts.length}</span>
+                <span className="font-semibold text-gray-800">
+                  {visiblePrompts.length}
+                </span>
               </div>
             )}
           </div>
@@ -257,9 +262,13 @@ const PromptsPage = () => {
       ) : visiblePrompts.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
           <div className="text-6xl mb-4">📝</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Промпты не найдены</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            Промпты не найдены
+          </h3>
           <p className="text-gray-600">
-            {searchTerm ? "Попробуйте изменить поисковый запрос" : "Добавьте первый промпт для выбранных фильтров"}
+            {searchTerm
+              ? "Попробуйте изменить поисковый запрос"
+              : "Добавьте первый промпт для выбранных фильтров"}
           </p>
         </div>
       ) : (
@@ -271,7 +280,9 @@ const PromptsPage = () => {
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate">{p.name}</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate">
+                    {p.name}
+                  </h3>
 
                   <div className="flex gap-2 flex-wrap">
                     <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium">
@@ -304,7 +315,6 @@ const PromptsPage = () => {
                     <Edit2 className="w-5 h-5" />
                   </button>
 
-                  {/* interactive’da delete ham ruxsat, xohlasangiz qoldiring */}
                   <button
                     onClick={() => handleDelete(p.id)}
                     className="p-2 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 transition"
@@ -323,7 +333,7 @@ const PromptsPage = () => {
       {showAddModal && (
         <PromptModal
           initialCategory={category}
-          initialAnalysisType={isInteractive ? "main" : analysisType}
+          initialAnalysisType={analysisType}
           onClose={() => setShowAddModal(false)}
           onSave={loadPrompts}
         />
