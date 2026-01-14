@@ -9,11 +9,17 @@ from database.engine import create_db
 from handlers import start_router, menu_router, analysis_router, cabinet_router, admin_router, verification_router, evolution_router, shorts_router
 from middlewares.admin_check import AdminMiddleware
 from handlers.strategic_hub import router as strategic_router
+from services.multi_analysis_optimizer import run_multi_analysis_optimizer_scheduler
 
 logging.basicConfig(level=logging.INFO)
 
 async def main():
     config = Config()
+    if not config.BOT_TOKEN:
+        raise RuntimeError("BOT_TOKEN is required in .env to run the Telegram bot")
+    if not config.DATABASE_URL:
+        raise RuntimeError("DATABASE_URL is required in .env")
+
     
     bot = Bot(
         token=config.BOT_TOKEN,
@@ -37,6 +43,9 @@ async def main():
     dp.include_router(strategic_router)
 
     await create_db()
+
+    # TZ-2: background optimizer (Advanced-only), runs every 30 minutes
+    asyncio.create_task(run_multi_analysis_optimizer_scheduler(interval_seconds=1800))
     
     logging.info("🚀 Bot ishga tushdi...")
     

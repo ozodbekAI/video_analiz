@@ -1,7 +1,7 @@
 // src/api/api.js
 // Admin Panel API client (FastAPI backend)
 
-const API_BASE = import.meta?.env?.VITE_API_BASE || 'http://localhost:8000';
+const API_BASE = import.meta?.env?.VITE_API_BASE || 'http://localhost:8001';
 
 function buildQuery(paramsObj = {}) {
   const params = new URLSearchParams();
@@ -192,6 +192,33 @@ class AdminAPI {
 
   static async deleteSampleReport(id) {
     return this.request(`/admin/samples/${id}`, { method: 'DELETE' });
+  }
+
+  // ==================== MULTI-ANALYSIS PROMPTS (TZ-2) ====================
+  static async getMultiPrompts() {
+    return this.request("/admin/multi-prompts");
+  }
+
+  static async createMultiPrompt(payload) {
+    return this.request("/admin/multi-prompts", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  static async updateMultiPrompt(id, payload) {
+    return this.request(`/admin/multi-prompts/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  static async activateMultiPrompt(id) {
+    return this.request(`/admin/multi-prompts/${id}/activate`, { method: "POST" });
+  }
+
+  static async deleteMultiPrompt(id) {
+    return this.request(`/admin/multi-prompts/${id}`, { method: "DELETE" });
   }
 
 

@@ -345,6 +345,8 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         with open(comments_file, "r", encoding="utf-8") as f:
             full_context = f.read()
         
+        ai_response_id_for_files = None
+
         if analysis_type == "simple":
             await update_progress_message(
                 progress_msg,
@@ -368,7 +370,7 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
                 response_text=ai_response
             )
             
-            await create_ai_response(
+            ai_response_id_for_files = await create_ai_response(
                 user.id, 
                 db_video_id, 
                 0, 
@@ -410,29 +412,25 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         
         elif analysis_type == "advanced":
             advanced_prompts = await get_prompts(category=category, analysis_type="advanced")
-            final_ai_response, all_partial_logs = await run_advanced_analysis_with_validation(
+            final_ai_response, all_partial_logs, machine_data_json, final_ai_response_id = await run_advanced_analysis_with_validation(
                 user_id=user.user_id,
                 video_id=video_id,
                 db_video_id=db_video_id,
                 full_context=full_context,
                 category=category,
+                video_meta_full=video_meta_full,
                 progress_msg=progress_msg,
                 message=message,
                 update_progress_message=update_progress_message
             )
+
+            ai_response_id_for_files = final_ai_response_id or None
             
-            # ===== MACHINE DATA NI AJRATIB OLISH =====
-            machine_data_json = None
-            ai_logs_only = []
-            
-            for log_item in all_partial_logs:
-                if isinstance(log_item, dict) and "machine_data" in log_item:
-                    # Bu machine data
-                    machine_data_json = log_item["machine_data"]
-                    print(f"✅ Machine data topildi: {len(machine_data_json)} bytes")
-                else:
-                    # Bu AI log fayli
-                    ai_logs_only.append(log_item)
+            # Only AI log files (filter out structured validation entries)
+            ai_logs_only = [
+                l for l in all_partial_logs
+                if isinstance(l, dict) and l.get('request_path') and l.get('response_path')
+            ]
             
             # ===== AI LOGLARNI YUBORISH =====
             try:
@@ -466,37 +464,17 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             except Exception as e:
                 print(f"❌ Ошибка отправки логов: {e}")
             
-            # ===== MACHINE DATA NI SAQLASH =====
-            if machine_data_json:
+            # ===== MACHINE DATA FILE (optional, for debugging / admin) =====
+            if machine_data_json and final_ai_response_id:
                 try:
                     reports_dir = Path(f"reports/{user.user_id}")
                     reports_dir.mkdir(parents=True, exist_ok=True)
-                    
-                    machine_json_path = reports_dir / f"{video_id}_machine.json"
+
+                    machine_json_path = reports_dir / f"{video_id}_machine_{final_ai_response_id}.json"
                     with open(machine_json_path, "w", encoding="utf-8") as f:
                         f.write(machine_data_json)
-                    
-                    print(f"✅ Machine data saqlandi: {machine_json_path}")
-                    
-                    # Ma'lumotlar bazasiga saqlash
-                    import json
-                    from database.crud import create_advanced_analysis_response
-                    
-                    await create_advanced_analysis_response(
-                        user_id=user.id,
-                        video_id=db_video_id,
-                        human_report=final_ai_response,
-                        machine_data=machine_data_json
-                    )
-                    
-                    print(f"✅ Machine data ma'lumotlar bazasiga saqlandi")
-                    
                 except Exception as e:
-                    print(f"⚠️ Machine data saqlashda xato: {e}")
-                    import traceback
-                    traceback.print_exc()
-            else:
-                print(f"⚠️ Machine data topilmadi")
+                    print(f"⚠️ Machine data file saqlashda xato: {e}")
 
         else:
             raise ValueError("Неизвестный тип анализа")
@@ -510,11 +488,12 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         
         reports_dir = Path(f"reports/{user.user_id}")
         reports_dir.mkdir(parents=True, exist_ok=True)
-        saved_pdf_path = reports_dir / f"{video_id}_{analysis_type}.pdf"
+        file_suffix = ai_response_id_for_files or int(datetime.now().timestamp())
+        saved_pdf_path = reports_dir / f"{video_id}_{analysis_type}_{file_suffix}.pdf"
         os.rename(pdf_file, str(saved_pdf_path))
         pdf_file = str(saved_pdf_path)
 
-        txt_file_path = reports_dir / f"{video_id}_{analysis_type}.txt"
+        txt_file_path = reports_dir / f"{video_id}_{analysis_type}_{file_suffix}.txt"
         with open(txt_file_path, "w", encoding="utf-8") as txt_file:
             txt_file.write(f"=== ANALIZ NATIJALARI ===\n\n")
             txt_file.write(f"Video ID: {video_id}\n")
@@ -560,9 +539,27 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             txt_file.write(f"\n{'='*50}\n\n")
             txt_file.write(final_ai_response)
 
+        # Save file paths for this exact analysis row
+        try:
+            from database.crud import update_ai_response_files_by_id, register_advanced_analysis_to_set
 
-        from database.crud import update_ai_response_txt_path
-        await update_ai_response_txt_path(user.id, db_video_id, str(txt_file_path))
+            if ai_response_id_for_files:
+                await update_ai_response_files_by_id(
+                    int(ai_response_id_for_files),
+                    txt_path=str(txt_file_path),
+                    pdf_path=str(saved_pdf_path),
+                )
+
+                # TZ-2: advanced analyses are grouped into sets for later evaluation
+                if analysis_type == "advanced":
+                    await register_advanced_analysis_to_set(
+                        user_identifier=user.user_id,
+                        youtube_video_id=video_id,
+                        db_video_id=db_video_id,
+                        ai_response_id=int(ai_response_id_for_files),
+                    )
+        except Exception as e:
+            print(f"⚠️ AIResponse file path / set registration error: {e}")
 
         if progress_msg:
             await progress_msg.delete()

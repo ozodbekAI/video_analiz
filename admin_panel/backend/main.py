@@ -4,12 +4,19 @@ from admin_panel.backend.routers.admin_prompts import router as prompts_router
 from admin_panel.backend.routers.admin_stats import router as stats_router
 from admin_panel.backend.routers.admin_users import router as users_router
 from admin_panel.backend.routers.admin_samples import router as samples_router
+from admin_panel.backend.routers.admin_multi_prompts import router as multi_prompts_router
 from admin_panel.backend.routers.admin_upload import router as upload_router
 from admin_panel.backend.core.config import settings
+from database.engine import create_db
+
 from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI(title="Admin Panel")
+
+@app.on_event("startup")
+async def _startup():
+    await create_db()
 
 
 app.add_middleware(
@@ -29,6 +36,7 @@ def admin_login(username: str, password: str):
     raise HTTPException(401, "Invalid credentials")
 
 app.include_router(prompts_router)
+app.include_router(multi_prompts_router)
 app.include_router(stats_router)
 app.include_router(users_router)
 app.include_router(samples_router)

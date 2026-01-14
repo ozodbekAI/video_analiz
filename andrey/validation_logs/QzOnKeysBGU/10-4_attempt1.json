@@ -1,0 +1,17 @@
+{
+  "timestamp": "2025-11-23T22:38:59.660616",
+  "video_id": "QzOnKeysBGU",
+  "module_id": "10-4",
+  "attempt": 1,
+  "is_valid": true,
+  "quality_score": 80.0,
+  "errors": [],
+  "warnings": [
+    "Найдено 0 сущностей (рекомендуется больше)"
+  ],
+  "metrics": {
+    "entities_count": 0
+  },
+  "retry_needed": false,
+  "retry_instructions": null
+}

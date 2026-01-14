@@ -1,21 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime
-import json
 import os
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from fastapi.params import Form
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any, Dict, List, Optional
 
 from pathlib import Path
-from admin_panel.backend.core.auth import admin_auth
-from database.engine import get_session
-from database.models import SampleReport
-from services.youtube_service import extract_video_id
 
+from admin_panel.backend.core.auth import admin_auth
+from services.sample_report_service import SampleReportsService
+from services.youtube_service import extract_video_id
 
 router = APIRouter(prefix="/admin/samples", tags=["Admin Samples"])
 
@@ -37,6 +32,19 @@ class SampleOut(BaseModel):
     created_at: Optional[str] = None
 
 
+def _to_out(payload: Dict[str, Any]) -> SampleOut:
+    created = payload.get("created_at")
+    created_at = created.isoformat() if hasattr(created, "isoformat") else (str(created) if created else None)
+    return SampleOut(
+        id=int(payload["id"]),
+        report_name=str(payload.get("report_name") or ""),
+        video_url=str(payload.get("video_url") or ""),
+        video_type=str(payload.get("video_type") or "regular"),
+        analysis_data=payload.get("analysis_data") or {},
+        is_active=bool(payload.get("is_active")),
+        created_at=created_at,
+    )
+
 
 @router.post("/upload", response_model=dict)
 async def upload_sample(
@@ -44,7 +52,6 @@ async def upload_sample(
     video_url: str = Form(..., min_length=1),
     video_type: str = Form("regular"),  # regular | shorts
     pdf: UploadFile = File(...),
-    db: AsyncSession = Depends(get_session),
     _: str = Depends(admin_auth),
 ):
     if video_type not in ("regular", "shorts"):
@@ -65,7 +72,7 @@ async def upload_sample(
     filename = f"demo_{safe_video_id}_{ts}.pdf"
     pdf_path = demo_dir / filename
 
-    # Faylni diskka saqlash
+    # Save file
     try:
         content = await pdf.read()
         with open(pdf_path, "wb") as f:
@@ -83,124 +90,78 @@ async def upload_sample(
         "original_filename": pdf.filename,
     }
 
-    r = SampleReport(
+    new_id = await SampleReportsService.add_sample_report(
         report_name=report_name,
         video_url=video_url,
+        analysis_data=analysis_data,
         video_type=video_type,
-        analysis_data=json.dumps(analysis_data, ensure_ascii=False),
-        is_active=True,
     )
 
-    db.add(r)
-    await db.commit()
-    await db.refresh(r)
-
-    return {"id": r.id, "status": "created", "analysis_data": analysis_data}
+    return {"id": new_id, "status": "created", "analysis_data": analysis_data}
 
 
 @router.get("", response_model=List[SampleOut])
 async def list_samples(
     video_type: Optional[str] = None,
-    db: AsyncSession = Depends(get_session),
     _: str = Depends(admin_auth),
 ):
-    q = select(SampleReport)
+    reports = await SampleReportsService.get_all_sample_reports(active_only=False)
     if video_type:
-        q = q.where(SampleReport.video_type == video_type)
-    q = q.order_by(SampleReport.created_at.desc())
-    res = await db.execute(q)
-    reports = res.scalars().all()
-    out: List[SampleOut] = []
-    for r in reports:
-        try:
-            payload = json.loads(r.analysis_data) if r.analysis_data else {}
-        except Exception:
-            payload = {"_raw": r.analysis_data}
-        out.append(
-            SampleOut(
-                id=r.id,
-                report_name=r.report_name,
-                video_url=r.video_url,
-                video_type=r.video_type,
-                analysis_data=payload,
-                is_active=r.is_active,
-                created_at=r.created_at.isoformat() if r.created_at else None,
-            )
-        )
-    return out
+        reports = [r for r in reports if (r.get("video_type") == video_type)]
+    return [_to_out(r) for r in reports]
 
 
 @router.get("/{sample_id}", response_model=SampleOut)
 async def get_sample(
     sample_id: int,
-    db: AsyncSession = Depends(get_session),
     _: str = Depends(admin_auth),
 ):
-    res = await db.execute(select(SampleReport).where(SampleReport.id == sample_id))
-    r = res.scalar_one_or_none()
+    r = await SampleReportsService.get_sample_report_by_id(sample_id)
     if not r:
         raise HTTPException(status_code=404, detail="Sample report not found")
-
-    try:
-        payload = json.loads(r.analysis_data) if r.analysis_data else {}
-    except Exception:
-        payload = {"_raw": r.analysis_data}
-
-    return SampleOut(
-        id=r.id,
-        report_name=r.report_name,
-        video_url=r.video_url,
-        video_type=r.video_type,
-        analysis_data=payload,
-        is_active=r.is_active,
-        created_at=r.created_at.isoformat() if r.created_at else None,
-    )
+    return _to_out(r)
 
 
 @router.post("", response_model=dict)
 async def create_sample(
     data: SampleCreate,
-    db: AsyncSession = Depends(get_session),
     _: str = Depends(admin_auth),
 ):
-    r = SampleReport(
+    if data.video_type not in ("regular", "shorts"):
+        raise HTTPException(status_code=400, detail="video_type must be regular|shorts")
+
+    new_id = await SampleReportsService.add_sample_report(
         report_name=data.report_name,
         video_url=data.video_url,
+        analysis_data=data.analysis_data,
         video_type=data.video_type,
-        analysis_data=json.dumps(data.analysis_data, ensure_ascii=False),
-        is_active=True,
     )
-    db.add(r)
-    await db.commit()
-    await db.refresh(r)
-    return {"id": r.id, "status": "created"}
+    return {"id": new_id, "status": "created"}
 
 
 @router.post("/{sample_id}/toggle")
 async def toggle_sample(
     sample_id: int,
-    db: AsyncSession = Depends(get_session),
     _: str = Depends(admin_auth),
 ):
-    res = await db.execute(select(SampleReport).where(SampleReport.id == sample_id))
-    r = res.scalar_one_or_none()
+    r = await SampleReportsService.get_sample_report_by_id(sample_id)
     if not r:
         raise HTTPException(status_code=404, detail="Sample report not found")
-    r.is_active = not r.is_active
-    await db.commit()
-    return {"status": "toggled", "is_active": r.is_active}
+
+    new_active = not bool(r.get("is_active"))
+    ok = await SampleReportsService.update_sample_report(sample_id, is_active=new_active)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Failed to update sample")
+
+    return {"status": "toggled", "is_active": new_active}
 
 
 @router.delete("/{sample_id}")
 async def delete_sample(
     sample_id: int,
-    db: AsyncSession = Depends(get_session),
     _: str = Depends(admin_auth),
 ):
-    res = await db.execute(select(SampleReport).where(SampleReport.id == sample_id))
-    r = res.scalar_one_or_none()
-    if not r:
+    ok = await SampleReportsService.delete_sample_report(sample_id)
+    if not ok:
         raise HTTPException(status_code=404, detail="Sample report not found")
-    await db.delete(r)
-    await db.commit()
     return {"status": "deleted"}

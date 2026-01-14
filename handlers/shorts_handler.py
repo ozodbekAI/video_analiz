@@ -589,7 +589,7 @@ async def process_shorts_prompt(message: Message, state: FSMContext, bot: Bot):
         return
     
     data = await state.get_data()
-    scale = data['shorts']
+    scale = data['shorts_scale']
     level = data['shorts_level']
     
     file_io = io.BytesIO()
@@ -626,7 +626,7 @@ async def process_shorts_prompt_update(message: Message, state: FSMContext, bot:
         return
     
     data = await state.get_data()
-    scale = data['shorts']
+    scale = data['shorts_scale']
     level = data['shorts_level']
     prompt_id = data['updating_prompt_id']
     

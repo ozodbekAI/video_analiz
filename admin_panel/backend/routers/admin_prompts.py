@@ -1,14 +1,11 @@
-# admin_panel/backend/routes/prompts.py
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 
 from admin_panel.backend.core.auth import admin_auth
-from database.engine import get_session
+from database import crud as db_crud
 from database.models import Prompt
 
 router = APIRouter(prefix="/admin/prompts", tags=["Admin Prompts"])
@@ -40,7 +37,7 @@ class PromptReorder(BaseModel):
 
 
 def _normalize_prompt(p: Prompt) -> Prompt:
-    # ✅ ResponseValidationError bo'lmasligi uchun
+    # ResponseValidationError bo'lmasligi uchun
     if p.order is None:
         p.order = 0
     if p.category is None:
@@ -54,34 +51,18 @@ def _normalize_prompt(p: Prompt) -> Prompt:
 async def list_prompts(
     category: Optional[str] = None,
     analysis_type: Optional[str] = None,
-    db: AsyncSession = Depends(get_session),
     _: str = Depends(admin_auth),
 ):
-    q = select(Prompt)
-
-    if category:
-        q = q.where(Prompt.category == category)
-    if analysis_type:
-        q = q.where(Prompt.analysis_type == analysis_type)
-
-    # ✅ NULL order bo'lsa ham tartib barqaror bo'lsin
-    q = q.order_by(func.coalesce(Prompt.order, 0), Prompt.id)
-
-    res = await db.execute(q)
-    items = res.scalars().all()
-
-    # ✅ None -> 0 qilib qaytaramiz (response_model uchun)
+    items = await db_crud.admin_list_prompts(category=category, analysis_type=analysis_type)
     return [_normalize_prompt(p) for p in items]
 
 
 @router.get("/{prompt_id}", response_model=PromptOut)
 async def get_prompt(
     prompt_id: int,
-    db: AsyncSession = Depends(get_session),
     _: str = Depends(admin_auth),
 ):
-    res = await db.execute(select(Prompt).where(Prompt.id == prompt_id))
-    prompt = res.scalar_one_or_none()
+    prompt = await db_crud.admin_get_prompt(prompt_id)
     if not prompt:
         raise HTTPException(status_code=404, detail="Prompt not found")
     return _normalize_prompt(prompt)
@@ -90,29 +71,15 @@ async def get_prompt(
 @router.post("/", response_model=PromptOut)
 async def add_prompt(
     data: PromptBase,
-    db: AsyncSession = Depends(get_session),
     _: str = Depends(admin_auth),
 ):
-    # ✅ max order ni NULL'larni inobatga olib topamiz
-    max_order_res = await db.execute(
-        select(func.max(func.coalesce(Prompt.order, 0)))
-        .where(Prompt.category == data.category)
-        .where(Prompt.analysis_type == data.analysis_type)
-    )
-    max_order = max_order_res.scalar_one_or_none()
-    next_order = (max_order + 1) if max_order is not None else 0
-
-    prompt = Prompt(
+    prompt = await db_crud.admin_create_prompt(
         name=data.name,
         prompt_text=data.prompt_text,
-        analysis_type=data.analysis_type,
         category=data.category,
+        analysis_type=data.analysis_type,
         module_id=data.module_id,
-        order=next_order,
     )
-    db.add(prompt)
-    await db.commit()
-    await db.refresh(prompt)
     return _normalize_prompt(prompt)
 
 
@@ -120,61 +87,39 @@ async def add_prompt(
 async def edit_prompt(
     prompt_id: int,
     data: PromptBase,
-    db: AsyncSession = Depends(get_session),
     _: str = Depends(admin_auth),
 ):
-    res = await db.execute(select(Prompt).where(Prompt.id == prompt_id))
-    prompt = res.scalar_one_or_none()
+    prompt = await db_crud.admin_update_prompt(
+        prompt_id=prompt_id,
+        name=data.name,
+        prompt_text=data.prompt_text,
+        category=data.category,
+        analysis_type=data.analysis_type,
+        module_id=data.module_id,
+    )
     if not prompt:
         raise HTTPException(status_code=404, detail="Prompt not found")
-
-    prompt.name = data.name
-    prompt.prompt_text = data.prompt_text
-    prompt.category = data.category
-    prompt.analysis_type = data.analysis_type
-    prompt.module_id = data.module_id
-
-    # ✅ order None bo'lib qolmasin
-    if prompt.order is None:
-        prompt.order = 0
-
-    await db.commit()
-    await db.refresh(prompt)
     return _normalize_prompt(prompt)
 
 
 @router.delete("/{prompt_id}")
 async def remove_prompt(
     prompt_id: int,
-    db: AsyncSession = Depends(get_session),
     _: str = Depends(admin_auth),
 ):
-    res = await db.execute(select(Prompt).where(Prompt.id == prompt_id))
-    prompt = res.scalar_one_or_none()
-    if not prompt:
+    ok = await db_crud.admin_delete_prompt(prompt_id)
+    if not ok:
         raise HTTPException(status_code=404, detail="Prompt not found")
-    await db.delete(prompt)
-    await db.commit()
     return {"status": "deleted"}
 
 
 @router.post("/reorder")
 async def reorder_prompts(
     data: PromptReorder,
-    db: AsyncSession = Depends(get_session),
     _: str = Depends(admin_auth),
 ):
-    ids = [x.id for x in data.orders]
-    existing = await db.execute(select(Prompt.id).where(Prompt.id.in_(ids)))
-    existing_ids = set(existing.scalars().all())
-    missing = [pid for pid in ids if pid not in existing_ids]
-    if missing:
-        raise HTTPException(status_code=400, detail={"missing_prompt_ids": missing})
-
-    for item in data.orders:
-        res = await db.execute(select(Prompt).where(Prompt.id == item.id))
-        p = res.scalar_one()
-        p.order = int(item.order)
-
-    await db.commit()
+    try:
+        await db_crud.admin_reorder_prompts([x.model_dump() for x in data.orders])
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return {"status": "reordered"}

@@ -48,6 +48,7 @@ class SampleReportsService:
                     'id': report.id,
                     'report_name': report.report_name,
                     'video_url': report.video_url,
+                    'video_type': report.video_type,
                     'analysis_data': json.loads(report.analysis_data),
                     'is_active': report.is_active,
                     'created_at': report.created_at
@@ -70,6 +71,7 @@ class SampleReportsService:
                 'id': report.id,
                 'report_name': report.report_name,
                 'video_url': report.video_url,
+                'video_type': report.video_type,
                 'analysis_data': json.loads(report.analysis_data),
                 'is_active': report.is_active,
                 'created_at': report.created_at
@@ -138,3 +140,10 @@ class SampleReportsService:
                 select(func.count(SampleReport.id)).where(SampleReport.is_active == True)
             )
             return result.scalar() or 0
+    @staticmethod
+    async def delete_sample_report(report_id: int) -> bool:
+        async with async_session() as session:
+            from sqlalchemy import delete
+            res = await session.execute(delete(SampleReport).where(SampleReport.id == report_id))
+            await session.commit()
+            return (res.rowcount or 0) > 0

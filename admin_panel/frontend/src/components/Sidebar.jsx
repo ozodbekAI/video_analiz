@@ -1,10 +1,11 @@
 // src/components/Sidebar.jsx
-import { Settings, BarChart3, FileText, Users, Download, Power, Menu, X } from 'lucide-react';
+import { Settings, BarChart3, FileText, CheckCircle2, Users, Download, Power, Menu, X } from 'lucide-react';
 
 const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, onLogout }) => {
   const tabs = [
     { id: 'dashboard', label: 'Дашборд', icon: BarChart3 },
     { id: 'prompts', label: 'Промпты', icon: FileText },
+    { id: 'multi_prompts', label: 'Evaluator (ADV)', icon: CheckCircle2 },
     { id: 'users', label: 'Пользователи', icon: Users },
     { id: 'samples', label: 'Демо отчеты', icon: Download },
   ];

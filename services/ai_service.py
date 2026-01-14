@@ -112,6 +112,34 @@ async def analyze_comments_with_prompt(comments_text: str, prompt_text: str, max
         return f"❌ **Ошибка анализа**\n\n{error_msg[:200]}\n\nПопробуйте выбрать другое видео или обратитесь в поддержку."
 
 
+async def analyze_text_with_prompt(text: str, prompt_text: str, max_tokens: int = 2500, temperature: float = 0.2) -> str:
+    """Analyze arbitrary text without comment sanitization.
+
+    This is required for TZ-2 evaluator prompts where we must not distort the reports.
+    """
+    try:
+        response = await client.chat.completions.create(
+            model="deepseek-r1",
+            messages=[
+                {"role": "system", "content": prompt_text},
+                {"role": "user", "content": text or " "},
+            ],
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+
+        raw_content = response.choices[0].message.content or ""
+        if '<think>' in raw_content and '</think>' in raw_content:
+            raw_content = re.sub(r'<think>.*?</think>', '', raw_content, flags=re.DOTALL)
+
+        return raw_content.strip()
+    except Exception as e:
+        error_msg = str(e)
+        if 'insufficient_quota' in error_msg or 'quota' in error_msg.lower():
+            return "⚠️ **Оценка временно недоступна**\n\nAPI квота исчерпана. Попробуйте позже или обратитесь к администратору."
+        return f"❌ **Ошибка оценки**\n\n{error_msg[:200]}"
+
+
 async def analyze_shorts_adaptive(
     comments_text: str,
     prompt_text: str,

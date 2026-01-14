@@ -153,7 +153,8 @@ async def test_real_youtube_video():
         
         print(f"\n📹 Video ID: {result['video_id']}")
         print(f"📝 Title: {result['title']}")
-        print(f"🕐 Timestamps mavjud: {'✅ Ha' if result['has_timestamps'] else '❌ Yo\'q'}")
+        no_ts = "❌ Yo'q"
+        print(f"🕐 Timestamps mavjud: {'✅ Ha' if result['has_timestamps'] else no_ts}")
         print(f"📊 Timestamps soni: {result['timestamps_count']}")
         
         if result['has_timestamps']:
