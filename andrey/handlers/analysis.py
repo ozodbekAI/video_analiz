@@ -11,7 +11,16 @@ from keyboards.client import (
     get_analysis_type_keyboard, 
     get_back_to_menu_keyboard, 
     get_main_menu_keyboard,
-    get_after_analysis_keyboard
+    get_after_analysis_keyboard,
+    get_stop_analysis_keyboard,
+)
+
+from services.active_analysis import (
+    ActiveAnalysis,
+    register_active,
+    unregister_active,
+    get_active,
+    cleanup_cancelled_analysis,
 )
 from services.youtube_service import (
     extract_video_id,
@@ -41,6 +50,43 @@ from config import config
 router = Router()
 
 user_analysis_locks = {}
+
+
+@router.callback_query(F.data == "analysis:stop")
+async def stop_running_analysis(callback: CallbackQuery, state: FSMContext):
+    """User requests to stop an in-flight analysis.
+
+    We cancel the background task and let its cancellation handler perform
+    DB/file cleanup.
+    """
+    user_id = callback.from_user.id
+    active = get_active(user_id)
+
+    if not active or not active.task or active.task.done():
+        await callback.answer("Нет активного анализа.", show_alert=True)
+        return
+
+    active.cancel_event.set()
+    try:
+        active.task.cancel()
+    except Exception:
+        pass
+
+    try:
+        await state.clear()
+    except Exception:
+        pass
+
+    # Best-effort UX update (may race with progress updates)
+    try:
+        await callback.message.edit_text(
+            "⛔ Останавливаю анализ и очищаю данные...",
+            reply_markup=get_back_to_menu_keyboard(),
+        )
+    except Exception:
+        pass
+
+    await callback.answer("Остановка запрошена")
 pending_verification_channels = {}
 ADMIN_IDS = config.ADMIN_IDS
 
@@ -123,12 +169,26 @@ async def back_from_analysis_type(query: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-async def update_progress_message(message: Message, text: str, emoji: str = "⏳"):
+async def update_progress_message(
+    message: Message,
+    text: str,
+    emoji: str = "⏳",
+    *,
+    keep_stop_keyboard: bool = True,
+):
+    """Update a progress message.
+
+    Important: while a long-running analysis is active, we must preserve the
+    "Stop analysis" button. Telegram removes inline keyboards if you edit the
+    message without passing `reply_markup`.
+    """
     try:
         progress_bar = f"{emoji} {text}"
-        await message.edit_text(progress_bar)
+        reply_markup = get_stop_analysis_keyboard() if keep_stop_keyboard else None
+        await message.edit_text(progress_bar, reply_markup=reply_markup)
     except Exception:
-        await message.answer(f"{emoji} {text}")
+        reply_markup = get_stop_analysis_keyboard() if keep_stop_keyboard else None
+        await message.answer(f"{emoji} {text}", reply_markup=reply_markup)
 
 
 async def send_sample_report_and_ask(message: Message, user_id: int, video_type: str = 'regular'):
@@ -224,9 +284,22 @@ async def check_video_ownership(user_id: int, video_url: str, is_admin: bool = F
         return False, f"Ошибка: {str(e)}", None
 
 
-async def run_analysis_task(user_id: int, message: Message, url: str, category: str, analysis_type: str):
+async def run_analysis_task(
+    user_id: int,
+    message: Message,
+    url: str,
+    category: str,
+    analysis_type: str,
+    runtime: ActiveAnalysis,
+):
     progress_msg = None
     try:
+
+        async def _raise_if_cancelled():
+            if runtime and runtime.cancel_event.is_set():
+                raise asyncio.CancelledError()
+
+        await _raise_if_cancelled()
         
         user = await get_user(user_id)
         
@@ -278,11 +351,15 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
                 )
                 return
         
-        progress_msg = await message.answer("⏳ Загрузка комментариев...")
-        
-        video_id = extract_video_id(url)
+        progress_msg = await message.answer(
+            "⏳ Загрузка комментариев...",
+            reply_markup=get_stop_analysis_keyboard(),
+        )
+
+        video_id = runtime.youtube_video_id or extract_video_id(url)
         from services.youtube_service import get_video_comments_with_metrics
-        
+
+        # Heavy network call (sync). We can only stop after it returns.
         comments_result = get_video_comments_with_metrics(video_id)
         comments_data = comments_result['comments']
         engagement_metrics = comments_result['metrics']
@@ -291,7 +368,11 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         video_meta_full = comments_result['metadata']
         
         comments_file = get_comments_file_path(video_id)
+        # Track temp comment file for stop/cleanup
+        runtime.add_file(comments_file)
         comments_len = len(comments_data)
+
+        await _raise_if_cancelled()
 
         if comments_len >= 2000 and analysis_type == "advanced":
             if user.tariff_plan not in ['pro', 'business', 'enterprise'] and not is_admin:
@@ -304,6 +385,8 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         
         timestamps_info = await get_video_timestamps(url)
         timestamps_text = format_timestamps_for_analysis(timestamps_info['timestamps'])
+
+        await _raise_if_cancelled()
         
         save_comments_to_file(comments_data, comments_file)
         
@@ -316,11 +399,15 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             f"✅ Загружено {comments_len} комментариев\n✅ Timestamps: {timestamps_info['timestamps_count']}\n🔄 Сохранение в базу данных..."
         )
         
+        await _raise_if_cancelled()
+
         db_video_id = await create_video(
             user.id, 
             url, 
             f"Comments: {comments_file}"
         )
+
+        runtime.db_video_id = db_video_id
         
         try:
             channel_info = await get_video_channel_info(url)
@@ -345,6 +432,8 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         with open(comments_file, "r", encoding="utf-8") as f:
             full_context = f.read()
         
+        ai_response_id_for_files = None
+
         if analysis_type == "simple":
             await update_progress_message(
                 progress_msg,
@@ -357,9 +446,12 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             
             prompt_text = simple_prompts[0].prompt_text
             request_context = full_context
+
+            await _raise_if_cancelled()
             
             ai_response = await analyze_comments_with_prompt(full_context, prompt_text)
 
+            await _raise_if_cancelled()
             ai_logs = save_ai_interaction(
                 user_id=user.user_id,
                 video_id=video_id,
@@ -367,14 +459,20 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
                 request_text=request_context,
                 response_text=ai_response
             )
+
+            runtime.add_file(ai_logs.get('request_path'))
+            runtime.add_file(ai_logs.get('response_path'))
+
+            await _raise_if_cancelled()
             
-            await create_ai_response(
+            ai_response_id_for_files = await create_ai_response(
                 user.id, 
                 db_video_id, 
                 0, 
                 "simple", 
                 ai_response
             )
+            runtime.ai_response_ids.append(int(ai_response_id_for_files))
             
             final_ai_response = ai_response
 
@@ -410,29 +508,37 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         
         elif analysis_type == "advanced":
             advanced_prompts = await get_prompts(category=category, analysis_type="advanced")
-            final_ai_response, all_partial_logs = await run_advanced_analysis_with_validation(
+            await _raise_if_cancelled()
+
+            final_ai_response, all_partial_logs, machine_data_json, final_ai_response_id = await run_advanced_analysis_with_validation(
                 user_id=user.user_id,
                 video_id=video_id,
                 db_video_id=db_video_id,
                 full_context=full_context,
                 category=category,
+                video_meta_full=video_meta_full,
                 progress_msg=progress_msg,
                 message=message,
-                update_progress_message=update_progress_message
+                update_progress_message=update_progress_message,
+                cancel_event=runtime.cancel_event,
             )
+
+            # Track DB/file artifacts for potential cleanup on stop
+            if final_ai_response_id:
+                runtime.ai_response_ids.append(int(final_ai_response_id))
+            for log in all_partial_logs or []:
+                runtime.add_file(log.get('request_path'))
+                runtime.add_file(log.get('response_path'))
+
+            await _raise_if_cancelled()
+
+            ai_response_id_for_files = final_ai_response_id or None
             
-            # ===== MACHINE DATA NI AJRATIB OLISH =====
-            machine_data_json = None
-            ai_logs_only = []
-            
-            for log_item in all_partial_logs:
-                if isinstance(log_item, dict) and "machine_data" in log_item:
-                    # Bu machine data
-                    machine_data_json = log_item["machine_data"]
-                    print(f"✅ Machine data topildi: {len(machine_data_json)} bytes")
-                else:
-                    # Bu AI log fayli
-                    ai_logs_only.append(log_item)
+            # Only AI log files (filter out structured validation entries)
+            ai_logs_only = [
+                l for l in all_partial_logs
+                if isinstance(l, dict) and l.get('request_path') and l.get('response_path')
+            ]
             
             # ===== AI LOGLARNI YUBORISH =====
             try:
@@ -466,37 +572,18 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             except Exception as e:
                 print(f"❌ Ошибка отправки логов: {e}")
             
-            # ===== MACHINE DATA NI SAQLASH =====
-            if machine_data_json:
+            # ===== MACHINE DATA FILE (optional, for debugging / admin) =====
+            if machine_data_json and final_ai_response_id:
                 try:
                     reports_dir = Path(f"reports/{user.user_id}")
                     reports_dir.mkdir(parents=True, exist_ok=True)
-                    
-                    machine_json_path = reports_dir / f"{video_id}_machine.json"
+
+                    machine_json_path = reports_dir / f"{video_id}_machine_{final_ai_response_id}.json"
                     with open(machine_json_path, "w", encoding="utf-8") as f:
                         f.write(machine_data_json)
-                    
-                    print(f"✅ Machine data saqlandi: {machine_json_path}")
-                    
-                    # Ma'lumotlar bazasiga saqlash
-                    import json
-                    from database.crud import create_advanced_analysis_response
-                    
-                    await create_advanced_analysis_response(
-                        user_id=user.id,
-                        video_id=db_video_id,
-                        human_report=final_ai_response,
-                        machine_data=machine_data_json
-                    )
-                    
-                    print(f"✅ Machine data ma'lumotlar bazasiga saqlandi")
-                    
+                    runtime.add_file(machine_json_path)
                 except Exception as e:
-                    print(f"⚠️ Machine data saqlashda xato: {e}")
-                    import traceback
-                    traceback.print_exc()
-            else:
-                print(f"⚠️ Machine data topilmadi")
+                    print(f"⚠️ Machine data file saqlashda xato: {e}")
 
         else:
             raise ValueError("Неизвестный тип анализа")
@@ -506,15 +593,19 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             "📄 Генерация PDF отчета..."
         )
 
+        await _raise_if_cancelled()
+
         pdf_file = generate_pdf(final_ai_response, url, video_id)
         
         reports_dir = Path(f"reports/{user.user_id}")
         reports_dir.mkdir(parents=True, exist_ok=True)
-        saved_pdf_path = reports_dir / f"{video_id}_{analysis_type}.pdf"
+        file_suffix = ai_response_id_for_files or int(datetime.now().timestamp())
+        saved_pdf_path = reports_dir / f"{video_id}_{analysis_type}_{file_suffix}.pdf"
         os.rename(pdf_file, str(saved_pdf_path))
         pdf_file = str(saved_pdf_path)
+        runtime.add_file(pdf_file)
 
-        txt_file_path = reports_dir / f"{video_id}_{analysis_type}.txt"
+        txt_file_path = reports_dir / f"{video_id}_{analysis_type}_{file_suffix}.txt"
         with open(txt_file_path, "w", encoding="utf-8") as txt_file:
             txt_file.write(f"=== ANALIZ NATIJALARI ===\n\n")
             txt_file.write(f"Video ID: {video_id}\n")
@@ -560,9 +651,29 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
             txt_file.write(f"\n{'='*50}\n\n")
             txt_file.write(final_ai_response)
 
+        runtime.add_file(txt_file_path)
 
-        from database.crud import update_ai_response_txt_path
-        await update_ai_response_txt_path(user.id, db_video_id, str(txt_file_path))
+        # Save file paths for this exact analysis row
+        try:
+            from database.crud import update_ai_response_files_by_id, register_advanced_analysis_to_set
+
+            if ai_response_id_for_files:
+                await update_ai_response_files_by_id(
+                    int(ai_response_id_for_files),
+                    txt_path=str(txt_file_path),
+                    pdf_path=str(saved_pdf_path),
+                )
+
+                # TZ-2: advanced analyses are grouped into sets for later evaluation
+                if analysis_type == "advanced":
+                    await register_advanced_analysis_to_set(
+                        user_identifier=user.user_id,
+                        youtube_video_id=video_id,
+                        db_video_id=db_video_id,
+                        ai_response_id=int(ai_response_id_for_files),
+                    )
+        except Exception as e:
+            print(f"⚠️ AIResponse file path / set registration error: {e}")
 
         if progress_msg:
             await progress_msg.delete()
@@ -599,6 +710,31 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
         if not is_admin:
             await update_user_analyses(user.id, user.analyses_used + 1)
         
+    except asyncio.CancelledError:
+        # Stop requested by the user
+        if progress_msg:
+            try:
+                await update_progress_message(progress_msg, "⛔ Анализ остановлен. Очищаю данные...")
+            except Exception:
+                pass
+
+        try:
+            await cleanup_cancelled_analysis(runtime)
+        except Exception:
+            pass
+
+        if progress_msg:
+            try:
+                await progress_msg.delete()
+            except Exception:
+                pass
+
+        await message.answer(
+            "⛔ Анализ остановлен. Все промежуточные данные удалены.",
+            reply_markup=get_main_menu_keyboard(),
+        )
+        return
+
     except ValueError as e:
         if progress_msg:
             await update_progress_message(progress_msg, f"❌ Ошибка: {str(e)}")
@@ -633,6 +769,26 @@ async def run_analysis_task(user_id: int, message: Message, url: str, category: 
 async def process_video_url(message: Message, state: FSMContext):
     url = message.text.strip()
     user_id = message.from_user.id
+
+    # Validate YouTube URL early
+    try:
+        youtube_video_id = extract_video_id(url)
+    except ValueError:
+        await message.answer(
+            "❌ Неверная ссылка на YouTube-видео. Пожалуйста, отправьте корректный URL.",
+            reply_markup=get_main_menu_keyboard(),
+        )
+        return
+
+    # Prevent parallel analyses per user
+    active = get_active(user_id)
+    if active and active.task and not active.task.done():
+        await message.answer(
+            "⏳ У вас уже идет анализ. Дождитесь завершения текущего.\n\n"
+            "Вы можете продолжить использовать бот:",
+            reply_markup=get_main_menu_keyboard(),
+        )
+        return
     
     if user_id in user_analysis_locks and not user_analysis_locks[user_id].done():
         await message.answer(
@@ -652,12 +808,27 @@ async def process_video_url(message: Message, state: FSMContext):
         pending_analysis_type=analysis_type
     )
     
-    task = asyncio.create_task(
-        run_analysis_task(user_id, message, url, category, analysis_type)
+    # We don't need FSM state after task start
+    await state.clear()
+
+    runtime = ActiveAnalysis(
+        user_id=user_id,
+        chat_id=message.chat.id,
+        kind="video",
+        url=url,
     )
+    runtime.youtube_video_id = youtube_video_id
+
+    task = asyncio.create_task(
+        run_analysis_task(user_id, message, url, category, analysis_type, runtime)
+    )
+    runtime.task = task
+    register_active(runtime)
+
     user_analysis_locks[user_id] = task
     
     def cleanup(t):
+        unregister_active(user_id)
         if user_id in user_analysis_locks:
             del user_analysis_locks[user_id]
     

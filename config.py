@@ -27,6 +27,7 @@ class Config(BaseSettings):
 
     DEFAULT_ANALYSES_LIMIT: int = 5
     MONTHLY_RESET_DAYS: int = 30
+    DEEPSEEK_API_KEY: str = ""
 
     class Config:
         env_file = ".env"

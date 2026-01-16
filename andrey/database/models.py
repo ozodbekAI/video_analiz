@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, BigInteger, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Enum
+from sqlalchemy import JSON, BigInteger, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Enum, Float
 from sqlalchemy.orm import relationship
 from .engine import Base
 from datetime import datetime, timezone
@@ -121,9 +121,15 @@ class AIResponse(Base):
     response_text = Column(Text, nullable=False)
     machine_data = Column(JSON, nullable=True)  
     txt_file_path = Column(String(500), nullable=True)
+    # TZ-2: multi-analysis optimizer
+    pdf_file_path = Column(String(500), nullable=True)
+    analysis_set_id = Column(Integer, ForeignKey("video_analysis_sets.id"), nullable=True)
+    is_for_strategic_hub = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz=timezone.utc))
     
     video = relationship("Video", back_populates="ai_responses")
+
+    analysis_set = relationship("VideoAnalysisSet", back_populates="ai_responses")
 
 
 
@@ -164,3 +170,65 @@ class VideoAnalysis(Base):
     user_id = Column(BigInteger, index=True)
     text_report = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+# =========================
+# TZ-2: MultiAnalysisOptimizer (Advanced-only)
+# =========================
+
+
+class VideoAnalysisSet(Base):
+    __tablename__ = "video_analysis_sets"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    video_id = Column(String(50), nullable=False, index=True)  # YouTube video id
+    db_video_id = Column(Integer, ForeignKey("videos.id"), nullable=True)
+
+    total_analyses = Column(Integer, default=0)
+    best_analysis_id = Column(Integer, nullable=True)
+    last_analysis_at = Column(DateTime(timezone=True), nullable=True)
+    next_evaluation_at = Column(DateTime(timezone=True), nullable=True)
+    status = Column(String(20), default="collecting")  # collecting/waiting/evaluating/completed/error
+    evaluation_count = Column(Integer, default=0)
+    evaluation_result = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz=timezone.utc))
+    evaluated_at = Column(DateTime(timezone=True), nullable=True)
+
+    ai_responses = relationship("AIResponse", back_populates="analysis_set")
+
+
+class AnalysisQualityMarker(Base):
+    __tablename__ = "analysis_quality_markers"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    analysis_set_id = Column(Integer, ForeignKey("video_analysis_sets.id"), nullable=False, index=True)
+    analysis_id = Column(Integer, ForeignKey("ai_responses.id"), nullable=False, index=True)
+
+    quality_rank = Column(Integer, nullable=True, index=True)  # 1 - best
+    is_best = Column(Boolean, default=False, index=True)
+    total_score = Column(Float, nullable=True)
+    scores = Column(JSON, nullable=True)
+    strengths = Column(JSON, nullable=True)
+    weaknesses = Column(JSON, nullable=True)
+    improvement_suggestions = Column(JSON, nullable=True)
+
+    pdf_deleted = Column(Boolean, default=False)
+    pdf_deleted_at = Column(DateTime(timezone=True), nullable=True)
+
+    evaluation_metadata = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz=timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz=timezone.utc))
+
+
+class MultiAnalysisPrompt(Base):
+    __tablename__ = "multi_analysis_prompts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), nullable=False)
+    prompt_text = Column(Text, nullable=False)
+    version = Column(String(20), default="1.0")
+    description = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz=timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz=timezone.utc))

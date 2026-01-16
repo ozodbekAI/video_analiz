@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from callbacks.menu import MenuCallback
 from callbacks.admin import AdminCallback
-from keyboards.client import get_main_menu_keyboard
+from keyboards.client import get_main_menu_keyboard, get_stop_analysis_keyboard
 from keyboards.admin import get_admin_menu_keyboard
 from database.crud import get_user, create_video, create_ai_response, update_user_analyses, get_prompts, create_prompt, update_prompt, delete_prompt
 from services.sample_report_service import SampleReportsService
@@ -18,12 +18,227 @@ from datetime import datetime
 from pathlib import Path
 import os
 import io
+import asyncio
+
+from services.active_analysis import (
+    ActiveAnalysis,
+    register_active,
+    unregister_active,
+    get_active,
+    cleanup_cancelled_analysis,
+)
 
 router = Router()
 
 from config import Config
 config = Config()
 ADMIN_IDS = config.ADMIN_IDS
+
+
+async def _run_shorts_analysis_task(
+    *,
+    user_id: int,
+    message: Message,
+    url: str,
+    runtime: ActiveAnalysis,
+    progress_msg: Message,
+    level_mode: str,
+    manual_level: int | None,
+    is_admin: bool,
+):
+    """Background task for Shorts analysis.
+
+    This is separated to support `analysis:stop` cancellation with DB/file cleanup.
+    """
+    try:
+        async def _raise_if_cancelled():
+            if runtime and runtime.cancel_event.is_set():
+                raise asyncio.CancelledError()
+
+        await _raise_if_cancelled()
+
+        user = await get_user(user_id)
+        if not user:
+            await progress_msg.edit_text(
+                "❌ Пользователь не найден",
+                reply_markup=get_main_menu_keyboard(),
+            )
+            return
+
+        video_id = extract_video_id(url)
+        runtime.youtube_video_id = video_id
+
+        await progress_msg.edit_text(
+            "📥 Загрузка комментариев...",
+            reply_markup=get_stop_analysis_keyboard(),
+        )
+
+        # NOTE: this call is synchronous inside youtube_service; cancellation is applied after it returns.
+        raw_comments = get_video_comments_adaptive(video_id, url)
+
+        await _raise_if_cancelled()
+
+        await progress_msg.edit_text(
+            f"🧹 Очистка...\nНайдено: {len(raw_comments)}",
+            reply_markup=get_stop_analysis_keyboard(),
+        )
+
+        preprocessor = RawDataShortsPreprocessor()
+        cleaned_comments = preprocessor.clean_comments(raw_comments)
+        total_comments = len(cleaned_comments)
+
+        if total_comments <= 300:
+            scale = "small"
+            scale_emoji = "🟢"
+            scale_name = "полный"
+        elif total_comments <= 1000:
+            scale = "medium"
+            scale_emoji = "🟡"
+            scale_name = "расширенный"
+        else:
+            scale = "large"
+            scale_emoji = "🔴"
+            scale_name = "стратегический"
+
+        await progress_msg.edit_text(
+            f"✅ Очистка завершена\n"
+            f"📊 Комментариев: {total_comments}\n"
+            f"{scale_emoji} Режим: {scale_name}\n\n"
+            f"🤖 Запуск AI...",
+            reply_markup=get_stop_analysis_keyboard(),
+        )
+
+        # Determine analysis level
+        if level_mode == "auto":
+            analysis_level = 1
+        else:
+            analysis_level = int(manual_level or 1)
+
+        analysis_type = f"shorts_{scale}_{500 + analysis_level}"
+        prompts = await get_prompts(category="shorts", analysis_type=analysis_type)
+
+        if not prompts:
+            await progress_msg.edit_text(
+                f"❌ Промпт не найден\n\nТип: {analysis_type}",
+                reply_markup=get_main_menu_keyboard(),
+            )
+            return
+
+        await _raise_if_cancelled()
+
+        prompt_text = prompts[0].prompt_text
+        await progress_msg.edit_text(
+            f"{scale_emoji} Анализ уровня {analysis_level}\n"
+            f"⏳ Обработка {total_comments}...",
+            reply_markup=get_stop_analysis_keyboard(),
+        )
+
+        comments_text = "\n\n".join(
+            [
+                f"[{c['time']}] ({c['author']}, {c['likes']} likes) {c['text']}"
+                for c in cleaned_comments
+            ]
+        )
+
+        analysis_result = await analyze_comments_with_prompt(comments_text, prompt_text)
+
+        await _raise_if_cancelled()
+
+        # Persist in DB
+        db_video_id = await create_video(user.id, url, f"Shorts: {video_id}")
+        runtime.db_video_id = int(db_video_id)
+
+        # Store AIResponse id for cleanup
+        ai_id = await create_ai_response(
+            user.id,
+            db_video_id,
+            0,
+            f"shorts_level_{analysis_level}",
+            analysis_result,
+        )
+        try:
+            runtime.ai_response_ids.append(int(ai_id))
+        except Exception:
+            pass
+
+        await progress_msg.edit_text("📄 Генерация PDF...", reply_markup=get_stop_analysis_keyboard())
+        pdf_file = generate_pdf(analysis_result, url, video_id)
+        runtime.add_file(pdf_file)
+
+        reports_dir = Path(f"reports/{user.user_id}/shorts")
+        reports_dir.mkdir(parents=True, exist_ok=True)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        saved_pdf_path = reports_dir / f"{video_id}_shorts_lv{analysis_level}_{timestamp}.pdf"
+        os.rename(pdf_file, str(saved_pdf_path))
+        runtime.add_file(saved_pdf_path)
+
+        await progress_msg.delete()
+
+        await message.answer_document(
+            FSInputFile(str(saved_pdf_path)),
+            caption=(
+                f"📊 <b>Анализ Shorts готов!</b>\n\n"
+                f"🎬 Видео: <code>{video_id}</code>\n"
+                f"📊 Комментариев: {total_comments}\n"
+                f"{scale_emoji} Режим: {scale_name}\n"
+                f"🎯 Уровень: {analysis_level}\n"
+                f"🗑️ Удалено шума: {len(raw_comments) - len(cleaned_comments)}"
+            ),
+            parse_mode="HTML",
+        )
+
+        if not is_admin:
+            await update_user_analyses(user.user_id, user.analyses_used + 1)
+            remaining = user.analyses_limit - (user.analyses_used + 1)
+            await message.answer(
+                f"✅ Анализ завершен!\n\n"
+                f"📊 Осталось: {remaining}/{user.analyses_limit}",
+                reply_markup=get_main_menu_keyboard(),
+            )
+        else:
+            await message.answer(
+                "✅ Анализ завершен!\n\n👑 Админ режим",
+                reply_markup=get_main_menu_keyboard(),
+            )
+
+    except asyncio.CancelledError:
+        # Stop requested by user
+        try:
+            await progress_msg.edit_text(
+                "⛔ Анализ остановлен. Очищаю данные...",
+                reply_markup=get_main_menu_keyboard(),
+            )
+        except Exception:
+            pass
+
+        try:
+            await cleanup_cancelled_analysis(runtime)
+        except Exception:
+            pass
+
+        try:
+            await progress_msg.delete()
+        except Exception:
+            pass
+
+        await message.answer(
+            "⛔ Анализ остановлен. Все промежуточные данные удалены.",
+            reply_markup=get_main_menu_keyboard(),
+        )
+
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
+        try:
+            await progress_msg.edit_text(
+                f"❌ <b>ОШИБКА</b>\n\n<code>{str(e)}</code>",
+                parse_mode="HTML",
+                reply_markup=get_main_menu_keyboard(),
+            )
+        except Exception:
+            pass
 
 
 def get_shorts_analysis_keyboard():
@@ -180,7 +395,8 @@ async def shorts_progression_handler(query: CallbackQuery):
 @router.message(AnalysisFSM.waiting_for_shorts_url)
 async def process_shorts_url(message: Message, state: FSMContext):
     url = message.text.strip()
-    user = await get_user(message.from_user.id)
+    user_id = message.from_user.id
+    user = await get_user(user_id)
 
     if not is_shorts_url(url):
         await message.answer(
@@ -196,6 +412,15 @@ async def process_shorts_url(message: Message, state: FSMContext):
             .as_markup()
         )
         return
+
+    # Do not allow parallel runs per user
+    active = get_active(user_id)
+    if active and active.task and not active.task.done():
+        await message.answer(
+            "⏳ У вас уже идет анализ. Дождитесь завершения текущего.\n\nВыберите действие:",
+            reply_markup=get_main_menu_keyboard(),
+        )
+        return
     
     is_admin = message.from_user.id in ADMIN_IDS
     
@@ -204,145 +429,44 @@ async def process_shorts_url(message: Message, state: FSMContext):
         await state.clear()
         return
     
-    progress_msg = await message.answer("⏳ Запускаем анализ Shorts...")
-    
-    try:
+    state_data = await state.get_data()
+    level_mode = state_data.get("shorts_level_mode", "auto")
+    manual_level = state_data.get("shorts_level")
 
-        video_id = extract_video_id(url)
-        await progress_msg.edit_text("📥 Загрузка комментариев...")
-        
-        raw_comments = get_video_comments_adaptive(video_id, url)
-        
-        await progress_msg.edit_text(
-            f"🧹 Очистка...\n"
-            f"Найдено: {len(raw_comments)}"
-        )
-        
-        preprocessor = RawDataShortsPreprocessor()
-        cleaned_comments = preprocessor.clean_comments(raw_comments)
-        
-        total_comments = len(cleaned_comments)
-        
-        if total_comments <= 300:
-            scale = "small"
-            scale_emoji = "🟢"
-            scale_name = "полный"
-        elif total_comments <= 1000:
-            scale = "medium"
-            scale_emoji = "🟡"
-            scale_name = "расширенный"
-        else:
-            scale = "large"
-            scale_emoji = "🔴"
-            scale_name = "стратегический"
-        
-        await progress_msg.edit_text(
-            f"✅ Очистка завершена\n"
-            f"📊 Комментариев: {total_comments}\n"
-            f"{scale_emoji} Режим: {scale_name}\n\n"
-            f"🤖 Запуск AI..."
-        )
-        
-        state_data = await state.get_data()
-        level_mode = state_data.get('shorts_level_mode', 'auto')
-        
-        if level_mode == 'auto':
-            analysis_level = 1 
-        else:
-            analysis_level = state_data.get('shorts_level', 1)
-        
-        analysis_type = f"shorts_{scale}_{500 + analysis_level}"
-        prompts = await get_prompts(category="shorts", analysis_type=analysis_type)
-        
-        if not prompts:
-            await progress_msg.edit_text(
-                f"❌ Промпт не найден\n\n"
-                f"Тип: {analysis_type}",
-                reply_markup=get_main_menu_keyboard()
-            )
-            await state.clear()
-            return
-        
-        prompt_text = prompts[0].prompt_text
-        
-        await progress_msg.edit_text(
-            f"{scale_emoji} Анализ уровня {analysis_level}\n"
-            f"⏳ Обработка {total_comments}..."
-        )
-        
-        comments_text = "\n\n".join([
-            f"[{c['time']}] ({c['author']}, {c['likes']} likes) {c['text']}"
-            for c in cleaned_comments
-        ])
-        
-        analysis_result = await analyze_comments_with_prompt(comments_text, prompt_text)
-        
-        db_video_id = await create_video(
-            user.id,
-            url,
-            f"Shorts: {video_id}"
-        )
-        
-        await create_ai_response(
-            user.id,
-            db_video_id,
-            0,
-            f"shorts_level_{analysis_level}",
-            analysis_result
-        )
-        
-        await progress_msg.edit_text("📄 Генерация PDF...")
-        
-        pdf_file = generate_pdf(analysis_result, url, video_id)
-        
-        reports_dir = Path(f"reports/{user.user_id}/shorts")
-        reports_dir.mkdir(parents=True, exist_ok=True)
-        
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        saved_pdf_path = reports_dir / f"{video_id}_shorts_lv{analysis_level}_{timestamp}.pdf"
-        os.rename(pdf_file, str(saved_pdf_path))
-        
-        await progress_msg.delete()
-        
-        await message.answer_document(
-            FSInputFile(str(saved_pdf_path)),
-            caption=f"📊 <b>Анализ Shorts готов!</b>\n\n"
-                    f"🎬 Видео: <code>{video_id}</code>\n"
-                    f"📊 Комментариев: {total_comments}\n"
-                    f"{scale_emoji} Режим: {scale_name}\n"
-                    f"🎯 Уровень: {analysis_level}\n"
-                    f"🗑️ Удалено шума: {len(raw_comments) - len(cleaned_comments)}",
-            parse_mode="HTML"
-        )
-        
-        if not is_admin:
-            await update_user_analyses(user.user_id, user.analyses_used + 1)
-            
-            remaining = user.analyses_limit - (user.analyses_used + 1)
-            await message.answer(
-                f"✅ Анализ завершен!\n\n"
-                f"📊 Осталось: {remaining}/{user.analyses_limit}",
-                reply_markup=get_main_menu_keyboard()
-            )
-        else:
-            await message.answer(
-                "✅ Анализ завершен!\n\n"
-                "👑 Админ режим",
-                reply_markup=get_main_menu_keyboard()
-            )
-        
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        
-        await progress_msg.edit_text(
-            f"❌ <b>ОШИБКА</b>\n\n"
-            f"<code>{str(e)}</code>",
-            parse_mode="HTML",
-            reply_markup=get_main_menu_keyboard()
-        )
-    
+    # Start background task; FSM state no longer needed.
     await state.clear()
+
+    runtime = ActiveAnalysis(
+        user_id=user_id,
+        chat_id=message.chat.id,
+        kind="shorts",
+        url=url,
+    )
+
+    progress_msg = await message.answer(
+        "⏳ Запускаем анализ Shorts...",
+        reply_markup=get_stop_analysis_keyboard(),
+    )
+
+    task = asyncio.create_task(
+        _run_shorts_analysis_task(
+            user_id=user_id,
+            message=message,
+            url=url,
+            runtime=runtime,
+            progress_msg=progress_msg,
+            level_mode=level_mode,
+            manual_level=manual_level,
+            is_admin=is_admin,
+        )
+    )
+    runtime.task = task
+    register_active(runtime)
+
+    def _cleanup(_t):
+        unregister_active(user_id)
+
+    task.add_done_callback(_cleanup)
 
 
 async def send_shorts_demo_report(message: Message, user_id: int):
@@ -589,7 +713,7 @@ async def process_shorts_prompt(message: Message, state: FSMContext, bot: Bot):
         return
     
     data = await state.get_data()
-    scale = data['shorts']
+    scale = data['shorts_scale']
     level = data['shorts_level']
     
     file_io = io.BytesIO()
@@ -626,7 +750,7 @@ async def process_shorts_prompt_update(message: Message, state: FSMContext, bot:
         return
     
     data = await state.get_data()
-    scale = data['shorts']
+    scale = data['shorts_scale']
     level = data['shorts_level']
     prompt_id = data['updating_prompt_id']
     

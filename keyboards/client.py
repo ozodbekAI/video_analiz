@@ -87,6 +87,15 @@ def get_after_analysis_keyboard():
     return builder.as_markup()
 
 
+def get_stop_analysis_keyboard():
+    """Keyboard shown while analysis is running."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="⛔ Остановить анализ", callback_data="analysis:stop")
+    builder.button(text="🏠 Главное меню", callback_data=MenuCallback(action="main_menu").pack())
+    builder.adjust(1)
+    return builder.as_markup()
+
+
 def get_back_to_menu_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(text="🏠 Главное меню", callback_data=MenuCallback(action="main_menu").pack())

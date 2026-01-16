@@ -17,6 +17,120 @@ from .engine import async_session
 from datetime import datetime, timezone, timedelta
 
 
+# -------------------------
+# Cancellation / cleanup helpers
+# -------------------------
+
+
+async def unregister_ai_response_from_sets(ai_response_id: int) -> None:
+    """Detach an AIResponse from TZ-2 multi-analysis sets and remove any markers.
+
+    This is used when an analysis is cancelled/deleted so that:
+    - VideoAnalysisSet.total_analyses stays consistent,
+    - stale best_analysis_id / evaluation_result do not break Strategic Hub,
+    - markers do not reference missing analyses.
+    """
+    now = datetime.now(tz=timezone.utc)
+    async with async_session() as session:
+        res = await session.execute(select(AIResponse).where(AIResponse.id == ai_response_id))
+        ai = res.scalar_one_or_none()
+
+        # Always remove quality markers for this analysis (if any)
+        await session.execute(
+            delete(AnalysisQualityMarker).where(AnalysisQualityMarker.analysis_id == ai_response_id)
+        )
+
+        set_id = getattr(ai, "analysis_set_id", None) if ai else None
+        if not set_id:
+            await session.commit()
+            return
+
+        # Compute how many *final advanced* analyses remain in this set after removing this one
+        remaining_res = await session.execute(
+            select(func.count(AIResponse.id)).where(
+                AIResponse.analysis_set_id == set_id,
+                AIResponse.id != ai_response_id,
+                AIResponse.chunk_id == 0,
+                AIResponse.analysis_type.in_(["advanced", "advanced_final"]),
+            )
+        )
+        remaining = int(remaining_res.scalar() or 0)
+
+        # Clear strategic hub flags for the set (in case evaluation becomes stale)
+        await session.execute(
+            update(AIResponse)
+            .where(AIResponse.analysis_set_id == set_id)
+            .values(is_for_strategic_hub=False)
+        )
+
+        if remaining == 0:
+            # Set is empty -> delete it entirely
+            await session.execute(delete(VideoAnalysisSet).where(VideoAnalysisSet.id == set_id))
+        else:
+            # Invalidate evaluation to avoid using stale best_analysis_id
+            status = "waiting" if remaining >= 3 else "collecting"
+            next_eval = (now + timedelta(hours=24)) if remaining >= 3 else None
+            await session.execute(
+                update(VideoAnalysisSet)
+                .where(VideoAnalysisSet.id == set_id)
+                .values(
+                    total_analyses=remaining,
+                    status=status,
+                    best_analysis_id=None,
+                    evaluation_result=None,
+                    evaluated_at=None,
+                    next_evaluation_at=next_eval,
+                    last_analysis_at=now,
+                )
+            )
+
+        # Detach the analysis itself (best-effort; it's often deleted right after)
+        await session.execute(
+            update(AIResponse)
+            .where(AIResponse.id == ai_response_id)
+            .values(analysis_set_id=None, is_for_strategic_hub=False)
+        )
+
+        await session.commit()
+
+
+async def delete_ai_response_by_id(ai_response_id: int) -> None:
+    """Delete AIResponse (and related TZ-2 artifacts) by id."""
+    # First detach from sets / delete markers (idempotent)
+    await unregister_ai_response_from_sets(ai_response_id)
+
+    async with async_session() as session:
+        await session.execute(delete(AIResponse).where(AIResponse.id == ai_response_id))
+        await session.commit()
+
+
+async def delete_video_by_id(video_id: int) -> None:
+    """Delete a Video and all related rows (AI responses, comments) safely.
+
+    We also unregister any AIResponse rows from TZ-2 analysis sets so Strategic Hub/evolution
+    doesn't see broken references.
+    """
+    async with async_session() as session:
+        # Find all AIResponses for this video
+        res = await session.execute(select(AIResponse.id).where(AIResponse.video_id == video_id))
+        ai_ids = [int(x[0]) for x in res.all()]
+
+    # Unregister in separate calls (each uses its own transaction)
+    for aid in ai_ids:
+        try:
+            await unregister_ai_response_from_sets(aid)
+        except Exception:
+            # Best-effort: deletion below will still proceed
+            pass
+
+    async with async_session() as session:
+        # Delete dependent rows
+        await session.execute(delete(AIResponse).where(AIResponse.video_id == video_id))
+        await session.execute(delete(Comment).where(Comment.video_id == video_id))
+        await session.execute(delete(Video).where(Video.id == video_id))
+        await session.commit()
+
+
 async def _resolve_user(session: AsyncSession, user_identifier: int) -> User:
     """
     Resolves a user by either Telegram user_id (User.user_id) or internal DB id (User.id).

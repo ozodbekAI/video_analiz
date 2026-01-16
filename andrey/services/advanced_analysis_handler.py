@@ -7,6 +7,8 @@ from html import escape
 from services.ai_service import analyze_comments_with_prompt, save_ai_interaction
 from database.crud import get_prompts, create_ai_response
 from services.advanced_validator import AdvancedModuleValidator, ValidationLogger
+from validators import FinalSynthesisValidator
+from validators.logger import FinalSynthesisValidationLogger
 
 
 async def run_advanced_analysis_with_validation(
@@ -15,10 +17,12 @@ async def run_advanced_analysis_with_validation(
     db_video_id: int,
     full_context: str,
     category: str,
+    video_meta_full: Dict,
     progress_msg,
     message,
-    update_progress_message
-) -> Tuple[str, List[Dict]]:
+    update_progress_message,
+    cancel_event: asyncio.Event | None = None,
+) -> Tuple[str, List[Dict], str | None, int]:
     """
     Запуск углубленного анализа с пошаговой валидацией
     """
@@ -42,6 +46,8 @@ async def run_advanced_analysis_with_validation(
     
     # ПОШАГОВОЕ ВЫПОЛНЕНИЕ С ВАЛИДАЦИЕЙ
     for idx, prompt in enumerate(advanced_prompts):
+        if cancel_event is not None and cancel_event.is_set():
+            raise asyncio.CancelledError()
         module_id = module_mapping.get(idx)
         if not module_id:
             raise ValueError(f"Не найден маппинг для промпта {idx}")
@@ -55,6 +61,8 @@ async def run_advanced_analysis_with_validation(
         previous_validation = None
         
         while attempt <= validator.max_retries + 1:
+            if cancel_event is not None and cancel_event.is_set():
+                raise asyncio.CancelledError()
             completed = idx
             percentage = int((completed / total_steps) * 100)
             progress_bar = "▓" * (percentage // 10) + "░" * (10 - percentage // 10)
@@ -105,6 +113,9 @@ async def run_advanced_analysis_with_validation(
                 partial_response,
                 attempt
             )
+
+            if cancel_event is not None and cancel_event.is_set():
+                raise asyncio.CancelledError()
             
             # Генерируем отчет о валидации
             validation_report = validator.format_validation_report(
@@ -244,29 +255,97 @@ async def run_advanced_analysis_with_validation(
         for i, resp in enumerate(partial_responses)
     ])
     
-    final_ai_response = await analyze_comments_with_prompt(
-        combined_partials,
-        synthesis_prompt_text
-    )
-    
-    synthesis_log = save_ai_interaction(
-        user_id=user_id,
-        video_id=video_id,
-        stage="synthesis",
-        request_text=f"SYNTHESIS PROMPT:\n{synthesis_prompt_text}\n\n{'='*80}\n\nPARTIAL RESPONSES:\n{combined_partials}",
-        response_text=final_ai_response
-    )
-    
-    try:
-        await create_ai_response(
-            user_id, 
-            db_video_id, 
-            0,
-            "advanced_final", 
-            final_ai_response
+    # ---- Финальный синтез + валидация (после шага 5 по ТЗ) ----
+    fs_validator = FinalSynthesisValidator()
+    partial_by_module = {module_mapping[i]: resp for i, resp in enumerate(partial_responses) if i in module_mapping}
+
+    # Normalize meta keys
+    normalized_video_meta = dict(video_meta_full or {})
+    normalized_video_meta.setdefault("id", video_id)
+    normalized_video_meta.setdefault("video_id", video_id)
+    if "comments" not in normalized_video_meta and "comment_count" in normalized_video_meta:
+        normalized_video_meta["comments"] = normalized_video_meta.get("comment_count")
+
+    max_attempts = 3  # 1 + up to 2 retries
+    final_ai_response = ""
+    synthesis_log = {}
+    last_retry_prompt = ""
+
+    for attempt in range(1, max_attempts + 1):
+        attempt_prompt = synthesis_prompt_text
+        if attempt > 1 and last_retry_prompt:
+            attempt_prompt = synthesis_prompt_text + "\n\n" + last_retry_prompt
+
+        final_ai_response = await analyze_comments_with_prompt(combined_partials, attempt_prompt)
+
+        synthesis_log = save_ai_interaction(
+            user_id=user_id,
+            video_id=video_id,
+            stage=f"synthesis_attempt{attempt}",
+            request_text=f"SYNTHESIS PROMPT (attempt {attempt}):\n{attempt_prompt}\n\n{'='*80}\n\nPARTIAL RESPONSES:\n{combined_partials}",
+            response_text=final_ai_response
         )
-    except Exception as e:
-        print(f"⚠️ Ошибка сохранения финального результата в БД: {e}")
+
+        # Validate
+        validation_result = fs_validator.validate(
+            raw_report=final_ai_response,
+            video_meta=normalized_video_meta,
+            partial_responses=partial_by_module,
+        )
+
+        # Persist validation result
+        try:
+            FinalSynthesisValidationLogger.save(
+                video_id=video_id,
+                attempt=attempt,
+                validation_result=validation_result,
+                extra={"score": validation_result.score, "status": validation_result.status},
+            )
+        except Exception as e:
+            print(f"⚠️ Ошибка сохранения final synthesis validation log: {e}")
+
+        # Auto-correct if provided
+        if validation_result.corrected_report:
+            final_ai_response = validation_result.corrected_report
+
+        all_partial_logs.append({
+            "final_synthesis_validation": {
+                "attempt": attempt,
+                "status": validation_result.status,
+                "score": validation_result.score,
+                "issues": [
+                    {
+                        "type": i.type,
+                        "severity": i.severity,
+                        "message": i.message,
+                        "details": i.details,
+                    }
+                    for i in validation_result.issues
+                ],
+                "indices": validation_result.indices_calculated,
+            },
+            "created_at": datetime.now().isoformat(),
+        })
+
+        # Decide whether to retry synthesis
+        if validation_result.retry_needed and validation_result.retry_prompt and attempt < max_attempts:
+            last_retry_prompt = validation_result.retry_prompt
+            continue
+
+        break
+    
+    # Persist final report (return id for file binding / multi-analysis optimizer)
+    final_ai_response_id = 0
+    try:
+        import json
+
+        machine_data_to_store = None
+        # machine_data is appended to logs below; we compute it before insertion
+        # and store JSON in ai_responses.machine_data when possible.
+        # (If parsing fails, we store raw string.)
+        # NOTE: machine_data is computed later; this placeholder will be updated.
+    except Exception:
+        machine_data_to_store = None
     
     all_partial_logs.append(synthesis_log)
     
@@ -292,13 +371,31 @@ async def run_advanced_analysis_with_validation(
         })
         
         print(f"✅ Machine data muvaffaqiyatli yaratildi va qo'shildi")
+
+        try:
+            import json
+            machine_data_to_store = json.loads(machine_data)
+        except Exception:
+            machine_data_to_store = machine_data
         
     except Exception as e:
         print(f"⚠️ Machine data yaratishda xato: {e}")
         import traceback
         traceback.print_exc()
     
-    return final_ai_response, all_partial_logs
+    try:
+        final_ai_response_id = await create_ai_response(
+            user_id,
+            db_video_id,
+            0,
+            "advanced",
+            final_ai_response,
+            machine_data=machine_data_to_store,
+        )
+    except Exception as e:
+        print(f"⚠️ Ошибка сохранения финального результата в БД: {e}")
+
+    return final_ai_response, all_partial_logs, machine_data if 'machine_data' in locals() else None, final_ai_response_id
 
 
 # ===== YANGI FUNKSIYA: Machine-readable data yaratish =====

@@ -20,7 +20,8 @@ async def run_advanced_analysis_with_validation(
     video_meta_full: Dict,
     progress_msg,
     message,
-    update_progress_message
+    update_progress_message,
+    cancel_event: asyncio.Event | None = None,
 ) -> Tuple[str, List[Dict], str | None, int]:
     """
     Запуск углубленного анализа с пошаговой валидацией
@@ -45,6 +46,8 @@ async def run_advanced_analysis_with_validation(
     
     # ПОШАГОВОЕ ВЫПОЛНЕНИЕ С ВАЛИДАЦИЕЙ
     for idx, prompt in enumerate(advanced_prompts):
+        if cancel_event is not None and cancel_event.is_set():
+            raise asyncio.CancelledError()
         module_id = module_mapping.get(idx)
         if not module_id:
             raise ValueError(f"Не найден маппинг для промпта {idx}")
@@ -58,6 +61,8 @@ async def run_advanced_analysis_with_validation(
         previous_validation = None
         
         while attempt <= validator.max_retries + 1:
+            if cancel_event is not None and cancel_event.is_set():
+                raise asyncio.CancelledError()
             completed = idx
             percentage = int((completed / total_steps) * 100)
             progress_bar = "▓" * (percentage // 10) + "░" * (10 - percentage // 10)
@@ -108,6 +113,9 @@ async def run_advanced_analysis_with_validation(
                 partial_response,
                 attempt
             )
+
+            if cancel_event is not None and cancel_event.is_set():
+                raise asyncio.CancelledError()
             
             # Генерируем отчет о валидации
             validation_report = validator.format_validation_report(
