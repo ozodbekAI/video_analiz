@@ -445,13 +445,16 @@ async def run_analysis_task(
                 raise ValueError("Нет промпта для простого анализа")
             
             prompt_text = simple_prompts[0].prompt_text
-            request_context = full_context
 
             await _raise_if_cancelled()
             
             ai_response = await analyze_comments_with_prompt(full_context, prompt_text)
 
             await _raise_if_cancelled()
+            
+            # ВАЖНО: Log должен содержать PROMPT + COMMENTS для отладки
+            request_context = f"PROMPT:\n{prompt_text}\n\n{'='*80}\n\nCOMMENTS:\n{full_context}"
+            
             ai_logs = save_ai_interaction(
                 user_id=user.user_id,
                 video_id=video_id,
