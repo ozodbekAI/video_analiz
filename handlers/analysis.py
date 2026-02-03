@@ -444,7 +444,14 @@ async def run_analysis_task(
             if not simple_prompts:
                 raise ValueError("Нет промпта для простого анализа")
             
-            prompt_text = simple_prompts[0].prompt_text
+            # Используем первый (самый приоритетный) промпт
+            selected_prompt = simple_prompts[0]
+            prompt_text = selected_prompt.prompt_text
+            
+            # Debug log - какой промпт используется
+            print(f"[SIMPLE ANALYSIS] Using prompt ID={selected_prompt.id}, name='{selected_prompt.name}', order={selected_prompt.order}")
+            if len(simple_prompts) > 1:
+                print(f"[WARNING] Found {len(simple_prompts)} prompts for category='{category}', analysis_type='simple'. Using first one (id={selected_prompt.id})")
 
             await _raise_if_cancelled()
             
@@ -513,6 +520,10 @@ async def run_analysis_task(
             advanced_prompts = await get_prompts(category=category, analysis_type="advanced")
             await _raise_if_cancelled()
 
+            # ВАЖНО: Передаем чистые комментарии для retry-итераций
+            # full_context может содержать метаданные, а comments_only - только комментарии
+            comments_only = full_context  # В нашем случае full_context уже содержит только комментарии
+
             final_ai_response, all_partial_logs, machine_data_json, final_ai_response_id = await run_advanced_analysis_with_validation(
                 user_id=user.user_id,
                 video_id=video_id,
@@ -524,6 +535,7 @@ async def run_analysis_task(
                 message=message,
                 update_progress_message=update_progress_message,
                 cancel_event=runtime.cancel_event,
+                comments_only=comments_only,  # Чистые комментарии для retry
             )
 
             # Track DB/file artifacts for potential cleanup on stop

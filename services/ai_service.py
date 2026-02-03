@@ -131,7 +131,7 @@ def _strip_think_tags(text: str) -> str:
 async def analyze_comments_with_prompt(
     comments_text: str,
     prompt_text: str,
-    max_tokens: int = 16000,
+    max_tokens: int = 32000,
     temperature: float = 0.3,
     model: Optional[str] = None,
 ) -> str:

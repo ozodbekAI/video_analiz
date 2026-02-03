@@ -22,6 +22,7 @@ async def run_advanced_analysis_with_validation(
     message,
     update_progress_message,
     cancel_event: asyncio.Event | None = None,
+    comments_only: str = None,  # ВАЖНО: чистые комментарии для retry
 ) -> Tuple[str, List[Dict], str | None, int]:
     """
     Запуск углубленного анализа с пошаговой валидацией
@@ -82,13 +83,10 @@ async def run_advanced_analysis_with_validation(
                 ai_input_context = full_context
             else:
                 # ВАЖНО: при повторной попытке используем ТОЛЬКО комментарии без предыдущего отчета!
-                # Извлекаем только комментарии из полного контекста
-                # Ищем начало блока комментариев
-                comments_start_marker = "\n### КОММЕНТАРИИ ###\n"
-                if comments_start_marker in full_context:
-                    ai_input_context = full_context[full_context.index(comments_start_marker):]
+                # Используем переданные чистые комментарии или full_context как fallback
+                if comments_only:
+                    ai_input_context = comments_only
                 else:
-                    # Fallback: если маркер не найден, берем с конца (где обычно находятся комментарии)
                     ai_input_context = full_context
                 
                 retry_instructions = validator.generate_retry_instructions(
@@ -116,7 +114,7 @@ async def run_advanced_analysis_with_validation(
                 user_id=user_id,
                 video_id=video_id,
                 stage=f"advanced_{module_id}_attempt{attempt}",
-                request_text=f"PROMPT ({module_id} - {module_name}):\n{prompt_text}\n\n{'='*80}\n\nCOMMENTS:\n{full_context}",
+                request_text=f"PROMPT ({module_id} - {module_name}):\n{prompt_text}\n\n{'='*80}\n\nCOMMENTS:\n{ai_input_context}",
                 response_text=partial_response
             )
             

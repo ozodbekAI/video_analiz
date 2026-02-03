@@ -244,7 +244,12 @@ async def get_prompts(
     category: str | None = None,
     analysis_type: str | None = None,
 ):
-    """Получить промпты. По умолчанию сортирует по order (ASC), а затем по id (DESC) для получения самого свежего промпта."""
+    """
+    Получить промпты для бота. 
+    ВАЖНО: Возвращает промпты отсортированные по order (ASC), затем по id (DESC).
+    Для simple/advanced анализа берется первый промпт - т.е. самый приоритетный.
+    При одинаковом order - берется самый новый (id DESC).
+    """
     async with async_session() as db:
         query = select(Prompt)
         if category:
@@ -253,7 +258,7 @@ async def get_prompts(
             query = query.where(Prompt.analysis_type == analysis_type)
 
         # Сортируем: сначала по order (для приоритета), затем по id DESC (самый новый)
-        res = await db.execute(query.order_by(Prompt.order, Prompt.id.desc()))
+        res = await db.execute(query.order_by(Prompt.order.asc(), Prompt.id.desc()))
         return res.scalars().all()
 
 
@@ -328,14 +333,23 @@ async def create_ai_response(
     analysis_type: str,
     response_text: str,
     machine_data: str | None = None,
+    is_for_strategic_hub: bool | None = None,
 ):
     """Store an AI response.
 
     IMPORTANT: The codebase historically mixes Telegram user_id and internal DB user.id.
     This function resolves either form and always stores internal user.id in AIResponse.user_id.
+    
+    STRATEGIC HUB:
+    - Для advanced/advanced_final анализов автоматически устанавливается is_for_strategic_hub=True
+    - Это позволяет отображать их в Стратегическом хабе
     """
     async with async_session() as session:
         user = await _resolve_user(session, user_id)
+        
+        # Автоматически включаем в Strategic Hub для advanced анализов
+        if is_for_strategic_hub is None:
+            is_for_strategic_hub = analysis_type in ("advanced", "advanced_final")
 
         stmt = (
             insert(AIResponse)
@@ -346,12 +360,17 @@ async def create_ai_response(
                 analysis_type=analysis_type,
                 response_text=response_text,
                 machine_data=machine_data,
+                is_for_strategic_hub=is_for_strategic_hub,
                 created_at=datetime.now(tz=timezone.utc),
             )
             .returning(AIResponse.id)
         )
         res = await session.execute(stmt)
         await session.commit()
+        
+        if is_for_strategic_hub:
+            print(f"[STRATEGIC HUB] New {analysis_type} analysis saved with is_for_strategic_hub=True")
+        
         return int(res.scalar_one())
 
 
@@ -1342,7 +1361,10 @@ async def create_advanced_analysis_response(
     human_report: str,
     machine_data: str
 ):
-    """Создает запись расширенного анализа с двумя типами данных"""
+    """Создает запись расширенного анализа с двумя типами данных.
+    
+    ВАЖНО: Автоматически устанавливает is_for_strategic_hub=True для Стратегического хаба.
+    """
     async with async_session() as session:
         stmt = insert(AIResponse).values(
             user_id=user_id,
@@ -1350,11 +1372,13 @@ async def create_advanced_analysis_response(
             chunk_id=0,
             analysis_type="advanced",
             response_text=human_report,
-            machine_data=machine_data,  # 🆕 Сохраняем машиночитаемый отчет
+            machine_data=machine_data,
+            is_for_strategic_hub=True,  # ✅ Включаем в Strategic Hub
             created_at=datetime.now(tz=timezone.utc)
         )
         await session.execute(stmt)
         await session.commit()
+        print(f"[STRATEGIC HUB] Advanced analysis saved with is_for_strategic_hub=True")
 
 async def get_user_analysis_history(user_id: int) -> list[str]:
     """Returns last 10 completed analyses (final reports) for Strategic Hub.
@@ -1586,14 +1610,18 @@ async def admin_reset_user_usage(user_id: int) -> None:
 
 
 async def admin_list_prompts(category: str | None = None, analysis_type: str | None = None) -> list[Prompt]:
-    """List prompts for Web Admin (same table as bot)."""
+    """
+    List prompts for Web Admin (same table as bot).
+    ВАЖНО: Сортировка должна быть идентична get_prompts() для консистентности.
+    """
     async with async_session() as session:
         q = select(Prompt)
         if category:
             q = q.where(Prompt.category == category)
         if analysis_type:
             q = q.where(Prompt.analysis_type == analysis_type)
-        q = q.order_by(func.coalesce(Prompt.order, 0), Prompt.id)
+        # Сортируем так же как в get_prompts: order ASC, id DESC
+        q = q.order_by(func.coalesce(Prompt.order, 0).asc(), Prompt.id.desc())
         res = await session.execute(q)
         return list(res.scalars().all())
 
@@ -1612,15 +1640,36 @@ async def admin_create_prompt(
     analysis_type: str = "simple",
     module_id: str | None = None,
 ) -> Prompt:
-    """Create prompt with stable ordering (next order within category+analysis_type)."""
+    """
+    Create prompt with stable ordering.
+    
+    ВАЖНО для simple анализа: 
+    - Если уже существует промпт с таким же category + analysis_type, 
+      новый промпт получит order=0 (станет приоритетным).
+    - Рекомендуется удалять старые промпты вручную.
+    
+    Для advanced анализа module_id определяет уникальность.
+    """
     async with async_session() as session:
-        max_order_res = await session.execute(
-            select(func.max(func.coalesce(Prompt.order, 0)))
-            .where(Prompt.category == category)
-            .where(Prompt.analysis_type == analysis_type)
-        )
-        max_order = max_order_res.scalar_one_or_none()
-        next_order = int(max_order or 0) + 1 if max_order is not None else 0
+        # Для simple анализа - новый промпт должен быть приоритетным (order=0)
+        if analysis_type == "simple":
+            # Сдвигаем все существующие промпты на +1
+            await session.execute(
+                update(Prompt)
+                .where(Prompt.category == category)
+                .where(Prompt.analysis_type == analysis_type)
+                .values(order=Prompt.order + 1)
+            )
+            next_order = 0
+        else:
+            # Для advanced - вычисляем следующий order
+            max_order_res = await session.execute(
+                select(func.max(func.coalesce(Prompt.order, 0)))
+                .where(Prompt.category == category)
+                .where(Prompt.analysis_type == analysis_type)
+            )
+            max_order = max_order_res.scalar_one_or_none()
+            next_order = int(max_order or 0) + 1 if max_order is not None else 0
 
         p = Prompt(
             name=name,
@@ -1645,11 +1694,16 @@ async def admin_update_prompt(
     analysis_type: str = "simple",
     module_id: str | None = None,
 ) -> Prompt | None:
+    """Update prompt and log for debugging."""
     async with async_session() as session:
         res = await session.execute(select(Prompt).where(Prompt.id == prompt_id))
         p = res.scalar_one_or_none()
         if not p:
             return None
+        
+        # Debug log
+        print(f"[ADMIN] Updating prompt ID={prompt_id}: '{p.name}' -> '{name}'")
+        
         p.name = name
         p.prompt_text = prompt_text
         p.category = category
@@ -1659,17 +1713,26 @@ async def admin_update_prompt(
             p.order = 0
         await session.commit()
         await session.refresh(p)
+        
+        print(f"[ADMIN] Prompt ID={prompt_id} successfully updated")
         return p
 
 
 async def admin_delete_prompt(prompt_id: int) -> bool:
+    """Delete prompt and log for debugging."""
     async with async_session() as session:
         res = await session.execute(select(Prompt).where(Prompt.id == prompt_id))
         p = res.scalar_one_or_none()
         if not p:
             return False
+        
+        # Debug log
+        print(f"[ADMIN] Deleting prompt ID={prompt_id}, name='{p.name}', category='{p.category}', analysis_type='{p.analysis_type}'")
+        
         await session.delete(p)
         await session.commit()
+        
+        print(f"[ADMIN] Prompt ID={prompt_id} successfully deleted from database")
         return True
 
 
