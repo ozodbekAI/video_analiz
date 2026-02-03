@@ -131,7 +131,7 @@ def _strip_think_tags(text: str) -> str:
 async def analyze_comments_with_prompt(
     comments_text: str,
     prompt_text: str,
-    max_tokens: int = 3000,
+    max_tokens: int = 16000,
     temperature: float = 0.3,
     model: Optional[str] = None,
 ) -> str:
@@ -141,6 +141,12 @@ async def analyze_comments_with_prompt(
     """
     try:
         clean_comments = sanitize_comments(comments_text)
+        
+        print(f"[AI DEBUG] Sending to DeepSeek:")
+        print(f"  - Model: {model or DEEPSEEK_MODEL}")
+        print(f"  - Prompt length: {len(prompt_text)} chars")
+        print(f"  - Comments length: {len(clean_comments)} chars")
+        print(f"  - Max tokens: {max_tokens}")
 
         resp = await client.chat.completions.create(
             model=model or DEEPSEEK_MODEL,
@@ -154,6 +160,19 @@ async def analyze_comments_with_prompt(
 
         msg = resp.choices[0].message
         content = (msg.content or "")
+        
+        # DeepSeek Reasoner returns reasoning_content separately
+        # Check if model returned reasoning but empty content
+        reasoning_content = getattr(msg, 'reasoning_content', None)
+        
+        print(f"[AI DEBUG] Response received:")
+        print(f"  - Content length: {len(content)} chars")
+        print(f"  - Reasoning content: {len(reasoning_content) if reasoning_content else 0} chars")
+        print(f"  - First 200 chars: {content[:200] if content else 'EMPTY'}")
+        
+        # If content is empty but we have reasoning, there might be an issue
+        if not content and reasoning_content:
+            print(f"[AI WARNING] Content empty but reasoning exists! Reasoning preview: {reasoning_content[:500]}")
 
         # DeepSeek reasoning model can expose extra reasoning field in some SDKs;
         # we intentionally return only final content.
@@ -163,6 +182,7 @@ async def analyze_comments_with_prompt(
 
     except Exception as e:
         error_msg = str(e)
+        print(f"[AI ERROR] Exception: {error_msg}")
 
         if 'insufficient_quota' in error_msg or 'quota' in error_msg.lower():
             return (
