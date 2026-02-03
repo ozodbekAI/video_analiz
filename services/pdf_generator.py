@@ -2,6 +2,265 @@ from weasyprint import HTML, CSS
 from datetime import datetime
 from pathlib import Path
 import re
+import json
+
+
+def format_evaluation_json_to_table(json_data: dict | str) -> str:
+    """
+    Multi-analysis evaluator JSON ni rus tilida chiroyli jadval formatiga aylantirish.
+    Oddiy foydalanuvchi uchun tushunarli ko'rinish.
+    """
+    if isinstance(json_data, str):
+        try:
+            json_data = json.loads(json_data)
+        except:
+            return ""
+    
+    if not json_data or not isinstance(json_data, dict):
+        return ""
+    
+    html_parts = []
+    
+    # Sarlavha
+    html_parts.append('<div class="evaluation-section">')
+    html_parts.append('<h2>📊 СРАВНИТЕЛЬНАЯ ОЦЕНКА АНАЛИЗОВ</h2>')
+    
+    # Eng yaxshi analiz
+    best_id = json_data.get("best_analysis_id", "—")
+    selection_reason = json_data.get("selection_reason", "")
+    
+    html_parts.append(f'''
+    <div class="best-analysis-box">
+        <div class="best-label">🏆 ЛУЧШИЙ АНАЛИЗ</div>
+        <div class="best-id">Анализ #{best_id}</div>
+        <div class="best-reason">{selection_reason}</div>
+    </div>
+    ''')
+    
+    # Evaluations jadvali
+    evaluations = json_data.get("evaluations", [])
+    if evaluations:
+        html_parts.append('<h3>📋 Детальные оценки</h3>')
+        html_parts.append('<table class="evaluation-table">')
+        html_parts.append('''
+        <thead>
+            <tr>
+                <th>Анализ</th>
+                <th>Полнота</th>
+                <th>Структура</th>
+                <th>Глубина</th>
+                <th>Ценность</th>
+                <th>Ясность</th>
+                <th>ИТОГО</th>
+                <th>Ранг</th>
+            </tr>
+        </thead>
+        <tbody>
+        ''')
+        
+        for ev in evaluations:
+            analysis_id = ev.get("analysis_id", "—")
+            scores = ev.get("scores", {})
+            total = ev.get("total_score", 0)
+            rank = ev.get("quality_rank", "—")
+            
+            # Rang uchun klass
+            rank_class = "rank-1" if rank == 1 else ("rank-2" if rank == 2 else "rank-other")
+            
+            html_parts.append(f'''
+            <tr class="{rank_class}">
+                <td><strong>#{analysis_id}</strong></td>
+                <td>{scores.get("completeness", "—")}</td>
+                <td>{scores.get("structure", "—")}</td>
+                <td>{scores.get("insights_depth", "—")}</td>
+                <td>{scores.get("practical_value", "—")}</td>
+                <td>{scores.get("clarity", "—")}</td>
+                <td class="total-score"><strong>{total:.1f}</strong></td>
+                <td class="rank">#{rank}</td>
+            </tr>
+            ''')
+        
+        html_parts.append('</tbody></table>')
+        
+        # Kuchli va zaif tomonlar
+        for ev in evaluations:
+            analysis_id = ev.get("analysis_id", "—")
+            strengths = ev.get("strengths", [])
+            weaknesses = ev.get("weaknesses", [])
+            suggestions = ev.get("improvement_suggestions", [])
+            
+            if strengths or weaknesses or suggestions:
+                html_parts.append(f'<div class="analysis-details">')
+                html_parts.append(f'<h4>Анализ #{analysis_id}</h4>')
+                
+                if strengths:
+                    html_parts.append('<div class="strengths"><strong>✅ Сильные стороны:</strong><ul>')
+                    for s in strengths[:3]:
+                        html_parts.append(f'<li>{s}</li>')
+                    html_parts.append('</ul></div>')
+                
+                if weaknesses:
+                    html_parts.append('<div class="weaknesses"><strong>⚠️ Слабые стороны:</strong><ul>')
+                    for w in weaknesses[:3]:
+                        html_parts.append(f'<li>{w}</li>')
+                    html_parts.append('</ul></div>')
+                
+                if suggestions:
+                    html_parts.append('<div class="suggestions"><strong>💡 Рекомендации:</strong><ul>')
+                    for s in suggestions[:2]:
+                        html_parts.append(f'<li>{s}</li>')
+                    html_parts.append('</ul></div>')
+                
+                html_parts.append('</div>')
+    
+    # Umumiy xulosalar
+    comparison = json_data.get("comparison_summary", "")
+    overall_recs = json_data.get("overall_recommendations", [])
+    
+    if comparison:
+        html_parts.append(f'''
+        <div class="comparison-summary">
+            <h4>📝 Общее сравнение</h4>
+            <p>{comparison}</p>
+        </div>
+        ''')
+    
+    if overall_recs:
+        html_parts.append('<div class="overall-recommendations">')
+        html_parts.append('<h4>🎯 Общие рекомендации</h4><ul>')
+        for rec in overall_recs[:5]:
+            html_parts.append(f'<li>{rec}</li>')
+        html_parts.append('</ul></div>')
+    
+    html_parts.append('</div>')  # evaluation-section
+    
+    return '\n'.join(html_parts)
+
+
+def format_machine_data_to_table(json_data: dict | str) -> str:
+    """
+    Machine data JSON ni rus tilida chiroyli jadval formatiga aylantirish.
+    ДАННЫЕ ДЛЯ АГРЕГАЦИИ -> Odam uchun tushunarli jadval.
+    """
+    if isinstance(json_data, str):
+        try:
+            json_data = json.loads(json_data)
+        except:
+            return ""
+    
+    if not json_data or not isinstance(json_data, dict):
+        return ""
+    
+    html_parts = []
+    html_parts.append('<div class="machine-data-section">')
+    html_parts.append('<h2>📊 КЛЮЧЕВЫЕ МЕТРИКИ АНАЛИЗА</h2>')
+    
+    # Video metadata
+    video_meta = json_data.get("video_metadata", {})
+    if video_meta:
+        html_parts.append('''
+        <table class="metrics-table">
+        <thead><tr><th colspan="2">🎬 Информация о видео</th></tr></thead>
+        <tbody>
+        ''')
+        
+        labels = {
+            "video_id": "ID видео",
+            "title": "Название",
+            "upload_date": "Дата загрузки",
+            "comments_count": "Количество комментариев",
+            "analysis_period": "Период анализа"
+        }
+        
+        for key, label in labels.items():
+            value = video_meta.get(key, "—")
+            html_parts.append(f'<tr><td><strong>{label}</strong></td><td>{value}</td></tr>')
+        
+        html_parts.append('</tbody></table>')
+    
+    # Content metrics
+    content_metrics = json_data.get("content_metrics", {})
+    if content_metrics:
+        html_parts.append('''
+        <table class="metrics-table">
+        <thead><tr><th colspan="2">📈 Метрики контента</th></tr></thead>
+        <tbody>
+        ''')
+        
+        labels = {
+            "analytically_valuable_comments_percentage": "Ценные комментарии (%)",
+            "theme_diversity_index": "Индекс разнообразия тем",
+            "top_theme_id": "Топ тема",
+            "top_theme_score": "Оценка топ темы"
+        }
+        
+        for key, label in labels.items():
+            value = content_metrics.get(key, "—")
+            if isinstance(value, float):
+                value = f"{value:.1f}"
+            html_parts.append(f'<tr><td><strong>{label}</strong></td><td>{value}</td></tr>')
+        
+        html_parts.append('</tbody></table>')
+    
+    # Emotional metrics
+    emotional_metrics = json_data.get("emotional_metrics", {})
+    if emotional_metrics:
+        html_parts.append('''
+        <table class="metrics-table">
+        <thead><tr><th colspan="2">😊 Эмоциональные метрики</th></tr></thead>
+        <tbody>
+        ''')
+        
+        labels = {
+            "emotional_saturation_index": "Индекс эмоц. насыщенности",
+            "emotional_diversity_coefficient": "Коэфф. разнообразия эмоций",
+            "predominant_emotion": "Преобладающая эмоция",
+            "predominant_emotion_percentage": "Доля эмоции (%)",
+            "emotional_weather": "Эмоциональная погода"
+        }
+        
+        for key, label in labels.items():
+            value = emotional_metrics.get(key, "—")
+            if isinstance(value, float):
+                value = f"{value:.1f}"
+            html_parts.append(f'<tr><td><strong>{label}</strong></td><td>{value}</td></tr>')
+        
+        html_parts.append('</tbody></table>')
+    
+    # Strategic indices
+    strategic = json_data.get("strategic_indices", {})
+    if strategic:
+        html_parts.append('''
+        <table class="metrics-table">
+        <thead><tr><th colspan="2">🎯 Стратегические индексы</th></tr></thead>
+        <tbody>
+        ''')
+        
+        labels = {
+            "content_health_index": "Индекс здоровья контента",
+            "audience_evolution_vector": "Вектор развития аудитории",
+            "strategic_stability_index": "Индекс стратег. стабильности",
+            "data_quality": "Качество данных"
+        }
+        
+        for key, label in labels.items():
+            value = strategic.get(key, "—")
+            html_parts.append(f'<tr><td><strong>{label}</strong></td><td>{value}</td></tr>')
+        
+        html_parts.append('</tbody></table>')
+    
+    # Key insights
+    insights = json_data.get("key_insights_summary", [])
+    if insights:
+        html_parts.append('<div class="key-insights">')
+        html_parts.append('<h3>💡 Ключевые инсайты</h3><ul>')
+        for insight in insights:
+            html_parts.append(f'<li>{insight}</li>')
+        html_parts.append('</ul></div>')
+    
+    html_parts.append('</div>')  # machine-data-section
+    
+    return '\n'.join(html_parts)
 
 
 def clean_html_tags_in_text(text: str) -> str:
@@ -46,9 +305,41 @@ def clean_markdown(content: str) -> str:
     table_lines = []
     in_list = False
     list_items = []
+    in_code_block = False
+    code_block_lines = []
+    code_block_lang = ""
     
     for line in lines:
         stripped = line.strip()
+        
+        # Code block (```json, ```python, etc.)
+        if stripped.startswith('```'):
+            if not in_code_block:
+                # Code block boshlanishi
+                in_code_block = True
+                code_block_lang = stripped[3:].strip().lower()
+                code_block_lines = []
+                # Oldingi list/table yopish
+                if in_list:
+                    html_parts.append(format_list(list_items))
+                    list_items = []
+                    in_list = False
+                if in_table:
+                    html_parts.append(format_table(table_lines))
+                    table_lines = []
+                    in_table = False
+            else:
+                # Code block tugashi
+                in_code_block = False
+                html_parts.append(format_code_block(code_block_lines, code_block_lang))
+                code_block_lines = []
+                code_block_lang = ""
+            continue
+        
+        # Code block ichida
+        if in_code_block:
+            code_block_lines.append(line)  # Original indentation saqlanadi
+            continue
         
         # Jadval boshlanishi/davomi
         if stripped.startswith('|') and stripped.endswith('|'):
@@ -104,6 +395,12 @@ def clean_markdown(content: str) -> str:
                     break
             if level > 0 and level <= 6:
                 text = stripped[level:].strip()
+                
+                # Maxsus markerlar uchun stil
+                if 'ДАННЫЕ ДЛЯ АГРЕГАЦИИ' in text or 'METRICS' in text.upper():
+                    html_parts.append(f'<div class="metrics-header">{text}</div>')
+                    continue
+                
                 # Emoji ni ajratish
                 emoji_match = re.match(r'^([\U0001F300-\U0001F9FF\U00002600-\U000027BF\U0001F600-\U0001F64F\U0001FA00-\U0001FAFF]+)\s*(.+)?$', text)
                 if emoji_match:
@@ -114,16 +411,190 @@ def clean_markdown(content: str) -> str:
                     html_parts.append(f'<h{level}>{process_inline_formatting(text)}</h{level}>')
                 continue
         
+        # Maxsus end marker
+        if 'VIDEO_ANALYSIS_METRICS_END' in stripped:
+            html_parts.append('<div class="metrics-footer">— Конец машиночитаемых данных —</div>')
+            continue
+        
         # Oddiy paragraf
         html_parts.append(f'<p>{process_inline_formatting(stripped)}</p>')
     
-    # Qolgan jadval/list
+    # Qolgan jadval/list/code block
     if in_table:
         html_parts.append(format_table(table_lines))
     if in_list:
         html_parts.append(format_list(list_items))
+    if in_code_block:
+        html_parts.append(format_code_block(code_block_lines, code_block_lang))
     
     return '\n'.join(html_parts)
+
+
+def format_code_block(lines: list, lang: str = "") -> str:
+    """Code block ni HTML ga aylantirish - JSON uchun jadval ko'rinishida"""
+    if not lines:
+        return ""
+    
+    code_content = '\n'.join(lines)
+    
+    # JSON uchun maxsus - jadvalga aylantirish
+    if lang == "json":
+        try:
+            import json
+            parsed = json.loads(code_content)
+            
+            # Machine data JSON ekanligini aniqlash
+            if isinstance(parsed, dict):
+                # Evaluation JSON (multi-analysis)
+                if 'best_analysis' in parsed or 'analyses_comparison' in parsed:
+                    return format_evaluation_json_to_table(parsed)
+                
+                # Machine data JSON
+                if any(key in parsed for key in ['video_data', 'content_metrics', 'emotional_metrics', 'strategic_indices', 'metadata']):
+                    return format_machine_data_to_table(parsed)
+                
+                # Oddiy JSON dict - simple table qilish
+                return format_simple_json_to_table(parsed)
+            
+            # JSON array - oddiy ko'rsatish
+            code_content = json.dumps(parsed, indent=2, ensure_ascii=False)
+        except:
+            pass  # JSON parse xatosi bo'lsa, original qoldirish
+    
+    # HTML escape
+    code_content = (code_content
+        .replace('&', '&amp;')
+        .replace('<', '&lt;')
+        .replace('>', '&gt;')
+        .replace('"', '&quot;')
+    )
+    
+    # Lang label
+    lang_label = lang.upper() if lang else "CODE"
+    
+    return f'''<div class="code-block">
+    <div class="code-header">{lang_label}</div>
+    <pre><code>{code_content}</code></pre>
+</div>'''
+
+
+def format_simple_json_to_table(data: dict) -> str:
+    """Oddiy JSON dict ni jadvalga aylantirish"""
+    if not isinstance(data, dict):
+        return ""
+    
+    html = ['<div class="machine-data-section">']
+    html.append('<table class="metrics-table">')
+    html.append('<thead><tr><th colspan="2">📊 Данные</th></tr></thead>')
+    html.append('<tbody>')
+    
+    for key, value in data.items():
+        # Keyni rus tiliga tarjima qilish
+        key_label = translate_key_to_russian(key)
+        
+        if isinstance(value, dict):
+            # Nested dict
+            html.append(f'<tr><td colspan="2"><strong>{key_label}</strong></td></tr>')
+            for k, v in value.items():
+                k_label = translate_key_to_russian(k)
+                html.append(f'<tr><td style="padding-left: 20px;">↳ {k_label}</td><td>{format_json_value(v)}</td></tr>')
+        elif isinstance(value, list):
+            html.append(f'<tr><td>{key_label}</td><td>{", ".join(str(v) for v in value)}</td></tr>')
+        else:
+            html.append(f'<tr><td>{key_label}</td><td>{format_json_value(value)}</td></tr>')
+    
+    html.append('</tbody></table></div>')
+    return '\n'.join(html)
+
+
+def translate_key_to_russian(key: str) -> str:
+    """JSON keylarini rus tiliga tarjima qilish"""
+    translations = {
+        # Video data
+        'title': 'Название',
+        'channel': 'Канал',
+        'duration': 'Длительность',
+        'views': 'Просмотры',
+        'likes': 'Лайки',
+        'comments': 'Комментарии',
+        'subscribers': 'Подписчики',
+        'published': 'Дата публикации',
+        'description': 'Описание',
+        
+        # Metrics
+        'engagement_rate': 'Вовлечённость',
+        'viral_coefficient': 'Виральный коэффициент',
+        'content_score': 'Оценка контента',
+        'quality_score': 'Качество',
+        'relevance_score': 'Релевантность',
+        'retention_rate': 'Удержание',
+        'ctr': 'CTR (кликабельность)',
+        
+        # Emotional
+        'emotional_tone': 'Эмоциональный тон',
+        'sentiment': 'Настроение',
+        'positive': 'Позитивные',
+        'negative': 'Негативные',
+        'neutral': 'Нейтральные',
+        
+        # Strategic
+        'growth_potential': 'Потенциал роста',
+        'monetization_index': 'Индекс монетизации',
+        'audience_fit': 'Соответствие аудитории',
+        'trend_alignment': 'Соответствие трендам',
+        
+        # General
+        'score': 'Оценка',
+        'value': 'Значение',
+        'count': 'Количество',
+        'total': 'Итого',
+        'average': 'Среднее',
+        'percentage': 'Процент',
+        'status': 'Статус',
+        'type': 'Тип',
+        'name': 'Название',
+        'id': 'ID',
+        'date': 'Дата',
+        'time': 'Время',
+        
+        # Analysis
+        'completeness': 'Полнота',
+        'structure': 'Структура',
+        'depth': 'Глубина',
+        'value_content': 'Ценность контента',
+        'clarity': 'Ясность',
+        'strengths': 'Сильные стороны',
+        'weaknesses': 'Слабые стороны',
+        'suggestions': 'Рекомендации',
+        'best_analysis': 'Лучший анализ',
+        'reason': 'Причина',
+        'overall_score': 'Общая оценка',
+    }
+    
+    # Keyni normalize qilish (snake_case -> bo'sh joy bilan)
+    normalized = key.lower().replace('-', '_')
+    
+    if normalized in translations:
+        return translations[normalized]
+    
+    # Topilmasa, keyni formatting qilish
+    return key.replace('_', ' ').title()
+
+
+def format_json_value(value) -> str:
+    """JSON qiymatini chiroyli ko'rsatish"""
+    if isinstance(value, bool):
+        return "✓ Да" if value else "✗ Нет"
+    elif isinstance(value, (int, float)):
+        if isinstance(value, float):
+            if value <= 1 and value >= 0:
+                return f"{value * 100:.1f}%"
+            return f"{value:.2f}"
+        return f"{value:,}".replace(',', ' ')
+    elif value is None:
+        return "—"
+    else:
+        return str(value)
 
 
 def format_list(items: list) -> str:
@@ -444,6 +915,258 @@ code {
     border-radius: 4px;
     font-size: 9pt;
     color: #7c3aed;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   CODE BLOCKS (JSON, etc.)
+   ───────────────────────────────────────────────────────────────── */
+
+.code-block {
+    margin: 16px 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    page-break-inside: avoid;
+}
+
+.code-header {
+    background: #1e293b;
+    color: #94a3b8;
+    font-size: 8pt;
+    font-weight: 600;
+    padding: 6px 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.code-block pre {
+    margin: 0;
+    padding: 16px;
+    background: #0f172a;
+    overflow-x: auto;
+}
+
+.code-block code {
+    font-family: 'DejaVu Sans Mono', 'Courier New', monospace;
+    font-size: 8pt;
+    line-height: 1.5;
+    color: #e2e8f0;
+    background: transparent;
+    padding: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   METRICS SECTION (Machine-readable data)
+   ───────────────────────────────────────────────────────────────── */
+
+.metrics-header {
+    margin-top: 30px;
+    margin-bottom: 10px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    color: white;
+    font-size: 11pt;
+    font-weight: 600;
+    border-radius: 8px 8px 0 0;
+    text-align: center;
+}
+
+.metrics-footer {
+    margin-top: 10px;
+    margin-bottom: 30px;
+    padding: 8px 16px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 9pt;
+    font-style: italic;
+    border-radius: 0 0 8px 8px;
+    text-align: center;
+    border-top: 2px dashed #cbd5e1;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   EVALUATION SECTION (Multi-analysis comparison)
+   ───────────────────────────────────────────────────────────────── */
+
+.evaluation-section {
+    margin: 20px 0;
+    page-break-inside: avoid;
+}
+
+.best-analysis-box {
+    background: linear-gradient(135deg, #fef3c7 0%, #fcd34d 100%);
+    border: 2px solid #f59e0b;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 16px 0;
+    text-align: center;
+}
+
+.best-label {
+    font-size: 10pt;
+    color: #92400e;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.best-id {
+    font-size: 18pt;
+    font-weight: 700;
+    color: #78350f;
+    margin: 8px 0;
+}
+
+.best-reason {
+    font-size: 9pt;
+    color: #92400e;
+    font-style: italic;
+}
+
+.evaluation-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8pt;
+    margin: 12px 0;
+}
+
+.evaluation-table th {
+    background: #1e40af;
+    color: white;
+    padding: 8px 4px;
+    text-align: center;
+    font-size: 7pt;
+}
+
+.evaluation-table td {
+    border: 1px solid #e2e8f0;
+    padding: 6px 4px;
+    text-align: center;
+}
+
+.evaluation-table .total-score {
+    background: #dbeafe;
+    font-size: 9pt;
+}
+
+.evaluation-table .rank {
+    font-weight: 700;
+}
+
+.evaluation-table .rank-1 {
+    background: #fef3c7;
+}
+
+.evaluation-table .rank-2 {
+    background: #e0e7ff;
+}
+
+.analysis-details {
+    background: #f8fafc;
+    border-left: 3px solid #3b82f6;
+    padding: 10px 12px;
+    margin: 10px 0;
+    font-size: 8pt;
+}
+
+.analysis-details h4 {
+    margin: 0 0 8px 0;
+    color: #1e40af;
+    font-size: 9pt;
+}
+
+.strengths { color: #059669; margin: 6px 0; }
+.weaknesses { color: #dc2626; margin: 6px 0; }
+.suggestions { color: #7c3aed; margin: 6px 0; }
+
+.analysis-details ul {
+    margin: 4px 0 4px 16px;
+    padding: 0;
+}
+
+.analysis-details li {
+    margin: 2px 0;
+}
+
+.comparison-summary, .overall-recommendations {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 12px 0;
+}
+
+.comparison-summary h4, .overall-recommendations h4 {
+    margin: 0 0 8px 0;
+    color: #166534;
+    font-size: 10pt;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   MACHINE DATA SECTION (Metrics tables)
+   ───────────────────────────────────────────────────────────────── */
+
+.machine-data-section {
+    margin: 20px 0;
+}
+
+.metrics-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 9pt;
+}
+
+.metrics-table thead th {
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    color: white;
+    padding: 10px;
+    text-align: left;
+    font-size: 10pt;
+}
+
+.metrics-table td {
+    border: 1px solid #e2e8f0;
+    padding: 8px 10px;
+}
+
+.metrics-table tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.metrics-table td:first-child {
+    width: 45%;
+    color: #475569;
+}
+
+.metrics-table td:last-child {
+    color: #1e40af;
+    font-weight: 500;
+}
+
+.key-insights {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 1px solid #fbbf24;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+}
+
+.key-insights h3 {
+    margin: 0 0 10px 0;
+    color: #92400e;
+    font-size: 11pt;
+}
+
+.key-insights ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.key-insights li {
+    margin: 6px 0;
+    color: #78350f;
 }
 
 /* ─────────────────────────────────────────────────────────────────
