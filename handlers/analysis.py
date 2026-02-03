@@ -649,6 +649,7 @@ async def run_analysis_task(
                 txt_file.write(f"\nAdmin tomonidan tahlil qilindi\n")
             
             txt_file.write(f"\n{'='*50}\n\n")
+            txt_file.write("=== AI TAHLIL NATIJALARI ===\n\n")
             txt_file.write(final_ai_response)
 
         runtime.add_file(txt_file_path)

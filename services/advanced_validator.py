@@ -15,7 +15,13 @@ class ValidationResult:
 class AdvancedModuleValidator:
     """Улучшенный валидатор с более гибкими критериями"""
     
-    def __init__(self):
+    def __init__(self, max_retries: int = 2):
+        """
+        Инициализация валидатора
+        
+        Args:
+            max_retries: Максимальное количество попыток переделки (по умолчанию 2)
+        """
         self.modules_config = {
             "10-1": {
                 "name": "Контент-Детектив",
@@ -57,7 +63,7 @@ class AdvancedModuleValidator:
             }
         }
         
-        self.max_retries = 2
+        self.max_retries = max_retries
 
     def validate_module(self, module_id: str, content: str, attempt: int = 1) -> ValidationResult:
         """Улучшенная валидация с более мягкими критериями"""

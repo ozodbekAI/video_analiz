@@ -27,7 +27,8 @@ async def run_advanced_analysis_with_validation(
     Запуск углубленного анализа с пошаговой валидацией
     """
     
-    validator = AdvancedModuleValidator()
+    # Инициализируем валидатор с 4 максимальными попытками
+    validator = AdvancedModuleValidator(max_retries=4)
     
     advanced_prompts = await get_prompts(category=category, analysis_type="advanced")
     if not advanced_prompts:
@@ -77,7 +78,19 @@ async def run_advanced_analysis_with_validation(
             # Формируем промпт
             if attempt == 1:
                 prompt_text = prompt.prompt_text
+                # Первая попытка: используем полный контекст (комментарии + метаинформация)
+                ai_input_context = full_context
             else:
+                # ВАЖНО: при повторной попытке используем ТОЛЬКО комментарии без предыдущего отчета!
+                # Извлекаем только комментарии из полного контекста
+                # Ищем начало блока комментариев
+                comments_start_marker = "\n### КОММЕНТАРИИ ###\n"
+                if comments_start_marker in full_context:
+                    ai_input_context = full_context[full_context.index(comments_start_marker):]
+                else:
+                    # Fallback: если маркер не найден, берем с конца (где обычно находятся комментарии)
+                    ai_input_context = full_context
+                
                 retry_instructions = validator.generate_retry_instructions(
                     module_id, 
                     previous_validation
@@ -87,7 +100,7 @@ async def run_advanced_analysis_with_validation(
             # Запрос к AI
             try:
                 partial_response = await analyze_comments_with_prompt(
-                    full_context, 
+                    ai_input_context, 
                     prompt_text
                 )
             except Exception as e:

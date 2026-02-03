@@ -1,0 +1,11 @@
+# YouTube Parser - URLs List
+
+# Foydalanish: Har bir qatorga bitta YouTube URL yozing
+# Bu fayldan o'qiyotgan parser barcha videolarni tahlil qiladi
+
+# Namunalar:
+# https://www.youtube.com/watch?v=dQw4w9WgXcQ
+# https://www.youtube.com/shorts/1234567890a
+# https://youtu.be/dQw4w9WgXcQ
+
+# Sizning videolar:

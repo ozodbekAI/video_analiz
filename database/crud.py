@@ -244,6 +244,7 @@ async def get_prompts(
     category: str | None = None,
     analysis_type: str | None = None,
 ):
+    """Получить промпты. По умолчанию сортирует по order (ASC), а затем по id (DESC) для получения самого свежего промпта."""
     async with async_session() as db:
         query = select(Prompt)
         if category:
@@ -251,7 +252,8 @@ async def get_prompts(
         if analysis_type:
             query = query.where(Prompt.analysis_type == analysis_type)
 
-        res = await db.execute(query.order_by(Prompt.order))
+        # Сортируем: сначала по order (для приоритета), затем по id DESC (самый новый)
+        res = await db.execute(query.order_by(Prompt.order, Prompt.id.desc()))
         return res.scalars().all()
 
 
@@ -822,7 +824,10 @@ async def get_due_video_analysis_sets(limit: int = 25) -> list[VideoAnalysisSet]
 
 
 async def get_final_advanced_analyses_for_set(analysis_set_id: int) -> list[AIResponse]:
-    """Fetch final advanced analyses (chunk_id=0, analysis_type='advanced') for a set."""
+    """Fetch final advanced analyses (chunk_id=0, analysis_type='advanced') for a set.
+    
+    Strategic Hub needs at least 3 advanced analyses per set to evaluate.
+    """
     async with async_session() as session:
         res = await session.execute(
             select(AIResponse)
@@ -831,7 +836,9 @@ async def get_final_advanced_analyses_for_set(analysis_set_id: int) -> list[AIRe
             .where(AIResponse.analysis_type.in_(["advanced", "advanced_final"]))
             .order_by(AIResponse.created_at.asc())
         )
-        return list(res.scalars().all())
+        results = list(res.scalars().all())
+        print(f"🔍 [DEBUG] get_final_advanced_analyses_for_set(set_id={analysis_set_id}): найдено {len(results)} анализов")
+        return results
 
 
 async def save_multi_analysis_evaluation(
