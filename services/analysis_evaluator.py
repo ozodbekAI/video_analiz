@@ -9,16 +9,13 @@ from services.ai_service import analyze_text_with_prompt, save_ai_interaction
 
 
 def _extract_json_block(text: str) -> Dict[str, Any]:
-    """Best-effort extraction of a JSON object from an LLM response."""
     if not text:
         raise ValueError("Empty evaluator response")
 
-    # Fast path
     text = text.strip()
     if text.startswith("{") and text.endswith("}"):
         return json.loads(text)
 
-    # Try to locate the first top-level JSON object
     m = re.search(r"\{[\s\S]*\}", text)
     if not m:
         raise ValueError("No JSON object found in evaluator response")

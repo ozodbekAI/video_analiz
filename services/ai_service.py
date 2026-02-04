@@ -8,18 +8,11 @@ from datetime import datetime
 
 config = Config()
 
-# =========================
-# DeepSeek DIRECT API (no AI Tunnel)
-# =========================
-# DeepSeek API is OpenAI-compatible; base_url can be https://api.deepseek.com/v1
-# Docs: https://api-docs.deepseek.com
+
 DEEPSEEK_API_BASE = getattr(config, "DEEPSEEK_API_BASE", None) or "https://api.deepseek.com/v1"
 DEEPSEEK_API_KEY = getattr(config, "DEEPSEEK_API_KEY", None)
 
-# Model choice:
-# - "deepseek-reasoner"  (reasoning)
-# - "deepseek-chat"      (chat)
-# Official reasoning model doc: deepseek-reasoner
+
 DEEPSEEK_MODEL = getattr(config, "DEEPSEEK_MODEL", None) or "deepseek-reasoner"
 
 if not DEEPSEEK_API_KEY:
@@ -33,9 +26,6 @@ client = AsyncOpenAI(
 )
 
 
-# =========================
-# AI logs
-# =========================
 def save_ai_interaction(
     user_id: int,
     video_id: str,
@@ -89,9 +79,7 @@ def save_ai_interaction(
     }
 
 
-# =========================
-# Sanitization (for comments only)
-# =========================
+
 def sanitize_comments(comments_text: str, max_length: int = 8000) -> str:
     lines = comments_text.split('\n')
     unique_lines = []
@@ -131,7 +119,7 @@ def _strip_think_tags(text: str) -> str:
 async def analyze_comments_with_prompt(
     comments_text: str,
     prompt_text: str,
-    max_tokens: int = 32000,
+    max_tokens: int = 128000,
     temperature: float = 0.3,
     model: Optional[str] = None,
 ) -> str:
