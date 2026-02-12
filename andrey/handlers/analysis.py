@@ -22,6 +22,7 @@ from services.active_analysis import (
     get_active,
     cleanup_cancelled_analysis,
 )
+from services.comments_cache import get_video_comments_with_metrics_cached
 from services.youtube_service import (
     extract_video_id,
     format_timestamps_for_analysis, 
@@ -357,10 +358,8 @@ async def run_analysis_task(
         )
 
         video_id = runtime.youtube_video_id or extract_video_id(url)
-        from services.youtube_service import get_video_comments_with_metrics
-
         # Heavy network call (sync). We can only stop after it returns.
-        comments_result = get_video_comments_with_metrics(video_id)
+        comments_result = await get_video_comments_with_metrics_cached(video_id)
         comments_data = comments_result['comments']
         engagement_metrics = comments_result['metrics']
         engagement_phases = comments_result['engagement_phases']

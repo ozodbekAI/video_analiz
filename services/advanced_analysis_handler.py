@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime
 from html import escape
 
-from services.ai_service import analyze_comments_with_prompt, analyze_text_with_prompt, save_ai_interaction
+from services.ai_service import analyze_comments_with_prompt, save_ai_interaction
 from database.crud import get_prompts, create_ai_response
 from services.advanced_validator import AdvancedModuleValidator, ValidationLogger
 from validators import FinalSynthesisValidator
@@ -287,13 +287,7 @@ async def run_advanced_analysis_with_validation(
         if attempt > 1 and last_retry_prompt:
             attempt_prompt = synthesis_prompt_text + "\n\n" + last_retry_prompt
 
-        final_ai_response = await analyze_text_with_prompt(
-            text=combined_partials,
-            prompt_text=attempt_prompt,
-            max_tokens=60000,
-            temperature=0.2,
-            model="deepseek-chat",  
-        )
+        final_ai_response = await analyze_comments_with_prompt(combined_partials, attempt_prompt)
 
         synthesis_log = save_ai_interaction(
             user_id=user_id,

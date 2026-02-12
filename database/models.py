@@ -93,6 +93,23 @@ class Comment(Base):
     
     video = relationship("Video", back_populates="comments")
 
+class VideoCommentsCache(Base):
+    """Persistent cache for fetched YouTube comments by youtube_video_id.
+
+    We store large payloads on disk (JSON) and keep only the file pointer + timestamp in DB.
+    TTL logic is implemented in services/comments_cache.py (default: 72h).
+    """
+
+    __tablename__ = "video_comments_cache"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    youtube_video_id = Column(String(32), unique=True, nullable=False, index=True)
+    file_path = Column(String(500), nullable=False)
+    fetched_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(tz=timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(tz=timezone.utc))
+
+
+
 
 class Prompt(Base):
     __tablename__ = "prompts"
